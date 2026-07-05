@@ -4,8 +4,6 @@ Seven Planets is a single-page browser strategy game for 1 human player against 
 
 Game built with Claude Code Fable 5, perfected by human.
 
-**To play:** open `index.html` in a browser. No build step, no dependencies.
-
 ---
 
 ## Objective
@@ -193,23 +191,3 @@ node simulate.js 2000     # custom game count
 ```
 
 It reports win rates, timeout rates, and average game length for every strategy.
-
----
-
-## Files
-
-| File | Description |
-|------|-------------|
-| `index.html` | Game page |
-| `game.js` | All game logic + headless sim exports |
-| `style.css` | UI styles |
-| `simulate.js` | Strategy tournament runner |
-| `idea.md` | Original design notes |
-
----
-
-## Development Notes
-
-- Pure vanilla JavaScript — no frameworks, no build step.
-- `game.js` runs headless under Node.js for automated strategy testing (`?auto` in the URL makes the AI play the human seat in the browser).
-- All AI logic lives in `game.js`; personalities are parameterised via `PRIORITIES` and per-personality branches in `aiDraftPick`, `aiPickAttack`, `aiPickInfluencePlay`, and `aiEvaluateTrade`.
