@@ -255,7 +255,7 @@ function drawPlanet(pl: Planet, now: number): void {
 
   ctx.font = '12px sans-serif'
   ctx.fillStyle = '#fff'
-  ctx.fillText(`🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}`, x, y + r + 18)
+  ctx.fillText(`🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`, x, y + r + 18)
 
   const icons = BUILD_ORDER.filter((b) => pl.buildings[b]).map((b) => BUILDINGS[b].icon + (pl.buildings[b] > 1 ? pl.buildings[b] : ''))
   ctx.font = '11px sans-serif'

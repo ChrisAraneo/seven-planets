@@ -23,6 +23,10 @@ import {
   CARDS,
   choice,
   CONQUEST_TRUCE,
+  PEACE_TRUCE,
+  PACIFIST_TURNS,
+  PACIFIST_DEF_BONUS,
+  PACIFIST_INFLUENCE,
   HOME_FIELD,
   incomeAmount,
   INFLUENCE_CARDS,
@@ -117,6 +121,8 @@ export function buildState(): GameState {
       alive: true,
       planets: [i],
       tradedThisTurn: false,
+      lastAttackTurn: 0,
+      pacifistStatus: false,
     })),
     planets: gameDefs.map((d, i) => ({
       id: i,
@@ -287,6 +293,28 @@ export function siloBonus(planet: Planet): number {
 export function underTruce(planet: Planet): boolean {
   return state.turn <= planet.protectedUntil
 }
+// Has this player earned permanent PACIFIST status (no attacks for PACIFIST_TURNS)?
+export function isPacifist(p: Player): boolean {
+  return p.pacifistStatus
+}
+// Extra flat defense every pacifist owner's planet enjoys.
+export function pacifistDefBonus(planet: Planet): number {
+  return state.players[planet.ownerId]?.pacifistStatus ? PACIFIST_DEF_BONUS : 0
+}
+// Promote any player who has gone PACIFIST_TURNS without attacking. Permanent.
+function updatePacifistStatus(): void {
+  for (const p of state.players) {
+    if (!p.alive || p.pacifistStatus) continue
+    if (state.turn - p.lastAttackTurn >= PACIFIST_TURNS) {
+      p.pacifistStatus = true
+      log(
+        `☮️ ${p.name} has forsworn war for ${PACIFIST_TURNS} turns and becomes a PACIFIST — never able to attack again, but every planet gains +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per turn.`,
+        'sys',
+      )
+      for (const pl of ownedPlanets(p)) floatText(pl, '☮️ PACIFIST', '#8affc0')
+    }
+  }
+}
 // The owned planet where the Singularity can still be built or upgraded.
 function singularityReadyPlanet(p: Player): Planet | undefined {
   const cap = Math.min(maxLevel('SINGULARITY'), techLevel(p))
@@ -334,7 +362,7 @@ export function canPickCard(p: Player, t: PoolType, planet: Planet | undefined):
   }
   // Influence cards cost ⭐ at pick time and go to hand; targets resolved later.
   if (CARDS[t].influenceCard) return p.influence >= INFLUENCE_CARDS[t as InfluenceType].cost
-  if (t === 'ATTACK') return hasBuilding(p, 'SILO') && totalTroops(p) >= 1
+  if (t === 'ATTACK') return !p.pacifistStatus && hasBuilding(p, 'SILO') && totalTroops(p) >= 1
   if (t === 'MOVE')
     return hasBuilding(p, 'SPACEPORT') && p.planets.length >= 2 && totalTroops(p) >= 1
   if (t === 'RECRUIT') return hasBuilding(p, 'BARRACKS')
@@ -424,9 +452,12 @@ export function useInfluenceCard(p: Player, t: InfluenceType, opts: InfluenceOpt
     p.hand[t]--
     log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys')
     for (const pl of ownedPlanets(p)) {
-      pl.protectedUntil = Math.max(pl.protectedUntil, state.turn + 3)
+      pl.protectedUntil = Math.max(pl.protectedUntil, state.turn + PEACE_TRUCE)
     }
-    log(`🕊️ ${p.name}'s planets are under truce for 3 turns — no attacks allowed!`, 'sys')
+    log(
+      `🕊️ ${p.name}'s planets are under truce for ${PEACE_TRUCE} turn${PEACE_TRUCE === 1 ? '' : 's'} — no attacks allowed!`,
+      'sys',
+    )
   } else {
     return false
   }
@@ -489,6 +520,7 @@ export async function playTurn(): Promise<void> {
         )
     }
   }
+  updatePacifistStatus()
   doIncome()
   if (!state.singularityAnnounced && singularityInPlay()) {
     state.singularityAnnounced = true
@@ -548,6 +580,7 @@ function doIncome(): void {
   const gains: Record<number, Hand> = {}
   const moveGains: Record<number, number> = {} // L2 Spaceport: free Move card every 3 turns
   const infGains: Record<number, number> = {} // L2 Embassy: +1 ⭐ Influence every turn
+  const pacGains: Record<number, number> = {} // Pacifist: +PACIFIST_INFLUENCE ⭐ per planet
   for (const pl of state.planets) {
     const owner = state.players[pl.ownerId]
     if (!owner.alive) continue
@@ -570,6 +603,11 @@ function doIncome(): void {
       owner.influence++
       infGains[owner.id] = (infGains[owner.id] || 0) + 1
     }
+    // Pacifist perk: every planet radiates extra influence every turn.
+    if (owner.pacifistStatus) {
+      owner.influence += PACIFIST_INFLUENCE
+      pacGains[owner.id] = (pacGains[owner.id] || 0) + PACIFIST_INFLUENCE
+    }
   }
   for (const id in gains) {
     log(`⚙️ ${state.players[id].name} produces ${fmtCards(gains[id])}`, 'draft')
@@ -579,6 +617,9 @@ function doIncome(): void {
   }
   for (const id in infGains) {
     log(`⭐ ${state.players[id].name} gains +${infGains[id]} Influence (L2 Embassy)`, 'draft')
+  }
+  for (const id in pacGains) {
+    log(`☮️ ${state.players[id].name} gains +${pacGains[id]} Influence (Pacifist)`, 'draft')
   }
 }
 
@@ -777,9 +818,11 @@ export async function doAttack(
   target: Planet,
   n: number,
 ): Promise<void> {
+  if (att.pacifistStatus) return // pacifists have forsworn war for good
   if (underTruce(target)) return // freshly conquered planets cannot be attacked
   if (!source.buildings.SILO) return // no silo, no rockets
   spendActionCard(att, 'ATTACK')
+  att.lastAttackTurn = state.turn // resets the pacifist countdown
   const def = state.players[target.ownerId]
   source.troops -= n
   log(
@@ -793,7 +836,7 @@ export async function doAttack(
 
   const shieldDef = (target.buildings.SHIELD || 0) * SHIELD_DEFENSE // shields stack
   const ap = 2 * n + siloBonus(source) + randInt(0, 3)
-  const dp = 2 * target.troops + shieldDef + HOME_FIELD + randInt(0, 3)
+  const dp = 2 * target.troops + shieldDef + pacifistDefBonus(target) + HOME_FIELD + randInt(0, 3)
   const win = ap > dp
 
   let attLoss: number, defLoss: number
@@ -990,6 +1033,9 @@ function aiDraftPick(p: Player, planet: Planet): number {
         if (pers === 'opportunist' || pers === 'trader') score += 1
       } else if (it === 'COUP') {
         score = aiPickCoupTarget(p) ? 7 : -3
+        // A pacifist can never attack, so a Coup is its ONLY road to conquest —
+        // and its extra influence income makes the 20⭐ price affordable.
+        if ((pers === 'pacifist' || isPacifist(p)) && aiPickCoupTarget(p)) score += 5
       } else if (it === 'PEACE') {
         const weak = ownedPlanets(p).some((pl) => pl.troops <= 3 && !underTruce(pl))
         score += weak ? 2 : -1
@@ -1049,6 +1095,7 @@ function troopTarget(p: Player): number {
 
 function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } | null {
   const pers = persOf(p)
+  if (isPacifist(p)) return null // forsworn war permanently
   if (!hasActionCard(p, 'ATTACK')) return null
   const earlyTurn =
     pers === 'aggressor' || pers === 'militarist' || pers === 'blitzer'
@@ -1108,7 +1155,8 @@ function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } 
     if (pl.ownerId === p.id) continue
     if (underTruce(pl)) continue // freshly conquered planets are off-limits
     const d = state.players[pl.ownerId]
-    const defense = 2 * pl.troops + (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE + HOME_FIELD
+    const defense =
+      2 * pl.troops + (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE + pacifistDefBonus(pl) + HOME_FIELD
     const margin = 2 * n + myBonus - defense
     if (margin < needMargin) continue
     let score = margin + handSize(d) * 0.6 + d.planets.length * 2
@@ -1315,6 +1363,7 @@ async function aiOneAction(p: Player): Promise<boolean> {
   const stagingCap = rocketCap(staging)
   const invasionNeed =
     pers !== 'pacifist' &&
+    !isPacifist(p) &&
     p.hand.ATTACK > 0 &&
     hasBuilding(p, 'SILO') &&
     (stagingCap === Infinity ? staging.troops < wantTroops + 4 : staging.troops < stagingCap + 3)

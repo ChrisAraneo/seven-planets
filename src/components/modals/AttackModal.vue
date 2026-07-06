@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
 import ModalShell from './ModalShell.vue'
 import { CONQUEST_TRUCE, HOME_FIELD, SHIELD_DEFENSE } from '@/game/constants'
-import { handSize, ownedPlanets, rocketCap, siloBonus, underTruce } from '@/game/engine'
+import { handSize, ownedPlanets, pacifistDefBonus, rocketCap, siloBonus, underTruce } from '@/game/engine'
 
 const store = useGameStore()
 const state = store.state
@@ -36,7 +36,11 @@ const canLaunch = computed(() => sel.value >= 0 && source.value.troops >= 1)
 const preview = computed(() => {
   if (!target.value) return null
   const ap = 2 * n.value + siloBonus(source.value)
-  const dp = 2 * target.value.troops + (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE + HOME_FIELD
+  const dp =
+    2 * target.value.troops +
+    (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
+    pacifistDefBonus(target.value) +
+    HOME_FIELD
   const note = ap > dp + 3 ? 'good' : ap > dp ? 'close' : 'suicide'
   const sendingAll = n.value >= source.value.troops
   return { ap, dp, note, sendingAll }
@@ -94,7 +98,7 @@ function launch(): void {
           🕊️ truce ({{ pl.protectedUntil - state.turn + 1 }} turn{{ pl.protectedUntil - state.turn ? 's' : '' }})
         </span>
       </div>
-      <div>🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }} 🃏{{ handSize(state.players[pl.ownerId]) }}</div>
+      <div>🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }} <span v-if="state.players[pl.ownerId].pacifistStatus" title="Pacifist — +6 defense">☮️</span> 🃏{{ handSize(state.players[pl.ownerId]) }}</div>
     </div>
     <p style="margin-top: 12px">
       Troops aboard:

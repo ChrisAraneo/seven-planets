@@ -9,6 +9,9 @@ import {
   BUILDINGS_FROM_TURN,
   CONQUEST_TRUCE,
   costLabel,
+  PACIFIST_TURNS,
+  PACIFIST_DEF_BONUS,
+  PACIFIST_INFLUENCE,
   INFLUENCE_CARDS,
   INFLUENCE_CARDS_FROM_TURN,
   INFLUENCE_TYPES,
@@ -48,6 +51,7 @@ const store = useGameStore()
       <li><b>Action cards</b> go to your hand and can be used on <b>any turn</b>. To pick them from the pool: ⚔️ needs a 🚀 <b>Rocket Silo</b> and ≥1 soldier, 🛸 needs a 🛰️ <b>Spaceport</b> and 2+ planets, 🪖 needs a 🎖️ <b>Barracks</b>, 🔁 needs a 🤝 <b>Embassy</b>. No card, no action.</li>
       <li><b>Armies belong to planets:</b> each planet garrisons its own troops. <b>Recruiting requires a 🎖️ Barracks</b> on the planet, yields troops equal to its yield (1/2/4 at L1/L2/L3) and costs <b>1⛏️ Ore per troop</b> (no energy). 🛸 Move redeploys troops between your planets.</li>
       <li><b>Combat:</b> <b>attacking requires a 🚀 Rocket Silo</b> — rockets launch only from your Silo planets, using that planet's own army. Rocket capacity = 3, <b>doubled per Silo level</b> (L1 → 6, L3 → unlimited). Strike = 2×troops (+2 per Silo level) + luck. Defense = 2×troops (+4/+8/+12 per 🛡️ Shield level) + luck. <b>Buildings are never destroyed.</b></li>
+      <li><b>☮️ Pacifism:</b> launch <b>no attack for {{ PACIFIST_TURNS }} turns</b> and you permanently become a <b>Pacifist</b> — you can <b>never attack again</b>, but every planet you own gains <b>+{{ PACIFIST_DEF_BONUS }} defense</b> and produces <b>+{{ PACIFIST_INFLUENCE }} ⭐ Influence every turn</b> (marked ☮️, distinct from the 🕊️ truce). A Coup is then your only road to conquest.</li>
       <li><b>Spoils of war:</b> winning a battle grants <b>no loot</b>. Wiping the garrison conquers the planet — survivors garrison it, <b>under truce for {{ CONQUEST_TRUCE }} turns</b> (🕊️), and the conqueror salvages part of the loser's hand. All buildings serve the new owner — and a second planet is the road to a second Singularity and <b>Tech 3</b>.</li>
       <li><b>Trading requires a 🤝 Embassy.</b> Propose <b>resource-only</b> swaps to any rival — <b>action cards cannot be traded</b>; the initiator spends a 🔁 Trade card and <b>earns +1 ⭐ Influence per accepted deal</b>. AI rivals will openly announce what resource they seek and will only accept your offer freely if it provides that resource — for anything else they demand very favourable terms. Rivals are <b>less willing to trade with the current leader.</b></li>
       <li>

@@ -93,6 +93,10 @@ export interface Player {
   alive: boolean
   planets: number[]
   tradedThisTurn: boolean
+  /** Turn on which this player last launched an attack (0 = never). */
+  lastAttackTurn: number
+  /** Once true (after PACIFIST_TURNS with no attack), the player can never attack again. */
+  pacifistStatus: boolean
 }
 
 export interface Planet {
