@@ -1,0 +1,235 @@
+/* =====================================================================
+   SEVEN PLANETS — game data tables and pure (state-independent) helpers.
+   Ported from the original vanilla-JS game.js.
+   ===================================================================== */
+
+import type {
+  BuildingDef,
+  BuildingType,
+  CardDef,
+  Cost,
+  Hand,
+  InfluenceCardDef,
+  InfluenceType,
+  PlanetStyle,
+  PoolType,
+  ResourceType,
+  ActionType,
+  CardType,
+} from './types'
+
+export const RESOURCE_TYPES: ResourceType[] = ['ORE', 'CRYSTAL', 'ENERGY', 'SPICE', 'RELIC']
+export const ACTION_TYPES: ActionType[] = ['RECRUIT', 'ATTACK', 'MOVE', 'TRADE']
+export const CARD_TYPES: CardType[] = [...RESOURCE_TYPES, ...ACTION_TYPES]
+
+export const BUILDINGS_FROM_TURN = 6 // turns 1-5 deal only resource cards; buildings join at 6
+export const ACTION_CARDS_FROM_TURN = 10 // ⚔️ Attack, 🪖 Recruit & 🔁 Trade cards are dealt from turn 10
+export const MOVE_CARDS_FROM_TURN = 20 // 🛸 Move cards join the action deck at turn 20
+export const ADVANCED_FROM_TURN = 10 // the Research Lab card is dealt from turn 10
+export const INFLUENCE_CARDS_FROM_TURN = 30
+
+export const CARDS: Record<string, CardDef> = {
+  ORE: { name: 'Ore', icon: '⛏️', color: '#c98f5a', weight: 30, value: 1.0 },
+  CRYSTAL: { name: 'Crystal', icon: '💎', color: '#7fd9ff', weight: 24, value: 1.3 },
+  ENERGY: { name: 'Energy', icon: '⚡', color: '#ffe066', weight: 24, value: 1.3 },
+  SPICE: { name: 'Spice', icon: '✨', color: '#ff9e3d', weight: 14, value: 2.2 },
+  RELIC: { name: 'Relic', icon: '🔮', color: '#c77dff', weight: 5, value: 3.0 },
+  // Action cards — performing an action spends the matching card.
+  RECRUIT: { name: 'Recruit', icon: '🪖', color: '#8fb4e8', weight: 30, value: 1.2, action: true },
+  ATTACK: { name: 'Attack', icon: '⚔️', color: '#ff5470', weight: 10, value: 1.4, action: true },
+  MOVE: { name: 'Move', icon: '🛸', color: '#6da2ff', weight: 6, value: 0.9, action: true },
+  TRADE: { name: 'Trade', icon: '🔁', color: '#ffd23d', weight: 18, value: 1.0, action: true },
+}
+
+// Every building has up to 3 LEVELS — picking its card again upgrades it.
+export const BUILDINGS: Record<BuildingType, BuildingDef> = {
+  MINE: { name: 'Ore Mine', icon: '⚒️', cost: { CRYSTAL: 1, ENERGY: 1 }, desc: '+1 Ore per turn (max L2: +3)', income: 'ORE', cardWeight: 7, cardColor: '#7dff8a', short: '+1/+3⛏️' },
+  EXTRACTOR: { name: 'Crystal Extractor', icon: '💠', cost: { ORE: 1, ENERGY: 1 }, desc: '+1 Crystal per turn per level (max L2: +2)', income: 'CRYSTAL', cardWeight: 7, cardColor: '#7dff8a', short: '+1💎/lvl' },
+  SOLAR: { name: 'Solar Array', icon: '🔆', cost: { ORE: 1, CRYSTAL: 1 }, desc: '+1 Energy per turn per level (max L2: +2)', income: 'ENERGY', cardWeight: 7, cardColor: '#7dff8a', short: '+1⚡/lvl' },
+  HARVESTER: { name: 'Spice Harvester', icon: '🏜️', cost: { ORE: 2, CRYSTAL: 1, ENERGY: 1 }, desc: '+1 Spice per turn per level (max L2: +2)', income: 'SPICE', cardWeight: 5, cardColor: '#7dff8a', short: '+1✨/lvl' },
+  BARRACKS: { name: 'Barracks', icon: '🎖️', cost: { ORE: 2, CRYSTAL: 1, ENERGY: 2 }, desc: 'REQUIRED to recruit on this planet — yields 1/2/4 troops at L1/L2/L3, costing 1⛏️ per troop', cardWeight: 6, cardColor: '#ff9e3d', short: 'recruit 1/2/4' },
+  SHIELD: { name: 'Shield Generator', icon: '🛡️', cost: { CRYSTAL: 3, ENERGY: 1 }, desc: '+4 defense per level (L1: +4 · L2: +8 · L3: +12). Never destroyed by attacks', cardWeight: 5, cardColor: '#ff9e3d', short: '+4/+8/+12 def' },
+  SILO: { name: 'Rocket Silo', icon: '🚀', cost: { ORE: 3, ENERGY: 1 }, desc: 'REQUIRED to attack — rockets launch only from Silo planets. Doubles rocket capacity per level (L1: 6 · L2: 12 · L3: unlimited). Adds +2 strike per level', cardWeight: 4, cardColor: '#ff9e3d', short: 'attack · 6/12/∞' },
+  SPACEPORT: { name: 'Spaceport', icon: '🛰️', cost: { ORE: 1, CRYSTAL: 1, ENERGY: 1 }, desc: 'ENABLES the 🛸 Move card — troops cannot be redeployed without one. L2: +1 free 🛸 Move card every 3 turns', cardWeight: 5, cardColor: '#6da2ff', short: 'move hub' },
+  EMBASSY: { name: 'Embassy', icon: '🤝', cost: { ORE: 1, CRYSTAL: 1, ENERGY: 1 }, desc: 'ENABLES trading. L2: +1 ⭐ Influence every turn', cardWeight: 5, cardColor: '#ffd23d', short: 'trade hub' },
+  LAB: { name: 'Research Lab', icon: '🔬', cost: { CRYSTAL: 3, ENERGY: 2, SPICE: 3 }, desc: "Prerequisite for the 🌀 Singularity — a Singularity's level can never exceed the Lab's level on the same planet", cardWeight: 5, cardColor: '#c77dff', short: '🌀 prereq' },
+  SINGULARITY: { name: 'Singularity', icon: '🌀', cost: { ORE: 4, CRYSTAL: 4, ENERGY: 4, SPICE: 4 }, desc: 'Raises your TECHNOLOGY: one Singularity = tech 2, two Singularities (on two planets) = tech 3. Each level on any owned planet also grants +1 draft pick AND adds 1 extra random card to the pool each turn. Requires a Research Lab of at least the same level on the same planet. Does NOT win the game', cardWeight: 4, cardColor: '#3df0ff', short: 'tech↑ +pick/lvl' },
+}
+
+export const BUILD_ORDER: BuildingType[] = ['MINE', 'EXTRACTOR', 'SOLAR', 'HARVESTER', 'BARRACKS', 'SHIELD', 'SILO', 'SPACEPORT', 'EMBASSY', 'LAB', 'SINGULARITY']
+
+// Max level per building (default 3). Income buildings, Spaceport and Embassy cap at level 2.
+const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = { MINE: 2, EXTRACTOR: 2, SOLAR: 2, HARVESTER: 2, SPACEPORT: 2, EMBASSY: 2 }
+export function maxLevel(id: BuildingType): number {
+  return BUILDING_MAX_LEVEL[id] || 3
+}
+
+// Level N of a building costs N× its base cost.
+export function buildingCost(id: BuildingType, level: number): Cost {
+  const base = BUILDINGS[id].cost
+  if (level <= 1) return base
+  const c: Cost = {}
+  for (const t in base) c[t] = base[t] * level
+  return c
+}
+
+// Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
+export function incomeAmount(id: BuildingType, lvl: number): number {
+  return id === 'MINE' && lvl >= 2 ? 3 : lvl
+}
+
+// Building cards live in the pool alongside resources & actions.
+for (const b of BUILD_ORDER) {
+  CARDS[b] = { name: BUILDINGS[b].name, icon: BUILDINGS[b].icon, color: BUILDINGS[b].cardColor, weight: BUILDINGS[b].cardWeight, value: 0, building: true }
+}
+
+// INFLUENCE CARDS — dealt into the pool from turn 30.
+export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
+  SKIP_ARMY: { name: 'Sabotage', icon: '🕵️', cost: 3, desc: 'The rival with the LARGEST army skips their next 2 turns' },
+  SKIP_PLANETS: { name: 'Uprising', icon: '🔥', cost: 3, desc: 'The rival with the MOST planets skips their next 2 turns' },
+  SKIP_INFLUENCE: { name: 'Smear Campaign', icon: '📰', cost: 2, desc: 'The rival with the LEAST influence skips their next 2 turns' },
+  SKIP_TECH: { name: 'Espionage', icon: '🧪', cost: 3, desc: 'The rival with the HIGHEST technology skips their next 2 turns' },
+  STEAL_ACTION: { name: 'Extortion', icon: '🎭', cost: 2, desc: 'Take one action card of your choice from a chosen rival (influence cards cannot be taken)' },
+  COUP: { name: "Coup d'État", icon: '👑', cost: 20, desc: 'Instantly take control of a chosen enemy planet — half its garrison disbands, the rest defects to you. Can eliminate a rival by taking their last planet. Cannot target a planet under truce' },
+  PEACE: { name: 'Peace Treaty', icon: '🕊️', cost: 4, desc: 'All your planets are under truce for 3 turns' },
+}
+export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[]
+for (const k of INFLUENCE_TYPES) {
+  CARDS[k] = { name: INFLUENCE_CARDS[k].name, icon: INFLUENCE_CARDS[k].icon, color: '#ffb0d8', weight: 1, value: 0, influenceCard: true }
+}
+export const POOL_TYPES: PoolType[] = [...CARD_TYPES, ...BUILD_ORDER, ...INFLUENCE_TYPES]
+
+export const BASE_ROCKET_CAP = 3 // each Silo LEVEL doubles it: 3 → 6 → 12 → 24
+export const SILO_HIT_BONUS = 2 // ...and adds +2 strike per level
+export const SHIELD_DEFENSE = 4 // per shield level (L1:+4, L2:+8, L3:+12)
+export const HOME_FIELD = 0 // flat defense bonus for defenders
+export const CONQUEST_TRUCE = 3 // a freshly conquered planet cannot be attacked for this many turns
+
+export const PLANET_STYLES: PlanetStyle[] = [
+  { light: '#4fd8c0', dark: '#0e4f63', feature: 'continents' }, //  0 Terra Prime (human)
+  { light: '#f0c070', dark: '#8a4416', feature: 'desert' }, //  1 arid desert world
+  { light: '#c9d6e8', dark: '#43485e', feature: 'city' }, //  2 machine city world
+  { light: '#8fe08a', dark: '#1e5c33', feature: 'moon' }, //  3 lush moon world
+  { light: '#d8f0ff', dark: '#3a6d94', feature: 'ice' }, //  4 frozen world
+  { light: '#ffd76e', dark: '#a33f14', feature: 'rings' }, //  5 ringed gas giant
+  { light: '#9a7fd0', dark: '#2a1e4d', feature: 'storm' }, //  6 storm world
+  { light: '#ff8060', dark: '#6a1a05', feature: 'lava' }, //  7 volcanic world
+  { light: '#60d890', dark: '#105030', feature: 'forest' }, //  8 dense jungle world
+  { light: '#c0e070', dark: '#304010', feature: 'toxic' }, //  9 toxic swamp world
+  { light: '#a0c8ff', dark: '#102060', feature: 'crystal' }, // 10 crystal spire world
+  { light: '#f0d090', dark: '#604010', feature: 'bands' }, // 11 sand-band desert
+  { light: '#c0c8f8', dark: '#1a1a40', feature: 'void' }, // 12 void / dark matter
+  { light: '#30c0d8', dark: '#0a3048', feature: 'ocean' }, // 13 endless ocean world
+  { light: '#ffb0d8', dark: '#503060', feature: 'nebula' }, // 14 nebula heart world
+  { light: '#b8ff70', dark: '#204010', feature: 'radiation' }, // 15 irradiated world
+]
+
+// Full roster of possible AI opponents. Six are drawn at random each game.
+export const AI_ROSTER = [
+  // ── Dune-inspired ──
+  { name: 'Baron Harkan', planet: 'Giedi Secundus', color: '#ff9e3d', personality: 'aggressor', styleIdx: 1 },
+  { name: 'Feyd Rakeen', planet: 'Dunemark', color: '#e8a030', personality: 'blitzer', styleIdx: 11 },
+  { name: 'Stilgarn', planet: 'Sietch Tau', color: '#c87030', personality: 'opportunist', styleIdx: 1 },
+  { name: 'Muad Davar', planet: 'Arrakesh Prime', color: '#d4c060', personality: 'rusher', styleIdx: 11 },
+  { name: 'Jabba Xorn', planet: 'Nar Shaddaa', color: '#e0c050', personality: 'trader', styleIdx: 5 },
+  // ── Star Wars-inspired ──
+  { name: 'Grand Moff Sullar', planet: 'Mechanon', color: '#ff5470', personality: 'militarist', styleIdx: 2 },
+  { name: 'Admiral Thrynn', planet: 'Umbra Station', color: '#b07fff', personality: 'balanced', styleIdx: 6 },
+  { name: 'Darth Nexar', planet: 'Infernus', color: '#c04060', personality: 'aggressor', styleIdx: 7 },
+  { name: 'Archon Tessala', planet: 'Coruscantis', color: '#80b0ff', personality: 'economist', styleIdx: 2 },
+  // ── Chronicles of Narnia-inspired ──
+  { name: 'Queen Jadis', planet: 'Wintermere', color: '#c0e8ff', personality: 'fortifier', styleIdx: 4 },
+  { name: 'High King Mirak', planet: 'Narynthia', color: '#50d0a0', personality: 'expansionist', styleIdx: 3 },
+  { name: 'Lady Tilda', planet: 'Cair Parvel', color: '#f0b0d0', personality: 'hoarder', styleIdx: 14 },
+  { name: 'Aslanis Prime', planet: 'Ember Glade', color: '#f0d060', personality: 'pacifist', styleIdx: 8 },
+  // ── Original sci-fi ──
+  { name: 'Queen Zenobii', planet: 'Veridia', color: '#7dff8a', personality: 'builder', styleIdx: 3 },
+  { name: 'Overmind-7', planet: 'Kryos', color: '#6da2ff', personality: 'balanced', styleIdx: 4 },
+  { name: 'Warden Elia', planet: 'Aegis Prime', color: '#80c0ff', personality: 'fortifier', styleIdx: 10 },
+  { name: 'Xeno Praxis', planet: 'Void Nexus', color: '#9070f0', personality: 'random', styleIdx: 12 },
+]
+
+export const PERSONALITY_TAG: Record<string, string> = {
+  aggressor: 'WARLORD', builder: 'ARCHITECT', hoarder: 'MERCHANT', balanced: 'TACTICIAN', human: 'COMMANDER',
+  rusher: 'SEEKER', militarist: 'CONQUEROR', economist: 'MAGNATE', fortifier: 'SENTINEL', expansionist: 'IMPERIALIST',
+  random: 'CHAOTIC', trader: 'BROKER', opportunist: 'SCHEMER', blitzer: 'BLITZ', pacifist: 'PACIFIST',
+}
+
+// Build/upgrade priorities per personality.
+export const PRIORITIES: Record<string, BuildingType[]> = {
+  aggressor: ['BARRACKS', 'MINE', 'SOLAR', 'SILO', 'EXTRACTOR', 'LAB', 'SHIELD', 'HARVESTER', 'SINGULARITY', 'SPACEPORT', 'EMBASSY'],
+  builder: ['MINE', 'EXTRACTOR', 'SOLAR', 'LAB', 'BARRACKS', 'HARVESTER', 'EMBASSY', 'SINGULARITY', 'SHIELD', 'SPACEPORT', 'SILO'],
+  hoarder: ['EXTRACTOR', 'MINE', 'SOLAR', 'EMBASSY', 'SHIELD', 'LAB', 'BARRACKS', 'HARVESTER', 'SINGULARITY', 'SPACEPORT', 'SILO'],
+  balanced: ['MINE', 'EXTRACTOR', 'BARRACKS', 'SOLAR', 'SILO', 'SHIELD', 'LAB', 'HARVESTER', 'SINGULARITY', 'EMBASSY', 'SPACEPORT'],
+  // ── simulation-only strategies ──
+  rusher: ['LAB', 'SINGULARITY', 'MINE', 'EXTRACTOR', 'SOLAR', 'BARRACKS', 'HARVESTER', 'SHIELD', 'EMBASSY', 'SPACEPORT', 'SILO'],
+  militarist: ['BARRACKS', 'SILO', 'MINE', 'SOLAR', 'LAB', 'SHIELD', 'EXTRACTOR', 'HARVESTER', 'SINGULARITY', 'SPACEPORT', 'EMBASSY'],
+  economist: ['MINE', 'EXTRACTOR', 'SOLAR', 'HARVESTER', 'LAB', 'EMBASSY', 'BARRACKS', 'SINGULARITY', 'SHIELD', 'SPACEPORT', 'SILO'],
+  fortifier: ['SHIELD', 'MINE', 'SOLAR', 'EXTRACTOR', 'LAB', 'BARRACKS', 'HARVESTER', 'EMBASSY', 'SINGULARITY', 'SPACEPORT', 'SILO'],
+  expansionist: ['BARRACKS', 'MINE', 'SILO', 'SOLAR', 'EXTRACTOR', 'LAB', 'SPACEPORT', 'HARVESTER', 'SINGULARITY', 'EMBASSY', 'SHIELD'],
+  random: ['MINE', 'EXTRACTOR', 'SOLAR', 'HARVESTER', 'SHIELD', 'BARRACKS', 'SILO', 'SPACEPORT', 'EMBASSY', 'LAB', 'SINGULARITY'],
+  trader: ['EMBASSY', 'MINE', 'EXTRACTOR', 'SOLAR', 'LAB', 'HARVESTER', 'BARRACKS', 'SINGULARITY', 'SPACEPORT', 'SHIELD', 'SILO'],
+  opportunist: ['MINE', 'EXTRACTOR', 'BARRACKS', 'SOLAR', 'SILO', 'SHIELD', 'LAB', 'HARVESTER', 'SINGULARITY', 'EMBASSY', 'SPACEPORT'],
+  blitzer: ['BARRACKS', 'SILO', 'MINE', 'SOLAR', 'EXTRACTOR', 'SHIELD', 'LAB', 'HARVESTER', 'SINGULARITY', 'SPACEPORT', 'EMBASSY'],
+  pacifist: ['MINE', 'EXTRACTOR', 'SOLAR', 'EMBASSY', 'HARVESTER', 'LAB', 'SHIELD', 'SINGULARITY', 'SPACEPORT', 'BARRACKS', 'SILO'],
+}
+
+export const TAUNTS: Record<string, string[]> = {
+  aggressor: ['"Your planet will burn!"', '"Weakness invites the blade."', '"The spice throne will be mine!"'],
+  builder: ['"Progress demands sacrifice."', '"You stand in the way of science."'],
+  hoarder: ['"Nothing personal. Just business."', '"Your assets are... undervalued."'],
+  balanced: ['"A necessary maneuver."', '"The calculus favors me."'],
+  militarist: ['"Resistance is futile."', '"Overwhelming force is my language."', '"Conquest is efficiency."'],
+  fortifier: ['"You cannot breach these walls."', '"My shields will outlast your patience."'],
+  rusher: ['"Speed is the only constant."', '"The stars fall before my ambition."'],
+  expansionist: ['"Every planet I take multiplies my power."', '"Your borders are an invitation."'],
+  trader: ['"Everything has its price."', '"I will simply buy your defeat."'],
+  pacifist: ['"War is waste."', '"I will outlast you all."'],
+  opportunist: ['"The strong fall first — count on it."', '"I strike when others look away."'],
+  blitzer: ['"Strike fast. Leave nothing standing."', '"Hesitation is defeat."'],
+  economist: ['"My treasury will outlast your armies."', '"Wealth is the only true power."'],
+}
+
+/* ---------------- pure numeric / formatting helpers ---------------- */
+
+export function randInt(a: number, b: number): number {
+  return a + Math.floor(Math.random() * (b - a + 1))
+}
+export function choice<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+// Fisher-Yates shuffle — returns a NEW array, does not mutate input.
+export function shuffleArr<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+export function handValue(map: Hand | Cost): number {
+  return CARD_TYPES.reduce((s, t) => s + (map[t] || 0) * CARDS[t].value, 0)
+}
+
+// Relics are wildcards: they can stand in for any missing resource.
+export function canAfford(hand: Hand, cost: Cost): boolean {
+  let shortfall = 0
+  for (const t in cost) {
+    const miss = cost[t] - (hand[t] || 0)
+    if (miss > 0) shortfall += miss
+  }
+  return shortfall <= (hand.RELIC || 0) - (cost.RELIC || 0)
+}
+
+export function costLabel(cost: Cost): string {
+  return Object.keys(cost)
+    .map((t) => `${cost[t]}${CARDS[t].icon}`)
+    .join(' ')
+}
+
+export function fmtCards(map: Hand | Cost): string {
+  const parts = CARD_TYPES.filter((t) => (map[t] || 0) > 0).map((t) => `${map[t]}${CARDS[t].icon}`)
+  return parts.length ? parts.join(' ') : 'nothing'
+}

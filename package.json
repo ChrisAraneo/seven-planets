@@ -1,6 +1,8 @@
 {
   "name": "seven-planets",
-  "version": "0.0.0",
+  "author": "Krzysztof Pająk (Chris Araneo) <chris.araneo@gmail.com>",
+  "license": "MIT",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +10,7 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
+    "simulation": "jiti src/game/simulation.ts",
     "test:e2e": "playwright test",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
