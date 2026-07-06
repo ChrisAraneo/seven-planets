@@ -31,6 +31,7 @@ import {
   COMBAT,
   CONQUEST_TRUCE,
   PEACE_TRUCE,
+  SKIP_TURNS,
   PACIFIST_TURNS,
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
@@ -425,8 +426,11 @@ export function useInfluenceCard(p: Player, t: InfluenceType, opts: InfluenceOpt
     if (!target) return false
     p.hand[t]--
     log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys')
-    target.skipTurns += 2
-    log(`⏭️ ${target.name} is paralysed — they skip their next 2 turns!`, 'war')
+    target.skipTurns += SKIP_TURNS
+    log(
+      `⏭️ ${target.name} is paralysed — they skip their next ${SKIP_TURNS} turn${SKIP_TURNS === 1 ? '' : 's'}!`,
+      'war',
+    )
     floatText(homePlanet(target), '⏭️ SKIPPED', '#ffb0d8')
   } else if (t === 'STEAL_ACTION') {
     const { target, cardType } = opts

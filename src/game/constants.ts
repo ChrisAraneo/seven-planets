@@ -207,25 +207,25 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
     name: 'Sabotage',
     icon: '🕵️',
     cost: 3,
-    desc: 'The rival with the LARGEST army skips their next 2 turns',
+    desc: 'The rival with the LARGEST army skips their next turn',
   },
   SKIP_PLANETS: {
     name: 'Uprising',
     icon: '🔥',
     cost: 3,
-    desc: 'The rival with the MOST planets skips their next 2 turns',
+    desc: 'The rival with the MOST planets skips their next turn',
   },
   SKIP_INFLUENCE: {
     name: 'Smear Campaign',
     icon: '📰',
     cost: 2,
-    desc: 'The rival with the LEAST influence skips their next 2 turns',
+    desc: 'The rival with the LEAST influence skips their next turn',
   },
   SKIP_TECH: {
     name: 'Espionage',
     icon: '🧪',
     cost: 3,
-    desc: 'The rival with the HIGHEST technology skips their next 2 turns',
+    desc: 'The rival with the HIGHEST technology skips their next turn',
   },
   STEAL_ACTION: {
     name: 'Extortion',
@@ -280,6 +280,7 @@ export const COMBAT = {
 } as const
 export const CONQUEST_TRUCE = 3 // a freshly conquered planet cannot be attacked for this many turns
 export const PEACE_TRUCE = 1 // Peace Treaty card: planets are under truce for this many turns
+export const SKIP_TURNS = 1 // ⏭️ skip influence cards (Sabotage/Uprising/…) paralyse a rival for this many turns
 
 // PACIFIST STATUS — a player who launches no attack for this many turns turns
 // permanently pacifist: they can never attack again, but each of their planets

@@ -27,7 +27,7 @@ Your **main planet picks 2 cards**, +1 per 🌀 Singularity level you own (they 
 **Pool composition by turn:**
 
 | Turns | Building cards | Resource cards | Action cards | Total |
-|-------|---------------|----------------|--------------|-------|
+| ----- | -------------- | -------------- | ------------ | ----- |
 | 1–5   | none           | 14             | none         | 14    |
 | 6–9   | 5 unique types | 11             | none         | 16    |
 | 10+   | 5 unique types | 5              | 6            | 16    |
@@ -57,13 +57,13 @@ Spend the action cards you have collected — each action consumes one matching 
 
 ## Resources
 
-| Resource | Icon | Relative value |
-|----------|------|----------------|
-| Ore      | ⛏️  | ×1.0 |
-| Crystal  | 💎  | ×1.3 |
-| Energy   | ⚡  | ×1.3 |
-| Spice    | ✨  | ×2.2 — never dealt as a card; produced only by the 🏜️ Spice Harvester |
-| Relic    | 🔮  | ×3.0 — wildcard, substitutes any missing resource when paying a cost |
+| Resource | Icon | Relative value                                                        |
+| -------- | ---- | --------------------------------------------------------------------- |
+| Ore      | ⛏️   | ×1.0                                                                  |
+| Crystal  | 💎   | ×1.3                                                                  |
+| Energy   | ⚡   | ×1.3                                                                  |
+| Spice    | ✨   | ×2.2 — never dealt as a card; produced only by the 🏜️ Spice Harvester |
+| Relic    | 🔮   | ×3.0 — wildcard, substitutes any missing resource when paying a cost  |
 
 You start with **0 resources** and **3 troops** on your home planet — everything else must be drafted, built, or conquered.
 
@@ -75,11 +75,11 @@ Every building has up to **3 levels**. Picking its card again upgrades it one le
 
 A building's level can never exceed your **technology level**:
 
-| Tech level | Requirement | Buildings available |
-|-----------|-------------|---------------------|
-| 1 | Starting level | Level 1 only |
-| 2 | Own a 🌀 **Singularity** | Levels 1–2 |
-| 3 | Own **two** Singularities, on two planets (conquer someone!) | Levels 1–3 |
+| Tech level | Requirement                                                  | Buildings available |
+| ---------- | ------------------------------------------------------------ | ------------------- |
+| 1          | Starting level                                               | Level 1 only        |
+| 2          | Own a 🌀 **Singularity**                                     | Levels 1–2          |
+| 3          | Own **two** Singularities, on two planets (conquer someone!) | Levels 1–3          |
 
 The 🌀 Singularity itself requires a 🔬 Research Lab on the same planet, and its level can never exceed that Lab's level — a **level-2 Singularity needs a level-2 Research Lab**. The full chain is: Lab L1 → Singularity L1 (tech 2) → Lab L2 → Singularity L2 → second planet → second Singularity (tech 3).
 
@@ -91,19 +91,19 @@ Higher technology also grants **draft priority** (see Draft Phase).
 
 Costs below are for **level 1** — level N costs N× as much (e.g. Ore Mine L2 costs 2💎 2⚡).
 
-| Building | Base cost (L1) | Max | Effect |
-|---------|---------------|-----|--------|
-| ⚒️ Ore Mine | 1💎 1⚡ | L2 | +1 ⛏️ per turn (**L2: +3 ⛏️ per turn**) |
-| 💠 Crystal Extractor | 1⛏️ 1⚡ | L2 | +1 💎 per turn per level |
-| 🔆 Solar Array | 1⛏️ 1💎 | L2 | +1 ⚡ per turn per level |
-| 🏜️ Spice Harvester | 2⛏️ 1💎 1⚡ | L2 | +1 ✨ per turn per level |
-| 🎖️ Barracks | 2⛏️ 1💎 2⚡ | L3 | **Required to recruit.** Yields 1/2/4 troops (L1/L2/L3) per recruit action, at 1⛏️ per troop |
-| 🛡️ Shield Generator | 3💎 1⚡ | L3 | +4/+8/+12 defense (L1/L2/L3). Never destroyed by attacks |
-| 🚀 Rocket Silo | 3⛏️ 1⚡ | L3 | **Required to attack.** Doubles rocket capacity each level (3→6→12→∞) and adds +2 strike per level |
-| 🛰️ Spaceport | 1⛏️ 1💎 1⚡ | L2 | **Enables the 🛸 Move card.** L2: +1 free 🛸 Move card every 3 turns |
-| 🤝 Embassy | 1⛏️ 1💎 1⚡ | L2 | **Enables trading.** L2: +1 ⭐ Influence every turn |
-| 🔬 Research Lab | 3💎 2⚡ 3✨ | L3 | Prerequisite for the Singularity — the Singularity's level cannot exceed the Lab's level on the same planet |
-| 🌀 Singularity | 4⛏️ 4💎 4⚡ 4✨ | L3 | **Raises your technology** (one = tech 2, two = tech 3) and grants +1 draft pick and +1 pool card per level |
+| Building             | Base cost (L1)  | Max | Effect                                                                                                      |
+| -------------------- | --------------- | --- | ----------------------------------------------------------------------------------------------------------- |
+| ⚒️ Ore Mine          | 1💎 1⚡         | L2  | +1 ⛏️ per turn (**L2: +3 ⛏️ per turn**)                                                                     |
+| 💠 Crystal Extractor | 1⛏️ 1⚡         | L2  | +1 💎 per turn per level                                                                                    |
+| 🔆 Solar Array       | 1⛏️ 1💎         | L2  | +1 ⚡ per turn per level                                                                                    |
+| 🏜️ Spice Harvester   | 2⛏️ 1💎 1⚡     | L2  | +1 ✨ per turn per level                                                                                    |
+| 🎖️ Barracks          | 2⛏️ 1💎 2⚡     | L3  | **Required to recruit.** Yields 1/2/4 troops (L1/L2/L3) per recruit action, at 1⛏️ per troop                |
+| 🛡️ Shield Generator  | 3💎 1⚡         | L3  | +4/+8/+12 defense (L1/L2/L3). Never destroyed by attacks                                                    |
+| 🚀 Rocket Silo       | 3⛏️ 1⚡         | L3  | **Required to attack.** Doubles rocket capacity each level (3→6→12→∞) and adds +2 strike per level          |
+| 🛰️ Spaceport         | 1⛏️ 1💎 1⚡     | L2  | **Enables the 🛸 Move card.** L2: +1 free 🛸 Move card every 3 turns                                        |
+| 🤝 Embassy           | 1⛏️ 1💎 1⚡     | L2  | **Enables trading.** L2: +1 ⭐ Influence every turn                                                         |
+| 🔬 Research Lab      | 3💎 2⚡ 3✨     | L3  | Prerequisite for the Singularity — the Singularity's level cannot exceed the Lab's level on the same planet |
+| 🌀 Singularity       | 4⛏️ 4💎 4⚡ 4✨ | L3  | **Raises your technology** (one = tech 2, two = tech 3) and grants +1 draft pick and +1 pool card per level |
 
 Buildings are erected during the **draft** (by picking their card) and are **never destroyed** — a conquered planet's buildings serve the new owner.
 
@@ -145,14 +145,14 @@ AI rivals broadcast which resource they are seeking and accept offers freely onl
 
 From **turn 30**, every draft pool contains **2 influence cards**. Picking one pays its ⭐ cost and puts the card **in your hand** — you then play it **for free on any of your action turns**, whenever you choose (⭐ Influence button):
 
-| Card | Cost | Effect |
-|------|------|--------|
-| 🕵️ Sabotage | 3⭐ | The rival with the **largest army** skips their next 2 turns |
-| 🔥 Uprising | 3⭐ | The rival with the **most planets** skips their next 2 turns |
-| 📰 Smear Campaign | 2⭐ | The rival with the **least influence** skips their next 2 turns |
-| 🧪 Espionage | 3⭐ | The rival with the **highest technology** skips their next 2 turns |
-| 🎭 Extortion | 2⭐ | Take **one action card of your choice** from a **chosen rival** (influence cards cannot be taken) |
-| 🕊️ Peace Treaty | 4⭐ | All your planets are under truce for 3 turns |
+| Card              | Cost | Effect                                                                                            |
+| ----------------- | ---- | ------------------------------------------------------------------------------------------------- |
+| 🕵️ Sabotage       | 3⭐  | The rival with the **largest army** skips their next turn                                         |
+| 🔥 Uprising       | 3⭐  | The rival with the **most planets** skips their next turn                                         |
+| 📰 Smear Campaign | 2⭐  | The rival with the **least influence** skips their next turn                                      |
+| 🧪 Espionage      | 3⭐  | The rival with the **highest technology** skips their next turn                                   |
+| 🎭 Extortion      | 2⭐  | Take **one action card of your choice** from a **chosen rival** (influence cards cannot be taken) |
+| 🕊️ Peace Treaty   | 4⭐  | All your planets are under truce for the next turn                                                |
 
 Skip cards always hit a **rival** — never the player who plays the card — and the target is determined at **play time**, not draft time. A skipped player misses their draft and action phases, but their buildings still produce income. Influence cards cannot be traded or stolen.
 
@@ -162,22 +162,22 @@ Skip cards always hit a **rival** — never the player who plays the card — an
 
 Each game randomly selects 6 opponents from a roster of 17 characters:
 
-| Personality | Tag | Play style |
-|-------------|-----|-----------|
-| Aggressor | WARLORD | Early military, then expansion |
-| Builder | ARCHITECT | Economy first → technology |
-| Hoarder | MERCHANT | Defensive + heavy trading |
-| Balanced | TACTICIAN | Adapts to the situation |
-| Militarist | CONQUEROR | All-in on Barracks + Silo levels |
-| Fortifier | SENTINEL | Shields everywhere, then economy |
-| Economist | MAGNATE | Maximise income before fighting |
-| Expansionist | IMPERIALIST | Conquer for extra draft picks |
-| Rusher | SEEKER | Race to the Singularity |
-| Trader | BROKER | Embassy + trade-heavy economy |
-| Opportunist | SCHEMER | Attacks leaders; trades with losers |
-| Blitzer | BLITZ | All-out rush early, then pivots |
-| Pacifist | PACIFIST | Never attacks; trades for everything |
-| Random | CHAOTIC | Picks cards at random |
+| Personality  | Tag         | Play style                           |
+| ------------ | ----------- | ------------------------------------ |
+| Aggressor    | WARLORD     | Early military, then expansion       |
+| Builder      | ARCHITECT   | Economy first → technology           |
+| Hoarder      | MERCHANT    | Defensive + heavy trading            |
+| Balanced     | TACTICIAN   | Adapts to the situation              |
+| Militarist   | CONQUEROR   | All-in on Barracks + Silo levels     |
+| Fortifier    | SENTINEL    | Shields everywhere, then economy     |
+| Economist    | MAGNATE     | Maximise income before fighting      |
+| Expansionist | IMPERIALIST | Conquer for extra draft picks        |
+| Rusher       | SEEKER      | Race to the Singularity              |
+| Trader       | BROKER      | Embassy + trade-heavy economy        |
+| Opportunist  | SCHEMER     | Attacks leaders; trades with losers  |
+| Blitzer      | BLITZ       | All-out rush early, then pivots      |
+| Pacifist     | PACIFIST    | Never attacks; trades for everything |
+| Random       | CHAOTIC     | Picks cards at random                |
 
 ---
 
