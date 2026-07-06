@@ -13,7 +13,11 @@ import {
   ACTION_CARDS_FROM_TURN,
   ACTION_TYPES,
   ADVANCED_FROM_TURN,
-  AI_ROSTER,
+  AI_NAMES,
+  AI_PLANET_NAMES,
+  AI_COLORS,
+  AI_PERSONALITIES,
+  PLANET_STYLES,
   BUILD_ORDER,
   BUILDINGS,
   BUILDINGS_FROM_TURN,
@@ -85,8 +89,30 @@ function startingHand(): Hand {
 }
 
 export function buildState(): GameState {
-  // Randomly pick 6 AI opponents from the full roster for this game.
-  const aiSlots = shuffleArr(AI_ROSTER).slice(0, 6)
+  // Task 4: every game fields a FIXED composition of 6 AI — 1 hoarder,
+  // 1 economist, 2 blitzer — plus 2 drawn at random from the whole pool.
+  const aiPersonalities = shuffleArr([
+    'hoarder',
+    'economist',
+    'blitzer',
+    'blitzer',
+    choice(AI_PERSONALITIES),
+    choice(AI_PERSONALITIES),
+  ])
+  // Task 3: name, homeworld, color and planet style are all randomized
+  // INDEPENDENTLY of personality, so no AI is a fixed character any more.
+  const names = shuffleArr(AI_NAMES).slice(0, 6)
+  const planetNames = shuffleArr(AI_PLANET_NAMES).slice(0, 6)
+  const colors = shuffleArr(AI_COLORS).slice(0, 6)
+  // The human owns planet style 0 (Terra Prime); AI draw distinct styles from the rest.
+  const styles = shuffleArr(PLANET_STYLES.map((_, i) => i).filter((i) => i !== 0)).slice(0, 6)
+  const aiSlots = aiPersonalities.map((personality, i) => ({
+    name: names[i],
+    planet: planetNames[i],
+    color: colors[i],
+    personality,
+    styleIdx: styles[i],
+  }))
   const gameDefs = [
     {
       name: 'You',
@@ -1025,22 +1051,33 @@ function aiDraftPick(p: Player, planet: Planet): number {
         const avgStr = allStr.reduce((a, b) => a + b, 0) / (allStr.length || 1)
         score = target ? 1.5 + (playerStrength(target) / Math.max(1, avgStr)) * 1.5 : 1
         if (pers === 'opportunist') score += 1.5 // their whole game plan
+        if (pers === 'aggressor' || pers === 'militarist' || pers === 'blitzer') score += 1 // paralyse rivals before striking
+        if (pers === 'expansionist') score += 0.5
       } else if (it === 'STEAL_ACTION') {
         const loot = alivePlayers().some(
           (x) => x.id !== p.id && ACTION_TYPES.some((a) => x.hand[a] > 0),
         )
         score += loot ? 0.8 : -3
         if (pers === 'opportunist' || pers === 'trader') score += 1
+        if (pers === 'militarist' || pers === 'aggressor' || pers === 'blitzer') score += 0.8 // deny rivals their attack cards
       } else if (it === 'COUP') {
         score = aiPickCoupTarget(p) ? 7 : -3
-        // A pacifist can never attack, so a Coup is its ONLY road to conquest —
-        // and its extra influence income makes the 20⭐ price affordable.
-        if ((pers === 'pacifist' || isPacifist(p)) && aiPickCoupTarget(p)) score += 5
+        if (aiPickCoupTarget(p)) {
+          // A pacifist can never attack, so a Coup is its ONLY road to conquest —
+          // and its extra influence income makes the 20⭐ price affordable.
+          if (pers === 'pacifist' || isPacifist(p)) score += 5
+          else if (pers === 'expansionist') score += 2 // more planets, no battle
+          else if (pers === 'opportunist') score += 1.5 // topple the leader outright
+          else if (pers === 'militarist' || pers === 'aggressor') score += 1
+        }
       } else if (it === 'PEACE') {
         const weak = ownedPlanets(p).some((pl) => pl.troops <= 3 && !underTruce(pl))
         score += weak ? 2 : -1
         if (pers === 'pacifist' || pers === 'fortifier' || pers === 'rusher') score += 1
+        if (pers === 'economist' || pers === 'hoarder' || pers === 'builder') score += 0.5 // shield the economy
       }
+      // Pacifists bank every ⭐ for the 20-cost Coup — they refuse cheaper cards.
+      if ((pers === 'pacifist' || isPacifist(p)) && it !== 'COUP') score -= 4
       if (p.hand[it] > 0) score -= 1.5 // one copy in hand is usually enough
     } else {
       const pers = persOf(p)
@@ -1083,15 +1120,45 @@ function aiDraftPick(p: Player, planet: Planet): number {
 }
 
 // Desired garrison per planet.
+//
+// Aggressive personalities stack troops to fuel INVASIONS; the defensive
+// (non-aggressive) personalities keep a strong garrison purely to DEFEND — they
+// still buy an army, they just never march it out (their aiPickAttack margins are
+// so high, or forbidden outright for pacifists, that the troops only ever hold).
 function troopTarget(p: Player): number {
   const pers = persOf(p)
   const base = 2 + Math.min(8, Math.floor(state.turn / 3))
+  // ── aggressive: army is for attacking ──
   if (pers === 'militarist') return base + 4
   if (pers === 'aggressor' || pers === 'expansionist') return base + 2
-  if (pers === 'fortifier') return base + 1
-  if (pers === 'rusher') return Math.max(1, base - 1)
+  // ── defensive: army is for holding the line ──
+  if (pers === 'fortifier') return base + 3 // the dedicated turtle
+  if (pers === 'pacifist' || isPacifist(p)) return base + 3 // never attacks — pure defense
+  if (
+    pers === 'hoarder' ||
+    pers === 'economist' ||
+    pers === 'builder' ||
+    pers === 'trader' ||
+    pers === 'balanced'
+  )
+    return base + 2 // economic turtles: enough garrison to not be easy prey
+  if (pers === 'rusher') return base + 1 // leaner, but still keeps defenders
   return base
 }
+
+// The non-aggressive personalities: they raise an army purely to DEFEND, and
+// only ever march it out to finish a nearly-dead rival or pre-empt a runaway
+// leader (see aiPickAttack). Pacifists never attack at all; 'random' stays
+// chaotic and is deliberately left out.
+const DEFENSIVE_PERSONALITIES = new Set([
+  'builder',
+  'hoarder',
+  'economist',
+  'fortifier',
+  'trader',
+  'rusher',
+  'balanced',
+])
 
 function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } | null {
   const pers = persOf(p)
@@ -1149,12 +1216,21 @@ function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } 
     needMargin = Math.max(-6, needMargin)
   }
 
+  const defensive = DEFENSIVE_PERSONALITIES.has(pers)
+  const myStr = playerStrength(p)
   let best: { source: Planet; target: Planet; n: number } | null = null
   let bestScore = -Infinity
   for (const pl of state.planets) {
     if (pl.ownerId === p.id) continue
     if (underTruce(pl)) continue // freshly conquered planets are off-limits
     const d = state.players[pl.ownerId]
+    // Defend-first personalities never attack for expansion — they only strike to
+    // FINISH a nearly-dead rival, or to pre-empt one who has grown into a threat.
+    if (defensive) {
+      const eliminates = d.planets.length === 1 // taking this planet ends them
+      const threatening = playerStrength(d) > myStr * 1.35 // a runaway leader
+      if (!eliminates && !threatening) continue
+    }
     const defense =
       2 * pl.troops + (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE + pacifistDefBonus(pl) + HOME_FIELD
     const margin = 2 * n + myBonus - defense
@@ -1292,18 +1368,21 @@ async function proposeTrade(p: Player, offer: TradeOffer): Promise<boolean> {
 
 // The juiciest planet a Coup could seize. Returns null when nothing is worth it.
 function aiPickCoupTarget(p: Player): Planet | null {
+  // A Coup is the pacifist's ONLY way to conquer, so it accepts weaker targets
+  // and leans harder on eliminations to thin the field toward a full conquest.
+  const pac = persOf(p) === 'pacifist' || isPacifist(p)
   let best: Planet | null = null
   let bestScore = -Infinity
   for (const pl of coupTargets(p)) {
     const bLevels = Object.values(pl.buildings).reduce((a, b) => a + b, 0)
     let score = bLevels + 2 * (pl.buildings.SINGULARITY || 0) + pl.troops * 0.5
-    if (state.players[pl.ownerId].planets.length === 1) score += 8 // elimination!
+    if (state.players[pl.ownerId].planets.length === 1) score += pac ? 12 : 8 // elimination!
     if (score > bestScore) {
       bestScore = score
       best = pl
     }
   }
-  return bestScore >= 3 ? best : null
+  return bestScore >= (pac ? 2 : 3) ? best : null
 }
 
 // Decide whether (and how) to play a held influence card this action.

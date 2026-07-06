@@ -269,7 +269,7 @@ export const PEACE_TRUCE = 1 // Peace Treaty card: planets are under truce for t
 // PACIFIST STATUS — a player who launches no attack for this many turns turns
 // permanently pacifist: they can never attack again, but each of their planets
 // gains a flat defense bonus and produces extra influence every turn.
-export const PACIFIST_TURNS = 50
+export const PACIFIST_TURNS = 30
 export const PACIFIST_DEF_BONUS = 4 // added to every pacifist planet's defense
 export const PACIFIST_INFLUENCE = 2 // extra ⭐ per pacifist planet every turn
 
@@ -293,124 +293,108 @@ export const PLANET_STYLES: PlanetStyle[] = [
 ]
 
 // Full roster of possible AI opponents. Six are drawn at random each game.
-export const AI_ROSTER = [
-  // ── Dune-inspired ──
-  {
-    name: 'Baron Harkan',
-    planet: 'Giedi Secundus',
-    color: '#ff9e3d',
-    personality: 'aggressor',
-    styleIdx: 1,
-  },
-  {
-    name: 'Feyd Rakeen',
-    planet: 'Dunemark',
-    color: '#e8a030',
-    personality: 'blitzer',
-    styleIdx: 11,
-  },
-  {
-    name: 'Stilgarn',
-    planet: 'Sietch Tau',
-    color: '#c87030',
-    personality: 'opportunist',
-    styleIdx: 1,
-  },
-  {
-    name: 'Muad Davar',
-    planet: 'Arrakesh Prime',
-    color: '#d4c060',
-    personality: 'rusher',
-    styleIdx: 11,
-  },
-  {
-    name: 'Jabba Xorn',
-    planet: 'Nar Shaddaa',
-    color: '#e0c050',
-    personality: 'trader',
-    styleIdx: 5,
-  },
-  // ── Star Wars-inspired ──
-  {
-    name: 'Grand Moff Sullar',
-    planet: 'Mechanon',
-    color: '#ff5470',
-    personality: 'militarist',
-    styleIdx: 2,
-  },
-  {
-    name: 'Admiral Thrynn',
-    planet: 'Umbra Station',
-    color: '#b07fff',
-    personality: 'balanced',
-    styleIdx: 6,
-  },
-  {
-    name: 'Darth Nexar',
-    planet: 'Infernus',
-    color: '#c04060',
-    personality: 'aggressor',
-    styleIdx: 7,
-  },
-  {
-    name: 'Archon Tessala',
-    planet: 'Coruscantis',
-    color: '#80b0ff',
-    personality: 'economist',
-    styleIdx: 2,
-  },
-  // ── Chronicles of Narnia-inspired ──
-  {
-    name: 'Queen Jadis',
-    planet: 'Wintermere',
-    color: '#c0e8ff',
-    personality: 'fortifier',
-    styleIdx: 4,
-  },
-  {
-    name: 'High King Mirak',
-    planet: 'Narynthia',
-    color: '#50d0a0',
-    personality: 'expansionist',
-    styleIdx: 3,
-  },
-  {
-    name: 'Lady Tilda',
-    planet: 'Cair Parvel',
-    color: '#f0b0d0',
-    personality: 'hoarder',
-    styleIdx: 14,
-  },
-  {
-    name: 'Aslanis Prime',
-    planet: 'Ember Glade',
-    color: '#f0d060',
-    personality: 'pacifist',
-    styleIdx: 8,
-  },
-  // ── Original sci-fi ──
-  {
-    name: 'Queen Zenobii',
-    planet: 'Veridia',
-    color: '#7dff8a',
-    personality: 'builder',
-    styleIdx: 3,
-  },
-  { name: 'Overmind-7', planet: 'Kryos', color: '#6da2ff', personality: 'balanced', styleIdx: 4 },
-  {
-    name: 'Warden Elia',
-    planet: 'Aegis Prime',
-    color: '#80c0ff',
-    personality: 'fortifier',
-    styleIdx: 10,
-  },
-  {
-    name: 'Xeno Praxis',
-    planet: 'Void Nexus',
-    color: '#9070f0',
-    personality: 'random',
-    styleIdx: 12,
-  },
+// Independent pools: each game randomizes a commander's name, homeworld and
+// color separately (see buildState) — none is tied to any fixed character.
+export const AI_NAMES = [
+  'Baron Harkan',
+  'Feyd Rakeen',
+  'Stilgarn',
+  'Muad Davar',
+  'Jabba Xorn',
+  'Grand Moff Sullar',
+  'Admiral Thrynn',
+  'Darth Nexar',
+  'Archon Tessala',
+  'Queen Jadis',
+  'High King Mirak',
+  'Lady Tilda',
+  'Aslanis Prime',
+  'Queen Zenobii',
+  'Overmind-7',
+  'Warden Elia',
+  'Xeno Praxis',
+  'Reverend Mohaim',
+  'Duke Atreon',
+  'Count Fenring',
+  'Emperor Shaddan',
+  'Vizier Kthara',
+  'Warlord Zorak',
+  'Praetor Vandal',
+  'Seneschal Vor',
+  'Matriarch Sabla',
+  'Inquisitor Rael',
+  'Chancellor Mott',
+  'Oracle Sygne',
+  'Regent Calyx',
+  'Marshal Dren',
+]
+
+export const AI_PLANET_NAMES = [
+  'Giedi Secundus',
+  'Dunemark',
+  'Sietch Tau',
+  'Arrakesh Prime',
+  'Nar Shaddaa',
+  'Mechanon',
+  'Umbra Station',
+  'Infernus',
+  'Coruscantis',
+  'Wintermere',
+  'Narynthia',
+  'Cair Parvel',
+  'Ember Glade',
+  'Veridia',
+  'Kryos',
+  'Aegis Prime',
+  'Void Nexus',
+  'Caladar',
+  'Salusa Ridge',
+  'Ix Prime',
+  'Kaitain',
+  'Geonos',
+  'Hoth Reach',
+  'Endoria',
+  'Tarsis Major',
+  'Lorwyn',
+  'Aethon',
+  'Pyrrhia',
+  'Zephyra',
+  'Obsidia',
+  'Halcyon',
+]
+
+export const AI_COLORS = [
+  '#ff9e3d',
+  '#e8a030',
+  '#c87030',
+  '#d4c060',
+  '#e0c050',
+  '#ff5470',
+  '#b07fff',
+  '#c04060',
+  '#80b0ff',
+  '#c0e8ff',
+  '#50d0a0',
+  '#f0b0d0',
+  '#f0d060',
+  '#7dff8a',
+  '#6da2ff',
+  '#80c0ff',
+  '#9070f0',
+  '#ff6b9d',
+  '#ffb347',
+  '#b5e853',
+  '#5ad1c8',
+  '#a06cd5',
+  '#ff8c66',
+  '#66d9ff',
+  '#d94f70',
+  '#8fd14f',
+  '#b388eb',
+  '#ffcf5c',
+  '#4fb0c6',
+  '#e07a5f',
+  '#f25f5c',
 ]
 
 export const PERSONALITY_TAG: Record<string, string> = {
@@ -603,20 +587,27 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
     'SPACEPORT',
     'EMBASSY',
   ],
+  // Pacifist: front-load income + defense (like an economist/hoarder) — Shield
+  // and Barracks come early so it can recruit DEFENDERS (recruiting isn't
+  // attacking), and the Embassy fuels the influence it banks for Coups. It never
+  // builds a Silo: its whole plan is to survive and win by Coup (aiPickInfluencePlay).
   pacifist: [
     'MINE',
     'EXTRACTOR',
     'SOLAR',
+    'SHIELD',
     'EMBASSY',
+    'BARRACKS',
     'HARVESTER',
     'LAB',
-    'SHIELD',
     'SINGULARITY',
     'SPACEPORT',
-    'BARRACKS',
     'SILO',
   ],
 }
+
+// The full pool of AI personalities (every key in PRIORITIES).
+export const AI_PERSONALITIES = Object.keys(PRIORITIES)
 
 export const TAUNTS: Record<string, string[]> = {
   aggressor: [
