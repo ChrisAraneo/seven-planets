@@ -263,6 +263,21 @@ export const BASE_ROCKET_CAP = 3 // each Silo LEVEL doubles it: 3 → 6 → 12 �
 export const SILO_HIT_BONUS = 2 // ...and adds +2 strike per level
 export const SHIELD_DEFENSE = 4 // per shield level (L1:+4, L2:+8, L3:+12)
 export const HOME_FIELD = 1 // flat defense bonus for defenders
+
+// COMBAT MATH — the single source of truth for battle resolution, shared by
+// the engine (doAttack) and every AI that predicts battle outcomes (./ai).
+// Change these numbers and both the game AND the AI's risk calculations
+// follow automatically. Casualty fractions are exact integer num/den pairs.
+export const COMBAT = {
+  attackPerTroop: 2, // strike power contributed by each attacking troop
+  defensePerTroop: 2, // defense contributed by each defending troop
+  attackRoll: 3, // attacker adds randInt(0, attackRoll) to the strike
+  defenseRoll: 3, // defender adds randInt(0, defenseRoll) to the defense
+  winDefLoss: { num: 1, den: 2 }, // win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
+  winAttLoss: { num: 1, den: 3 }, // win: attackers lose floor(n/3)
+  loseAttLoss: { num: 3, den: 4 }, // loss: attackers lose ceil(3n/4)
+  loseDefLoss: { num: 1, den: 4 }, // loss: defenders lose floor(n/4)
+} as const
 export const CONQUEST_TRUCE = 3 // a freshly conquered planet cannot be attacked for this many turns
 export const PEACE_TRUCE = 1 // Peace Treaty card: planets are under truce for this many turns
 
@@ -413,6 +428,7 @@ export const PERSONALITY_TAG: Record<string, string> = {
   opportunist: 'SCHEMER',
   blitzer: 'BLITZ',
   pacifist: 'PACIFIST',
+  mastermind: 'MASTERMIND',
 }
 
 // Build/upgrade priorities per personality.
@@ -604,10 +620,44 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
     'SPACEPORT',
     'SILO',
   ],
+  // Mastermind: this static list is only a FALLBACK — the advanced AI (./ai)
+  // plans its builds dynamically by expected return-on-investment every turn.
+  mastermind: [
+    'MINE',
+    'EXTRACTOR',
+    'SOLAR',
+    'BARRACKS',
+    'SILO',
+    'LAB',
+    'SHIELD',
+    'HARVESTER',
+    'SINGULARITY',
+    'EMBASSY',
+    'SPACEPORT',
+  ],
 }
 
 // The full pool of AI personalities (every key in PRIORITIES).
 export const AI_PERSONALITIES = Object.keys(PRIORITIES)
+
+/* =====================================================================
+   AI LINEUP — the personalities of the 6 AI opponents in the human game.
+
+   Edit this ONE array to change who you play against. It must have exactly
+   6 entries (one per AI seat). Each entry is either:
+     · a personality name from PRIORITIES  → that exact personality, or
+     · the literal 'RANDOM'                → a random NON-mastermind pick.
+
+   The order does not matter — the seats are shuffled each game.
+
+   Examples:
+     6 masterminds (current):     Array(6).fill('mastermind')
+     3 masterminds + 3 random:    ['mastermind','mastermind','mastermind','RANDOM','RANDOM','RANDOM']
+     all random:                  Array(6).fill('RANDOM')
+     a hand-picked rogues' gallery: ['militarist','blitzer','hoarder','trader','fortifier','rusher']
+   ===================================================================== */
+export const RANDOM_SEAT = 'RANDOM' as const
+export const AI_LINEUP: string[] = Array(6).fill('mastermind')
 
 export const TAUNTS: Record<string, string[]> = {
   aggressor: [
@@ -631,6 +681,11 @@ export const TAUNTS: Record<string, string[]> = {
   opportunist: ['"The strong fall first — count on it."', '"I strike when others look away."'],
   blitzer: ['"Strike fast. Leave nothing standing."', '"Hesitation is defeat."'],
   economist: ['"My treasury will outlast your armies."', '"Wealth is the only true power."'],
+  mastermind: [
+    '"Every outcome was computed before you moved."',
+    '"You lost this war five turns ago."',
+    '"Probability favors the prepared."',
+  ],
 }
 
 /* ---------------- pure numeric / formatting helpers ---------------- */

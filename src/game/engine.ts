@@ -17,6 +17,8 @@ import {
   AI_PLANET_NAMES,
   AI_COLORS,
   AI_PERSONALITIES,
+  AI_LINEUP,
+  RANDOM_SEAT,
   PLANET_STYLES,
   BUILD_ORDER,
   BUILDINGS,
@@ -26,6 +28,7 @@ import {
   CARD_TYPES,
   CARDS,
   choice,
+  COMBAT,
   CONQUEST_TRUCE,
   PEACE_TRUCE,
   PACIFIST_TURNS,
@@ -50,6 +53,7 @@ import {
   TAUNTS,
 } from './constants'
 import { animateRocket, boom, floatText, setSimMode, sleep } from './effects'
+import { mastermindAction, mastermindDraftPick, mastermindEvaluateTrade } from './ai'
 import type {
   ActionType,
   BuildingType,
@@ -89,16 +93,13 @@ function startingHand(): Hand {
 }
 
 export function buildState(): GameState {
-  // Task 4: every game fields a FIXED composition of 6 AI — 1 hoarder,
-  // 1 economist, 2 blitzer — plus 2 drawn at random from the whole pool.
-  const aiPersonalities = shuffleArr([
-    'hoarder',
-    'economist',
-    'blitzer',
-    'blitzer',
-    choice(AI_PERSONALITIES),
-    choice(AI_PERSONALITIES),
-  ])
+  // The 6 AI seats come from the AI_LINEUP config (constants.ts) — edit that
+  // one array to change opponents. A 'RANDOM' entry resolves to a random
+  // non-mastermind personality; anything else is used verbatim.
+  const otherPersonalities = AI_PERSONALITIES.filter((p) => p !== 'mastermind')
+  const aiPersonalities = shuffleArr(
+    AI_LINEUP.map((seat) => (seat === RANDOM_SEAT ? choice(otherPersonalities) : seat)),
+  )
   // Task 3: name, homeworld, color and planet style are all randomized
   // INDEPENDENTLY of personality, so no AI is a fixed character any more.
   const names = shuffleArr(AI_NAMES).slice(0, 6)
@@ -860,18 +861,28 @@ export async function doAttack(
   }
   await animateRocket(source, target, att.color)
 
+  // Battle resolution reads every coefficient from constants.COMBAT so the
+  // planning AI (./ai) predicts with the exact numbers the dice use.
   const shieldDef = (target.buildings.SHIELD || 0) * SHIELD_DEFENSE // shields stack
-  const ap = 2 * n + siloBonus(source) + randInt(0, 3)
-  const dp = 2 * target.troops + shieldDef + pacifistDefBonus(target) + HOME_FIELD + randInt(0, 3)
+  const ap = COMBAT.attackPerTroop * n + siloBonus(source) + randInt(0, COMBAT.attackRoll)
+  const dp =
+    COMBAT.defensePerTroop * target.troops +
+    shieldDef +
+    pacifistDefBonus(target) +
+    HOME_FIELD +
+    randInt(0, COMBAT.defenseRoll)
   const win = ap > dp
 
   let attLoss: number, defLoss: number
   if (win) {
-    defLoss = Math.min(target.troops, Math.ceil(n / 2))
-    attLoss = Math.floor(n / 3)
+    defLoss = Math.min(target.troops, Math.ceil((n * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den))
+    attLoss = Math.floor((n * COMBAT.winAttLoss.num) / COMBAT.winAttLoss.den)
   } else {
-    attLoss = Math.ceil(n * 0.75)
-    defLoss = Math.min(target.troops, Math.floor(n / 4))
+    attLoss = Math.ceil((n * COMBAT.loseAttLoss.num) / COMBAT.loseAttLoss.den)
+    defLoss = Math.min(
+      target.troops,
+      Math.floor((n * COMBAT.loseDefLoss.num) / COMBAT.loseDefLoss.den),
+    )
   }
   const survivors = n - attLoss
   target.troops -= defLoss
@@ -1003,6 +1014,12 @@ function currentGoal(p: Player): { id: BuildingType; planet: Planet; cost: Cost 
 
 // Pick for `planet`'s draft turn. Returns -1 when nothing in the pool is pickable.
 function aiDraftPick(p: Player, planet: Planet): number {
+  // MASTERMIND: the advanced planner in ./ai scores every pickable card
+  // (own value + denial value) against its rolling multi-turn plan.
+  if (persOf(p) === 'mastermind') {
+    const pickable = state.pool.map((t) => canPickCard(p, t, planet))
+    return mastermindDraftPick(state, p, planet, pickable)
+  }
   // Random strategy: pick any pickable card uniformly at random.
   if (persOf(p) === 'random') {
     const pickable: number[] = []
@@ -1232,8 +1249,11 @@ function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } 
       if (!eliminates && !threatening) continue
     }
     const defense =
-      2 * pl.troops + (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE + pacifistDefBonus(pl) + HOME_FIELD
-    const margin = 2 * n + myBonus - defense
+      COMBAT.defensePerTroop * pl.troops +
+      (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE +
+      pacifistDefBonus(pl) +
+      HOME_FIELD
+    const margin = COMBAT.attackPerTroop * n + myBonus - defense
     if (margin < needMargin) continue
     let score = margin + handSize(d) * 0.6 + d.planets.length * 2
     if (pers === 'expansionist') score += d.planets.length * 2 // prefer multi-planet targets
@@ -1261,6 +1281,8 @@ export function aiEvaluateTrade(
     if (!RESOURCE_TYPES.includes(t as never) && (gives[t] || 0) > 0) return false
   for (const t in gets) if (!RESOURCE_TYPES.includes(t as never) && (gets[t] || 0) > 0) return false
   for (const t in gives) if ((ai.hand[t] || 0) < gives[t]) return false
+  // MASTERMIND weighs offers against its own build plan (see ./ai).
+  if (persOf(ai) === 'mastermind') return mastermindEvaluateTrade(state, ai, gives, gets, proposer)
   const vOut = handValue(gives)
   const vIn = handValue(gets)
   const goal = currentGoal(ai)
@@ -1428,7 +1450,35 @@ function aiPickInfluencePlay(p: Player): (InfluenceOpts & { type: InfluenceType 
   return null
 }
 
+// Execute one MASTERMIND decision — the brain (./ai) decides, the engine acts.
+async function mastermindOneAction(p: Player): Promise<boolean> {
+  const d = mastermindAction(state, p)
+  if (!d) return false
+  switch (d.kind) {
+    case 'influence':
+      return useInfluenceCard(p, d.type, d.opts)
+    case 'attack':
+      if (!hasActionCard(p, 'ATTACK')) return false
+      await doAttack(p, d.source, d.target, d.n)
+      return true
+    case 'recruit':
+      if (!hasActionCard(p, 'RECRUIT')) return false
+      recruit(p, d.planet)
+      return true
+    case 'move':
+      if (!hasActionCard(p, 'MOVE')) return false
+      await moveTroops(p, d.from, d.to, d.n)
+      return true
+    case 'trade': {
+      if (p.tradedThisTurn || !hasActionCard(p, 'TRADE')) return false
+      p.tradedThisTurn = true
+      return await proposeTrade(p, { partner: d.partner, gives: d.gives, gets: d.gets })
+    }
+  }
+}
+
 async function aiOneAction(p: Player): Promise<boolean> {
+  if (persOf(p) === 'mastermind') return mastermindOneAction(p)
   // 0. influence cards — already paid for at draft; play when the moment is right
   const infPlay = aiPickInfluencePlay(p)
   if (infPlay && useInfluenceCard(p, infPlay.type, infPlay)) return true
