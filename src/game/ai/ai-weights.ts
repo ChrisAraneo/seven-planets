@@ -42,9 +42,9 @@ export interface AiWeights {
   tradeAcceptRatio: number;
   /** How likely an aggressive rival is to actually launch a viable attack. */
   willAggressive: number;
-  /** ...a neutral/unknown rival (balanced, random, the human player). */
+  /** ...a neutral rival (mastermind, the human player). */
   willNeutral: number;
-  /** ...a defensive rival (fortifier, economist, trader, ...). */
+  /** ...a defensive rival. */
   willDefensive: number;
 }
 

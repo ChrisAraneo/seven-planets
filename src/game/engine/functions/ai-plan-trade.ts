@@ -5,8 +5,6 @@ import { AUTO_HUMAN } from './auto-human';
 import { currentGoal } from './current-goal';
 import { hasActionCard } from './has-action-card';
 import { hasBuilding } from './has-building';
-import { persOf } from './pers-of';
-import { playerStrength } from './player-strength';
 
 export function aiPlanTrade(p: Player): TradeOffer | null {
   if (!hasActionCard(p, 'TRADE') || !hasBuilding(p, 'EMBASSY')) {
@@ -56,23 +54,9 @@ export function aiPlanTrade(p: Player): TradeOffer | null {
     return null;
   }
   let partner = partners[0];
-  const persP = persOf(p);
-  if (
-    persP !== 'trader' &&
-    partner.isHuman &&
-    !AUTO_HUMAN &&
-    Math.random() < 0.5
-  ) {
-    partner = partners[1] || partner; // Don't pester the human every turn
-  }
-  // Opportunist prefers trading with the weakest player.
-  if (persP === 'opportunist') {
-    const weakest = [...partners].sort(
-      (a, b) => playerStrength(a) - playerStrength(b),
-    )[0];
-    if (weakest && weakest.hand[want] > 0) {
-      partner = weakest;
-    }
+  // Don't pester the human every turn
+  if (partner.isHuman && !AUTO_HUMAN && Math.random() < 0.5) {
+    partner = partners[1] || partner;
   }
   return { partner, gives, gets: { [want]: 1 } };
 }

@@ -481,215 +481,13 @@ export const AI_COLORS = [
 ];
 
 export const PERSONALITY_TAG: Record<string, string> = {
-  aggressor: 'WARLORD',
-  builder: 'ARCHITECT',
-  hoarder: 'MERCHANT',
-  balanced: 'TACTICIAN',
   human: 'COMMANDER',
-  rusher: 'SEEKER',
-  militarist: 'CONQUEROR',
-  economist: 'MAGNATE',
-  fortifier: 'SENTINEL',
-  expansionist: 'IMPERIALIST',
-  random: 'CHAOTIC',
-  trader: 'BROKER',
-  opportunist: 'SCHEMER',
-  blitzer: 'BLITZ',
-  pacifist: 'PACIFIST',
   mastermind: 'MASTERMIND',
 };
 
-// Build/upgrade priorities per personality.
+// Build/upgrade priorities — mastermind uses this as a static fallback only;
+// the advanced AI (./ai) plans dynamically by expected return-on-investment.
 export const PRIORITIES: Record<string, BuildingType[]> = {
-  aggressor: [
-    'BARRACKS',
-    'MINE',
-    'SOLAR',
-    'SILO',
-    'EXTRACTOR',
-    'LAB',
-    'SHIELD',
-    'HARVESTER',
-    'SINGULARITY',
-    'SPACEPORT',
-    'EMBASSY',
-  ],
-  builder: [
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'LAB',
-    'BARRACKS',
-    'HARVESTER',
-    'EMBASSY',
-    'SINGULARITY',
-    'SHIELD',
-    'SPACEPORT',
-    'SILO',
-  ],
-  hoarder: [
-    'EXTRACTOR',
-    'MINE',
-    'SOLAR',
-    'EMBASSY',
-    'SHIELD',
-    'LAB',
-    'BARRACKS',
-    'HARVESTER',
-    'SINGULARITY',
-    'SPACEPORT',
-    'SILO',
-  ],
-  balanced: [
-    'MINE',
-    'EXTRACTOR',
-    'BARRACKS',
-    'SOLAR',
-    'SILO',
-    'SHIELD',
-    'LAB',
-    'HARVESTER',
-    'SINGULARITY',
-    'EMBASSY',
-    'SPACEPORT',
-  ],
-  // ── simulation-only strategies ──
-  rusher: [
-    'LAB',
-    'SINGULARITY',
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'BARRACKS',
-    'HARVESTER',
-    'SHIELD',
-    'EMBASSY',
-    'SPACEPORT',
-    'SILO',
-  ],
-  militarist: [
-    'BARRACKS',
-    'SILO',
-    'MINE',
-    'SOLAR',
-    'LAB',
-    'SHIELD',
-    'EXTRACTOR',
-    'HARVESTER',
-    'SINGULARITY',
-    'SPACEPORT',
-    'EMBASSY',
-  ],
-  economist: [
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'HARVESTER',
-    'LAB',
-    'EMBASSY',
-    'BARRACKS',
-    'SINGULARITY',
-    'SHIELD',
-    'SPACEPORT',
-    'SILO',
-  ],
-  fortifier: [
-    'SHIELD',
-    'MINE',
-    'SOLAR',
-    'EXTRACTOR',
-    'LAB',
-    'BARRACKS',
-    'HARVESTER',
-    'EMBASSY',
-    'SINGULARITY',
-    'SPACEPORT',
-    'SILO',
-  ],
-  expansionist: [
-    'BARRACKS',
-    'MINE',
-    'SILO',
-    'SOLAR',
-    'EXTRACTOR',
-    'LAB',
-    'SPACEPORT',
-    'HARVESTER',
-    'SINGULARITY',
-    'EMBASSY',
-    'SHIELD',
-  ],
-  random: [
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'HARVESTER',
-    'SHIELD',
-    'BARRACKS',
-    'SILO',
-    'SPACEPORT',
-    'EMBASSY',
-    'LAB',
-    'SINGULARITY',
-  ],
-  trader: [
-    'EMBASSY',
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'LAB',
-    'HARVESTER',
-    'BARRACKS',
-    'SINGULARITY',
-    'SPACEPORT',
-    'SHIELD',
-    'SILO',
-  ],
-  opportunist: [
-    'MINE',
-    'EXTRACTOR',
-    'BARRACKS',
-    'SOLAR',
-    'SILO',
-    'SHIELD',
-    'LAB',
-    'HARVESTER',
-    'SINGULARITY',
-    'EMBASSY',
-    'SPACEPORT',
-  ],
-  blitzer: [
-    'BARRACKS',
-    'SILO',
-    'MINE',
-    'SOLAR',
-    'EXTRACTOR',
-    'SHIELD',
-    'LAB',
-    'HARVESTER',
-    'SINGULARITY',
-    'SPACEPORT',
-    'EMBASSY',
-  ],
-  // Pacifist: front-load income + defense (like an economist/hoarder) — Shield
-  // And Barracks come early so it can recruit DEFENDERS (recruiting isn't
-  // Attacking), and the Embassy fuels the influence it banks for Coups. It never
-  // Builds a Silo: its whole plan is to survive and win by Coup (aiPickInfluencePlay).
-  pacifist: [
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'SHIELD',
-    'EMBASSY',
-    'BARRACKS',
-    'HARVESTER',
-    'LAB',
-    'SINGULARITY',
-    'SPACEPORT',
-    'SILO',
-  ],
-  // Mastermind: this static list is only a FALLBACK — the advanced AI (./ai)
-  // Plans its builds dynamically by expected return-on-investment every turn.
   mastermind: [
     'MINE',
     'EXTRACTOR',
@@ -705,80 +503,16 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
   ],
 };
 
-// The full pool of AI personalities (every key in PRIORITIES).
+// The only AI personality in the game.
 export const AI_PERSONALITIES = Object.keys(PRIORITIES);
 
-/* =====================================================================
-   AI LINEUP — the personalities of the 6 AI opponents in the human game.
-
-   Edit this ONE array to change who you play against. It must have exactly
-   6 entries (one per AI seat). Each entry is either:
-     · a personality name from PRIORITIES  → that exact personality, or
-     · the literal 'RANDOM'                → a random NON-mastermind pick.
-
-   The order does not matter — the seats are shuffled each game.
-
-   Examples:
-     6 masterminds (current):     Array(6).fill('mastermind')
-     3 masterminds + 3 random:    ['mastermind','mastermind','mastermind','RANDOM','RANDOM','RANDOM']
-     all random:                  Array(6).fill('RANDOM')
-     a hand-picked rogues' gallery: ['militarist','blitzer','hoarder','trader','fortifier','rusher']
-   ===================================================================== */
-export const RANDOM_SEAT = 'RANDOM' as const;
 export const AI_LINEUP: string[] = Array(6).fill('mastermind');
 
-export const TAUNTS: Record<string, string[]> = {
-  aggressor: [
-    '"Your planet will burn!"',
-    '"Weakness invites the blade."',
-    '"The spice throne will be mine!"',
-  ],
-  builder: [
-    '"Progress demands sacrifice."',
-    '"You stand in the way of science."',
-  ],
-  hoarder: [
-    '"Nothing personal. Just business."',
-    '"Your assets are... undervalued."',
-  ],
-  balanced: ['"A necessary maneuver."', '"The calculus favors me."'],
-  militarist: [
-    '"Resistance is futile."',
-    '"Overwhelming force is my language."',
-    '"Conquest is efficiency."',
-  ],
-  fortifier: [
-    '"You cannot breach these walls."',
-    '"My shields will outlast your patience."',
-  ],
-  rusher: [
-    '"Speed is the only constant."',
-    '"The stars fall before my ambition."',
-  ],
-  expansionist: [
-    '"Every planet I take multiplies my power."',
-    '"Your borders are an invitation."',
-  ],
-  trader: ['"Everything has its price."', '"I will simply buy your defeat."'],
-  pacifist: ['"War is waste."', '"I will outlast you all."'],
-  opportunist: [
-    '"The strong fall first — count on it."',
-    '"I strike when others look away."',
-  ],
-  blitzer: [
-    '"Strike fast. Leave nothing standing."',
-    '"Hesitation is defeat."',
-  ],
-  economist: [
-    '"My treasury will outlast your armies."',
-    '"Wealth is the only true power."',
-  ],
-  mastermind: [
-    '"Every outcome was computed before you moved."',
-    '"You lost this war five turns ago."',
-    '"Probability favors the prepared."',
-  ],
-};
+export const TAUNTS: string[] = [
+  '"Every outcome was computed before you moved."',
+  '"You lost this war five turns ago."',
+  '"Probability favors the prepared."',
+];
 
 /* ---------------- pure numeric / formatting helpers ---------------- */
 

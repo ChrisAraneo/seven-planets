@@ -30,7 +30,7 @@ function midGameState(): GameState {
   const s = buildState();
   s.turn = 20;
   for (const p of s.players) {
-    p.personality = p.id === 0 ? 'mastermind' : 'balanced';
+    p.personality = 'mastermind';
   }
   return s;
 }
@@ -82,7 +82,6 @@ describe('mastermind retention forecast (holdProbability)', () => {
     s.planets[1].buildings.BARRACKS = 2;
     s.planets[1].troops = 20;
     s.players[1].hand.ATTACK = 2;
-    s.players[1].personality = 'militarist';
     const threatened = holdProbability(s, me, mine, 5);
     expect(threatened).toBeLessThan(1);
     expect(threatened).toBeGreaterThanOrEqual(0);
@@ -186,7 +185,6 @@ describe('kamikaze (Hard mode) targeting', () => {
     s.planets[1].buildings.SILO = 2;
     s.planets[1].troops = 16;
     kami.hand.ATTACK = 1;
-    // Two equally soft targets: the human (id 0) and a rival AI (id 2).
     s.planets[0].troops = 2; // Human — the ONLY legal target
     s.planets[2].troops = 2; // Rival AI — juicy but forbidden
     const plans = evaluateAttacks(s, kami);
@@ -225,7 +223,6 @@ describe('kamikaze (Hard mode) targeting', () => {
     s.planets[1].buildings.BARRACKS = 3;
     s.planets[1].troops = 30;
     kami.hand.ATTACK = 3;
-    kami.personality = 'militarist';
     // With ONLY the kamikaze armed, a rival AI's planet is perfectly safe…
     expect(
       holdProbability(s, s.players[2], s.planets[2], s.planets[2].troops),
@@ -240,24 +237,13 @@ describe('kamikaze (Hard mode) targeting', () => {
 describe('mastermind in full headless games', () => {
   it('plays complete games without throwing and wins its share', async () => {
     resetAiWeights();
-    const rivals = [
-      'aggressor',
-      'builder',
-      'hoarder',
-      'balanced',
-      'economist',
-      'fortifier',
-    ];
     let wins = 0;
     const games = 24;
     for (let g = 0; g < games; g++) {
-      const result = await simulateGameWithPersonalities([
-        'mastermind',
-        ...rivals,
-      ]);
+      const result = await simulateGameWithPersonalities([]);
       expect(result.turns).toBeGreaterThan(0);
       expect(['conquest', 'timeout']).toContain(result.reason);
-      if (result.winner?.personality === 'mastermind') {
+      if (result.winner?.id === 0) {
         wins++;
       }
     }

@@ -15,7 +15,6 @@ import { conquerPlanet } from './conquer-planet';
 import { log } from './log';
 import { ownedPlanets } from './owned-planets';
 import { pacifistDefBonus } from './pacifist-def-bonus';
-import { persOf } from './pers-of';
 import { siloBonus } from './silo-bonus';
 import { singularityDefBonus } from './singularity-def-bonus';
 import { spendActionCard } from './spend-action-card';
@@ -56,8 +55,8 @@ export async function doAttack(
     `🚀 ${att.name} launches a rocket with ${n} troops from ${source.name} at ${target.name} (${def.name})!`,
     'war',
   );
-  if (!att.isHuman && TAUNTS[persOf(att)] && Math.random() < 0.4) {
-    log(`   ${att.name}: ${choice(TAUNTS[persOf(att)])}`, 'war');
+  if (!att.isHuman && Math.random() < 0.4) {
+    log(`   ${att.name}: ${choice(TAUNTS)}`, 'war');
   }
   await animateRocket(source, target, att.color);
 

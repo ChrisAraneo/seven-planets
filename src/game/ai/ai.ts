@@ -369,33 +369,10 @@ function avgStrength(s: GameState): number {
   return all.reduce((a, b) => a + b, 0) / (all.length || 1);
 }
 
-const AGGRESSIVE = new Set([
-  'aggressor',
-  'militarist',
-  'blitzer',
-  'expansionist',
-  'opportunist',
-]);
-const DEFENSIVE = new Set([
-  'fortifier',
-  'trader',
-  'rusher',
-  'hoarder',
-  'economist',
-  'builder',
-]);
-
-/** How readily this rival marches its army out (personalities are public —
-    the UI shows every commander's archetype tag). */
+/** How readily this rival marches its army out. */
 function aggression(p: Player): number {
-  if (p.pacifistStatus || p.personality === 'pacifist') {
+  if (p.pacifistStatus) {
     return 0;
-  }
-  if (AGGRESSIVE.has(p.personality)) {
-    return W.willAggressive;
-  }
-  if (DEFENSIVE.has(p.personality)) {
-    return W.willDefensive;
   }
   return W.willNeutral;
 }
@@ -1221,7 +1198,7 @@ function bestCoupTarget(
   if (p.kamikaze) {
     return null;
   } // A kamikaze hunts the human with rockets — never a Coup
-  const mayTakeLast = p.pacifistStatus || p.personality === 'pacifist';
+  const mayTakeLast = p.pacifistStatus;
   let best: { planet: Planet; value: number } | null = null;
   for (const pl of s.planets) {
     const owner = s.players[pl.ownerId];
@@ -1248,7 +1225,7 @@ function rivalGoalBuilding(
   s: GameState,
   r: Player,
 ): { id: BuildingType; cost: Cost } | null {
-  const prio = PRIORITIES[r.personality] || PRIORITIES.balanced;
+  const prio = PRIORITIES.mastermind;
   const tech = techLevel(s, r);
   for (const id of prio) {
     if (id === 'SINGULARITY') {

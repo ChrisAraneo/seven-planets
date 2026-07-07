@@ -5,22 +5,12 @@ import { describe, expect, it } from 'vitest';
 
 import { setSimMode, simulateGameWithPersonalities } from '@/game/engine';
 
-const STRATEGIES = [
-  'aggressor',
-  'builder',
-  'hoarder',
-  'balanced',
-  'militarist',
-  'economist',
-  'fortifier',
-];
-
 describe('headless game simulation', () => {
   setSimMode(true); // No animation delays — pure logic speed
 
   it('plays full AI-vs-AI games to a resolution without throwing', async () => {
     for (let g = 0; g < 20; g++) {
-      const result = await simulateGameWithPersonalities(STRATEGIES);
+      const result = await simulateGameWithPersonalities([]);
       expect(result.turns).toBeGreaterThan(0);
       // Either someone conquered the galaxy, or the 400-turn cap was hit.
       expect(['conquest', 'timeout']).toContain(result.reason);

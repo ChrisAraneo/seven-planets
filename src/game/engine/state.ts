@@ -3,13 +3,10 @@ import {
   AI_COLORS,
   AI_LINEUP,
   AI_NAMES,
-  AI_PERSONALITIES,
   AI_PLANET_NAMES,
   CARD_TYPES,
-  choice,
   INFLUENCE_TYPES,
   PLANET_STYLES,
-  RANDOM_SEAT,
   shuffleArr,
 } from '../constants';
 import type { GameState, Hand } from '../types';
@@ -36,15 +33,8 @@ function startingHand(): Hand {
 }
 
 export function buildState(): GameState {
-  // The 6 AI seats come from the AI_LINEUP config (constants.ts) — edit that
-  // One array to change opponents. A 'RANDOM' entry resolves to a random
-  // Non-mastermind personality; anything else is used verbatim.
-  const otherPersonalities = AI_PERSONALITIES.filter((p) => p !== 'mastermind');
-  const aiPersonalities = shuffleArr(
-    AI_LINEUP.map((seat) =>
-      seat === RANDOM_SEAT ? choice(otherPersonalities) : seat,
-    ),
-  );
+  // All 6 AI seats are always mastermind.
+  const aiPersonalities = AI_LINEUP;
   // Task 3: name, homeworld, color and planet style are all randomized
   // INDEPENDENTLY of personality, so no AI is a fixed character any more.
   const names = shuffleArr(AI_NAMES).slice(0, 6);
