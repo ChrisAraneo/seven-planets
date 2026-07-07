@@ -273,8 +273,8 @@ export const SINGULARITY_DEF_BONUS = 8 // a level-4 Singularity warps local spac
 export const COMBAT = {
   attackPerTroop: 2, // strike power contributed by each attacking troop
   defensePerTroop: 2, // defense contributed by each defending troop
-  attackRoll: 3, // attacker adds randInt(0, attackRoll) to the strike
-  defenseRoll: 3, // defender adds randInt(0, defenseRoll) to the defense
+  attackRoll: 4, // attacker adds randInt(0, attackRoll) to the strike (more swing)
+  defenseRoll: 4, // defender adds randInt(0, defenseRoll) to the defense (more swing)
   winDefLoss: { num: 1, den: 2 }, // win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
   winAttLoss: { num: 1, den: 3 }, // win: attackers lose floor(n/3)
   loseAttLoss: { num: 3, den: 4 }, // loss: attackers lose ceil(3n/4)

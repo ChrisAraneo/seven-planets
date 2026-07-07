@@ -2,7 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
 import ModalShell from './ModalShell.vue'
-import { CONQUEST_TRUCE, HOME_FIELD, SHIELD_DEFENSE } from '@/game/constants'
+import { COMBAT, CONQUEST_TRUCE, HOME_FIELD, SHIELD_DEFENSE } from '@/game/constants'
+import { battleWinProb } from '@/game/ai'
 import { handSize, isPacifist, ownedPlanets, pacifistDefBonus, rocketCap, siloBonus, singularityDefBonus, underTruce } from '@/game/engine'
 
 const store = useGameStore()
@@ -44,9 +45,11 @@ const preview = computed(() => {
     pacifistDefBonus(target.value) +
     singularityDefBonus(target.value) +
     HOME_FIELD
-  const note = ap > dp + 3 ? 'good' : ap > dp ? 'close' : 'suicide'
+  const pWin = battleWinProb(ap, dp) // exact P(win), same math the dice roll
+  const winPct = Math.round(pWin * 100)
+  const note = pWin >= 0.6 ? 'good' : pWin >= 0.35 ? 'close' : 'suicide'
   const sendingAll = n.value >= source.value.troops
-  return { ap, dp, note, sendingAll }
+  return { ap, dp, pWin, winPct, note, sendingAll }
 })
 
 function capFmt(pl = source.value): string {
@@ -116,10 +119,17 @@ function launch(): void {
     </p>
     <p>
       <template v-if="preview">
-        Your strike {{ preview.ap }} + 🎲0-3 &nbsp;vs&nbsp; defense {{ preview.dp }} + 🎲0-3<br />
-        <span v-if="preview.note === 'good'" style="color: #7dff8a">Odds look good.</span>
-        <span v-else-if="preview.note === 'close'" style="color: #ffd23d">Close fight — luck decides.</span>
-        <span v-else class="warn">Likely suicide.</span>
+        Your strike {{ preview.ap }} + 🎲0-{{ COMBAT.attackRoll }} &nbsp;vs&nbsp; defense {{ preview.dp }} + 🎲0-{{ COMBAT.defenseRoll }}<br />
+        <b
+          :style="{
+            color: preview.note === 'good' ? '#7dff8a' : preview.note === 'close' ? '#ffd23d' : '#ff6b6b',
+          }"
+          >Win chance: {{ preview.winPct }}%</b
+        >
+        —
+        <span v-if="preview.note === 'good'" style="color: #7dff8a">odds look good.</span>
+        <span v-else-if="preview.note === 'close'" style="color: #ffd23d">close fight, luck decides.</span>
+        <span v-else class="warn">likely suicide.</span>
         <span v-if="preview.sendingAll" class="warn"> Sending everyone leaves {{ source.name }} defenseless!</span>
       </template>
       <span v-else class="warn">All enemy planets are under truce — no valid target.</span>
