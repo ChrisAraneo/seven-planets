@@ -3,11 +3,13 @@ import { computed, ref, watch } from 'vue'
 import { useGameStore } from '@/stores/game'
 import ModalShell from './ModalShell.vue'
 import { CONQUEST_TRUCE, HOME_FIELD, SHIELD_DEFENSE } from '@/game/constants'
-import { handSize, ownedPlanets, rocketCap, siloBonus, underTruce } from '@/game/engine'
+import { handSize, isPacifist, ownedPlanets, pacifistDefBonus, rocketCap, siloBonus, singularityDefBonus, underTruce } from '@/game/engine'
 
 const store = useGameStore()
 const state = store.state
 const human = store.human
+
+const breaksVow = computed(() => isPacifist(human))
 
 const siloPls = ownedPlanets(human).filter((pl) => pl.buildings.SILO && pl.troops >= 1)
 const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id)
@@ -36,7 +38,12 @@ const canLaunch = computed(() => sel.value >= 0 && source.value.troops >= 1)
 const preview = computed(() => {
   if (!target.value) return null
   const ap = 2 * n.value + siloBonus(source.value)
-  const dp = 2 * target.value.troops + (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE + HOME_FIELD
+  const dp =
+    2 * target.value.troops +
+    (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
+    pacifistDefBonus(target.value) +
+    singularityDefBonus(target.value) +
+    HOME_FIELD
   const note = ap > dp + 3 ? 'good' : ap > dp ? 'close' : 'suicide'
   const sendingAll = n.value >= source.value.troops
   return { ap, dp, note, sendingAll }
@@ -69,6 +76,10 @@ function launch(): void {
       loot — wipe out the garrison to conquer the planet (then it's safe from attacks for {{ CONQUEST_TRUCE }} turns).
       Spends one ⚔️ Attack card (you have {{ human.hand.ATTACK }}).
     </p>
+    <p v-if="breaksVow" class="vow-warning">
+      ☮️➡️⚔️ You are a PACIFIST. Launching this attack breaks your vow <strong>permanently</strong>: you lose the
+      +defense and +⭐ bonuses on every planet and can never become a PACIFIST again.
+    </p>
     <p v-if="sources.length > 1">
       Launch from:
       <button
@@ -94,7 +105,7 @@ function launch(): void {
           🕊️ truce ({{ pl.protectedUntil - state.turn + 1 }} turn{{ pl.protectedUntil - state.turn ? 's' : '' }})
         </span>
       </div>
-      <div>🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }} 🃏{{ handSize(state.players[pl.ownerId]) }}</div>
+      <div>🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }} <span v-if="state.players[pl.ownerId].pacifistStatus" title="Pacifist — +6 defense">☮️</span> 🃏{{ handSize(state.players[pl.ownerId]) }}</div>
     </div>
     <p style="margin-top: 12px">
       Troops aboard:
@@ -119,3 +130,16 @@ function launch(): void {
     </div>
   </ModalShell>
 </template>
+
+<style scoped>
+.vow-warning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 107, 107, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ffb0b0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+</style>

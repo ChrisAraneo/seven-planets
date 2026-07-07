@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useGameStore } from '@/stores/game'
 import { canAfford, INFLUENCE_TYPES } from '@/game/constants'
-import { alivePlayers, hasActionCard, hasBuilding, ownedPlanets, recruitCost, totalTroops } from '@/game/engine'
+import { alivePlayers, hasActionCard, hasBuilding, isPacifist, ownedPlanets, recruitCost, totalTroops } from '@/game/engine'
 
 const store = useGameStore()
 
@@ -15,6 +15,7 @@ const hasEmbassy = computed(() => hasBuilding(human.value, 'EMBASSY'))
 const canRecruitSomewhere = computed(() =>
   ownedPlanets(human.value).some((pl) => pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl))),
 )
+const isPeaceful = computed(() => isPacifist(human.value))
 const canLaunchSomewhere = computed(() => ownedPlanets(human.value).some((pl) => pl.buildings.SILO && pl.troops >= 1))
 const heldInf = computed(() => INFLUENCE_TYPES.reduce((s, t) => s + (human.value.hand[t] || 0), 0))
 
@@ -24,9 +25,11 @@ const recruitTitle = computed(() =>
     : 'Requires a 🎖️ Barracks — you cannot recruit without one.',
 )
 const attackTitle = computed(() =>
-  canLaunchSomewhere.value
-    ? "Spends one ⚔️ Attack card per rocket launch (uses the launching planet's army)"
-    : 'Requires a 🚀 Rocket Silo with troops garrisoned — rockets launch only from Silo planets.',
+  isPeaceful.value
+    ? '☮️ You are a PACIFIST. You MAY attack — but doing so breaks your vow permanently, forfeiting the defense and ⭐ bonuses for good (you can never regain PACIFIST status).'
+    : canLaunchSomewhere.value
+      ? "Spends one ⚔️ Attack card per rocket launch (uses the launching planet's army)"
+      : 'Requires a 🚀 Rocket Silo with troops garrisoned — rockets launch only from Silo planets.',
 )
 const moveTitle = computed(() =>
   hasPort.value

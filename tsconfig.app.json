@@ -1,7 +1,9 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "exclude": ["src/**/__tests__/*"],
+  // simulation.ts and tune.ts are Node-only analysis scripts (run via jiti);
+  // they use node globals (process/fs) absent from the browser app's types.
+  "exclude": ["src/**/__tests__/*", "src/game/simulation.ts", "src/game/tune.ts"],
   "compilerOptions": {
     // The ported game engine (src/game/*) is built on dynamic dictionary access
     // keyed by runtime card/building strings (hands, cost tables, lookup maps).

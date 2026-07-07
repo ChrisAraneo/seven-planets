@@ -42,6 +42,8 @@ const PERSONALITY_DESC: Record<string, string> = {
   opportunist: 'Values action/influence cards and strikes the current leader to keep anyone from running away.',
   blitzer: 'Fast military rush (barracks, silo); early overwhelming strikes with a minimal reserve.',
   pacifist: 'Never attacks; pure economy and diplomacy, banking on outlasting the field.',
+  mastermind:
+    'Planning AI (src/game/ai.ts): exact battle odds, 5-turn retention forecasts before attacking, ROI-based builds, hate-drafting and timed influence plays.',
 }
 
 interface Stats {

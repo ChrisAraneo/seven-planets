@@ -16,6 +16,7 @@ import TradeModal from '@/components/modals/TradeModal.vue'
 import InfluenceModal from '@/components/modals/InfluenceModal.vue'
 import TradeOfferModal from '@/components/modals/TradeOfferModal.vue'
 import GameOverModal from '@/components/modals/GameOverModal.vue'
+import DifficultyModal from '@/components/modals/DifficultyModal.vue'
 
 const store = useGameStore()
 onMounted(() => store.start())
@@ -38,8 +39,10 @@ onMounted(() => store.start())
     <ActionZone />
   </footer>
 
+  <!-- The difficulty picker opens the game and blocks all other UI. -->
+  <DifficultyModal v-if="!store.difficulty" />
   <!-- Game over takes precedence over everything else. -->
-  <GameOverModal v-if="store.state.over" />
+  <GameOverModal v-else-if="store.state.over" />
   <template v-else>
     <HelpModal v-if="store.modal === 'help'" />
     <AttackModal v-else-if="store.modal === 'attack'" />

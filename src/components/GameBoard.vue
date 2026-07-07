@@ -9,6 +9,16 @@ import type { Planet } from '@/game/types'
 const store = useGameStore()
 const state = store.state
 
+// DEBUG: set localStorage['seven-planets:debug-black-holes'] = 'true' to render
+// EVERY planet as a black hole (visual testing only). Read once at load.
+const FORCE_BLACK_HOLES = (() => {
+  try {
+    return localStorage.getItem('seven-planets:debug-black-holes') === 'true'
+  } catch {
+    return false
+  }
+})()
+
 const canvas = ref<HTMLCanvasElement | null>(null)
 let ctx: CanvasRenderingContext2D | null = null
 let canvasW = 0
@@ -80,11 +90,71 @@ function drawFrame(now: number): void {
   drawAnims(now)
 }
 
+// A collapsed Singularity: a black event horizon wrapped in a glowing, spinning
+// accretion disk with a lensing halo. Drawn in place of the normal planet body.
+function drawBlackHole(x: number, y: number, r: number, now: number): void {
+  if (!ctx) return
+  const t = now / 1000
+
+  // Gravitational lensing halo — light bending into a warm/violet glow.
+  const halo = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2.1)
+  halo.addColorStop(0, 'rgba(255,170,70,0)')
+  halo.addColorStop(0.55, 'rgba(255,150,60,0.28)')
+  halo.addColorStop(0.8, 'rgba(150,90,255,0.16)')
+  halo.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = halo
+  circle(x, y, r * 2.1)
+  ctx.fill()
+
+  // Accretion disk — bright tilted rings of infalling matter, plus a superheated
+  // hotspot orbiting the plane to sell the spin.
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(-0.4)
+  for (let i = 0; i < 3; i++) {
+    const rr = r * (1.35 + i * 0.16)
+    const a = 0.5 - i * 0.13
+    const disk = ctx.createLinearGradient(-rr, 0, rr, 0)
+    disk.addColorStop(0, 'rgba(255,120,40,0)')
+    disk.addColorStop(0.25, `rgba(255,180,90,${a})`)
+    disk.addColorStop(0.5, `rgba(255,240,200,${a + 0.15})`)
+    disk.addColorStop(0.75, `rgba(255,150,70,${a})`)
+    disk.addColorStop(1, 'rgba(255,120,40,0)')
+    ctx.strokeStyle = disk
+    ctx.lineWidth = r * 0.16
+    ctx.beginPath()
+    ctx.ellipse(0, 0, rr, rr * 0.42, 0, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  const ang = t * 1.5
+  const hx = Math.cos(ang) * r * 1.5
+  const hy = Math.sin(ang) * r * 1.5 * 0.42
+  const spot = ctx.createRadialGradient(hx, hy, 0, hx, hy, r * 0.3)
+  spot.addColorStop(0, 'rgba(255,255,235,0.9)')
+  spot.addColorStop(1, 'rgba(255,180,80,0)')
+  ctx.fillStyle = spot
+  circle(hx, hy, r * 0.3)
+  ctx.fill()
+  ctx.restore()
+
+  // Event horizon — pure black, rimmed by a faint photon ring.
+  ctx.fillStyle = '#000'
+  circle(x, y, r)
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(255,220,150,0.9)'
+  ctx.lineWidth = 2
+  circle(x, y, r * 0.98)
+  ctx.stroke()
+}
+
 function drawPlanet(pl: Planet, now: number): void {
   if (!ctx) return
   const st = PLANET_STYLES[pl.styleIdx !== undefined ? pl.styleIdx : pl.id] || PLANET_STYLES[0]
   const owner = state.players[pl.ownerId]
   const { x, y, r } = pl
+  // A maxed Singularity (level 3) collapses the planet into a black hole; the
+  // debug flag forces the look on every planet.
+  const blackHole = FORCE_BLACK_HOLES || (pl.buildings.SINGULARITY || 0) >= 3
 
   if (owner.id === state.activeId && !state.over) {
     const k = 0.5 + 0.5 * Math.sin(now / 300)
@@ -96,6 +166,9 @@ function drawPlanet(pl: Planet, now: number): void {
     ctx.globalAlpha = 1
   }
 
+  if (blackHole) {
+    drawBlackHole(x, y, r, now)
+  } else {
   if (st.feature === 'rings') {
     ctx.strokeStyle = 'rgba(255,215,110,0.55)'
     ctx.lineWidth = 3
@@ -237,6 +310,7 @@ function drawPlanet(pl: Planet, now: number): void {
     circle(x + Math.cos(a) * r * 1.6, y + Math.sin(a) * r * 0.9, r * 0.16)
     ctx.fill()
   }
+  } // end normal-planet body (skipped when rendered as a black hole)
 
   ctx.strokeStyle = owner.color
   ctx.lineWidth = 2
@@ -255,7 +329,7 @@ function drawPlanet(pl: Planet, now: number): void {
 
   ctx.font = '12px sans-serif'
   ctx.fillStyle = '#fff'
-  ctx.fillText(`🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}`, x, y + r + 18)
+  ctx.fillText(`🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`, x, y + r + 18)
 
   const icons = BUILD_ORDER.filter((b) => pl.buildings[b]).map((b) => BUILDINGS[b].icon + (pl.buildings[b] > 1 ? pl.buildings[b] : ''))
   ctx.font = '11px sans-serif'
