@@ -64,28 +64,37 @@ import type {
 
 /* ============================ WEIGHTS ============================ */
 
+// `tuned` is the STANDARD (full-strength) weight set — the strength the tuner
+// optimizes and the human always plays at. `W` is the ACTIVE weight set for the
+// player currently deciding: it equals `tuned` for the human seat (or whenever no
+// difficulty is set) and the handicapped derivation for AI opponents. It is
+// re-selected at every mastermind entry by activateWeightsFor.
+let tuned: AiWeights = { ...AI_WEIGHTS }
 let W: AiWeights = { ...AI_WEIGHTS }
+let difficulty: AiDifficulty | null = null
+let randomPickChance = 0
 
-/** Override weights at runtime (used by the tuner). */
+/** Override the tuned (standard) weights at runtime (used by the tuner). */
 export function setAiWeights(patch: Partial<AiWeights>): void {
-  W = { ...W, ...patch }
+  tuned = { ...tuned, ...patch }
 }
 export function getAiWeights(): AiWeights {
-  return { ...W }
+  return { ...tuned }
 }
 export function resetAiWeights(): void {
+  tuned = { ...AI_WEIGHTS }
   W = { ...AI_WEIGHTS }
+  difficulty = null
   randomPickChance = 0
 }
 
 /* ============================ DIFFICULTY ============================ */
 
-// Difficulty handicaps applied to EVERY mastermind. Baked into W where possible
-// (so every W.planHorizon / W.minConquerProb / W.denialWeight read picks them up
-// automatically); the draft-time random-pick chance can't be a weight, so it
-// lives here.
-let randomPickChance = 0
-
+// A difficulty handicap weakens the AI OPPONENTS only — never the human seat, who
+// always plays at full `tuned` strength. In a real game the human isn't a
+// mastermind at all, so this only ever affects the AI; in headless simulation
+// seat 0 is a standard-strength mastermind standing in for the human, so it too
+// keeps `tuned` while its rivals are handicapped.
 export interface AiDifficulty {
   /** Chance [0..1] a draft pick is made at random instead of by plan (dumber). */
   randomPickChance?: number
@@ -97,17 +106,29 @@ export interface AiDifficulty {
   denialWeightMult?: number
 }
 
-/** Apply a difficulty handicap to the mastermind AI. Called once at game start
-    from the store (see chooseDifficulty). Rebuilds W from the base weights so
-    repeated calls don't compound. */
+/** Set the difficulty handicap applied to AI opponents. Called once at game start
+    (see store.chooseDifficulty). The handicap is derived per-decision, so the
+    human seat is never affected and repeated calls never compound. */
 export function setAiDifficulty(d: AiDifficulty): void {
-  W = {
-    ...AI_WEIGHTS,
-    planHorizon: Math.max(1, AI_WEIGHTS.planHorizon + (d.planHorizonDelta ?? 0)),
-    minConquerProb: AI_WEIGHTS.minConquerProb * (d.minConquerProbMult ?? 1),
-    denialWeight: AI_WEIGHTS.denialWeight * (d.denialWeightMult ?? 1),
+  difficulty = d
+}
+
+/** Select the active weights for the player about to make a mastermind decision:
+    full `tuned` strength for the human seat (or when no difficulty is set), the
+    handicapped derivation for AI opponents. Called at every mastermind entry. */
+function activateWeightsFor(p: Player): void {
+  if (difficulty && !p.isHuman) {
+    W = {
+      ...tuned,
+      planHorizon: Math.max(1, tuned.planHorizon + (difficulty.planHorizonDelta ?? 0)),
+      minConquerProb: tuned.minConquerProb * (difficulty.minConquerProbMult ?? 1),
+      denialWeight: tuned.denialWeight * (difficulty.denialWeightMult ?? 1),
+    }
+    randomPickChance = Math.max(0, Math.min(1, difficulty.randomPickChance ?? 0))
+  } else {
+    W = tuned
+    randomPickChance = 0
   }
-  randomPickChance = Math.max(0, Math.min(1, d.randomPickChance ?? 0))
 }
 
 // One star (⭐) is worth roughly this many card-value units — anchored on the
@@ -909,13 +930,17 @@ function skipTarget(s: GameState, p: Player, t: InfluenceType): Player | null {
   return null
 }
 
-/** The juiciest Coup target (not ours, owner alive, no truce), or null. */
+/** The juiciest Coup target (not ours, owner alive, no truce), or null. A rival's
+    LAST planet is coup-proof unless we are a Pacifist (mirrors engine.coupTargets). */
 function bestCoupTarget(s: GameState, p: Player): { planet: Planet; value: number } | null {
+  if (p.kamikaze) return null // a kamikaze hunts the human with rockets — never a Coup
+  const mayTakeLast = p.pacifistStatus || p.personality === 'pacifist'
   let best: { planet: Planet; value: number } | null = null
   for (const pl of s.planets) {
     const owner = s.players[pl.ownerId]
     if (pl.ownerId === p.id || !owner.alive || underTruce(s, pl)) continue
     if (!mayTarget(p, owner)) continue // kamikaze coups only the human; others skip kamikazes
+    if (!mayTakeLast && owner.planets.length === 1) continue // last planet is coup-proof
     const value = planetValue(s, pl) + (owner.planets.length === 1 ? 10 : 0)
     if (!best || value > best.value) best = { planet: pl, value }
   }
@@ -1071,6 +1096,7 @@ export function mastermindDraftPick(
   draftPlanet: Planet,
   pickable: boolean[],
 ): number {
+  activateWeightsFor(p) // human seat → standard; AI opponents → difficulty handicap
   // Difficulty handicap (easy mode): occasionally draft a random pickable card
   // instead of the planned best one.
   if (randomPickChance > 0 && Math.random() < randomPickChance) {
@@ -1209,6 +1235,7 @@ function desiredGarrison(s: GameState, p: Player, planet: Planet): number {
 /** One action for the mastermind's turn; null ends the turn. The engine
     validates and executes; each decision spends a card, so this terminates. */
 export function mastermindAction(s: GameState, p: Player): MastermindDecision | null {
+  activateWeightsFor(p) // human seat → standard; AI opponents → difficulty handicap
   const plan = planFor(s, p)
   const pls = owned(s, p)
 
@@ -1356,6 +1383,7 @@ export function mastermindEvaluateTrade(
   gets: Cost,
   proposer: Player | null,
 ): boolean {
+  activateWeightsFor(ai) // human seat → standard; AI opponents → difficulty handicap
   const plan = planFor(s, ai)
   const head = plan.buildQueue[0]
   let vIn = 0

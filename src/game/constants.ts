@@ -237,8 +237,8 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
   COUP: {
     name: "Coup d'État",
     icon: '👑',
-    cost: 20,
-    desc: 'Instantly take control of a chosen enemy planet — half its garrison disbands, the rest defects to you. Can eliminate a rival by taking their last planet. Cannot target a planet under truce',
+    cost: 25,
+    desc: "Instantly take control of a chosen enemy planet — half its garrison disbands, the rest defects to you. A rival's LAST planet is coup-proof (you cannot eliminate a player by coup) — UNLESS you are a Pacifist, whose only road to conquest this is. Cannot target a planet under truce",
   },
   PEACE: {
     name: 'Peace Treaty',
@@ -287,7 +287,7 @@ export const SKIP_TURNS = 1 // ⏭️ skip influence cards (Sabotage/Uprising/�
 // PACIFIST STATUS — a player who launches no attack for this many turns turns
 // permanently pacifist: they can never attack again, but each of their planets
 // gains a flat defense bonus and produces extra influence every turn.
-export const PACIFIST_TURNS = 30
+export const PACIFIST_TURNS = 50
 export const PACIFIST_DEF_BONUS = 4 // added to every pacifist planet's defense
 export const PACIFIST_INFLUENCE = 2 // extra ⭐ per pacifist planet every turn
 

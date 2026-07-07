@@ -10,7 +10,7 @@
    for future buffs (currently identical to Normal).
    ===================================================================== */
 
-export type Difficulty = 'casual' | 'easy' | 'normal' | 'hard' | 'nightmare' | 'impossible'
+export type Difficulty = 'casual' | 'easy' | 'normal' | 'hard' | 'impossible'
 
 /** Per-difficulty handicaps applied to the mastermind AI (see ai.setAiDifficulty). */
 export interface AiHandicap {
@@ -53,9 +53,9 @@ export const DIFFICULTIES: DifficultyDef[] = [
     blurb: 'No pressure.',
     ai: {
       ...NO_HANDICAP,
-      randomPickChance: 0.15, // 15% of AI draft picks are random
-      minConquerProbMult: 1.53, // AI attacks only at very high odds
-      planHorizonDelta: -2, // AI barely plans ahead
+      randomPickChance: 0.8, // 80% of AI draft picks are random
+      minConquerProbMult: 1.25, // AI attacks only at very high odds
+      planHorizonDelta: -4, // AI barely plans ahead
       denialWeightMult: 0.05, // effectively never hate-drafts the cards you need
     },
     kamikazeCount: 0,
@@ -67,10 +67,10 @@ export const DIFFICULTIES: DifficultyDef[] = [
     blurb: 'Best for new players.',
     ai: {
       ...NO_HANDICAP,
-      randomPickChance: 0.08, // 8% of AI draft picks are random
-      minConquerProbMult: 0.75, // AI attacks at lower odds (wastes troops)
-      planHorizonDelta: -1, // AI plans one turn less far ahead
-      denialWeightMult: 0.25, // rarely hate-drafts the cards rivals need
+      randomPickChance: 0.6, // 60% of AI draft picks are random
+      minConquerProbMult: 0.82, // AI attacks at lower odds
+      planHorizonDelta: -3, // AI plans three turns less far ahead
+      denialWeightMult: 0.35, // rarely hate-drafts the cards rivals need
     },
     kamikazeCount: 0,
   },
@@ -81,8 +81,10 @@ export const DIFFICULTIES: DifficultyDef[] = [
     blurb: 'The standard challenge.',
     ai: {
       ...NO_HANDICAP,
-      randomPickChance: 0.01, // 1% of AI draft picks are random
-      denialWeightMult: 0.85, // denies a bit less than the tuned baseline
+      randomPickChance: 0.2, // 20% of AI draft picks are random
+      minConquerProbMult: 0.875, // AI attacks at lower odds
+      planHorizonDelta: -2, // AI plans one turn less far ahead
+      denialWeightMult: 0.5, // rarely hate-drafts the cards rivals need
     },
     kamikazeCount: 0,
   },
@@ -92,15 +94,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     icon: '🔥',
     blurb: 'Good luck commander!',
     ai: NO_HANDICAP,
-    kamikazeCount: 1, // one AI hunt only the human; every other AI ignores them
-  },
-  {
-    id: 'nightmare',
-    name: 'Nightmare',
-    icon: '😈',
-    blurb: 'No mercy.',
-    ai: NO_HANDICAP,
-    kamikazeCount: 2, // two AI hunt only the human; every other AI ignores them
+    kamikazeCount: 0, // one AI hunt only the human; every other AI ignores them
   },
   {
     id: 'impossible',
@@ -108,7 +102,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     icon: '🖤',
     blurb: 'There is no hope.',
     ai: NO_HANDICAP,
-    kamikazeCount: 6, // six AI hunt only the human; every other AI ignores them
+    kamikazeCount: 1, // three AI hunt only the human; every other AI ignores them
   },
 ]
 

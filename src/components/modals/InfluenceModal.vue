@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useGameStore } from '@/stores/game'
 import ModalShell from './ModalShell.vue'
 import { ACTION_TYPES, BUILD_ORDER, BUILDINGS, CARDS, CONQUEST_TRUCE, INFLUENCE_CARDS, INFLUENCE_TYPES } from '@/game/constants'
-import { alivePlayers, coupTargets, influenceTarget } from '@/game/engine'
+import { alivePlayers, coupTargets, influenceTarget, isPacifist } from '@/game/engine'
 import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types'
 
 const store = useGameStore()
@@ -14,6 +14,9 @@ const view = ref<View>('main')
 
 const held = computed(() => INFLUENCE_TYPES.filter((t) => (human.hand[t] || 0) > 0))
 const coupList = computed(() => coupTargets(human))
+// A Pacifist may coup a rival's last planet (their only path to a win); everyone
+// else is barred from eliminating a player by influence card.
+const canCoupLast = computed(() => isPacifist(human))
 const rivals = computed(() => alivePlayers().filter((x) => !x.isHuman))
 
 function skipTarget(t: InfluenceType): Player | null {
@@ -71,8 +74,13 @@ function doSteal(target: Player, cardType: 'RECRUIT' | 'ATTACK' | 'MOVE' | 'TRAD
       <h2>👑 COUP D'ÉTAT</h2>
       <p class="dimtx">
         The chosen planet defects to you instantly — half its garrison disbands, the rest joins you (then a
-        {{ CONQUEST_TRUCE }}-turn truce). Taking a rival's LAST planet eliminates them. Only a truce protects a planet
-        from a coup.
+        {{ CONQUEST_TRUCE }}-turn truce).
+        <template v-if="canCoupLast">
+          ☮️ As a PACIFIST, you may even take a rival's LAST planet — eliminating them. Only a truce protects a planet from a coup.
+        </template>
+        <template v-else>
+          A rival's LAST planet is coup-proof — you cannot eliminate a player by influence card (only a PACIFIST can). A truce also protects a planet.
+        </template>
       </p>
       <template v-if="coupList.length">
         <div v-for="pl in coupList" :key="pl.id" class="trow" @click="doCoup(pl)">
@@ -82,7 +90,9 @@ function doSteal(target: Player, cardType: 'RECRUIT' | 'ATTACK' | 'MOVE' | 'TRAD
           <div>🪖{{ pl.troops }} {{ coupIcons(pl) }}</div>
         </div>
       </template>
-      <p v-else class="warn">No valid target — planets under truce cannot be couped.</p>
+      <p v-else class="warn">
+        No valid target — planets under truce cannot be couped{{ canCoupLast ? '' : ", and a rival's last planet can only be taken by a Pacifist" }}.
+      </p>
       <div class="mbtns">
         <button class="btn" @click="view = 'main'">Back</button>
         <button class="btn" @click="store.closeModal()">Cancel</button>
