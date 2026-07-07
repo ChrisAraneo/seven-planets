@@ -16,8 +16,7 @@ const STORAGE_KEY = 'seven-planets:unlocked-difficulties'
 /** Winning at the KEY difficulty unlocks the VALUE difficulty. */
 const UNLOCKED_BY_WIN: Partial<Record<Difficulty, Difficulty>> = {
   normal: 'hard',
-  hard: 'nightmare',
-  nightmare: 'impossible',
+  hard: 'impossible',
 }
 
 // Every level that is not the reward of some other win is free from the start.

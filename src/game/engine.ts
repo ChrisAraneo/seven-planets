@@ -55,7 +55,12 @@ import {
   TAUNTS,
 } from './constants'
 import { animateRocket, boom, floatText, setSimMode, sleep } from './effects'
-import { mastermindAction, mastermindDraftPick, mastermindEvaluateTrade, setAiDifficulty } from './ai'
+import {
+  mastermindAction,
+  mastermindDraftPick,
+  mastermindEvaluateTrade,
+  setAiDifficulty,
+} from './ai'
 
 // Re-exported so the store can apply the chosen difficulty's AI handicap
 // without importing ./ai directly. (assignKamikazes is defined below.)
@@ -292,7 +297,9 @@ export function recruitCost(planet: Planet): Cost {
 // grants TECHNOLOGY 4 — the tier that unlocks the level-4 Singularity.
 export function isFullyBuilt(pl: Planet): boolean {
   return BUILD_ORDER.every((b) =>
-    b === 'SINGULARITY' ? (pl.buildings.SINGULARITY || 0) >= 3 : (pl.buildings[b] || 0) >= maxLevel(b),
+    b === 'SINGULARITY'
+      ? (pl.buildings.SINGULARITY || 0) >= 3
+      : (pl.buildings[b] || 0) >= maxLevel(b),
   )
 }
 
@@ -438,10 +445,18 @@ export function influenceTarget(p: Player, t: InfluenceType): Player | null {
   return null
 }
 
-// Can this planet be seized by a 👑 Coup played by `p`? Only a truce protects it.
+// Can this planet be seized by a 👑 Coup played by `p`? A truce protects it, and a
+// rival's LAST planet is coup-proof — you may not ELIMINATE a player with an
+// influence card — UNLESS the couper is a Pacifist, for whom a Coup is the only
+// road to conquest (and thus the only way to finish off the final rival).
 export function coupTargets(p: Player): Planet[] {
+  const mayTakeLast = isPacifist(p) || persOf(p) === 'pacifist'
   return state.planets.filter(
-    (pl) => pl.ownerId !== p.id && state.players[pl.ownerId].alive && !underTruce(pl),
+    (pl) =>
+      pl.ownerId !== p.id &&
+      state.players[pl.ownerId].alive &&
+      !underTruce(pl) &&
+      (mayTakeLast || state.players[pl.ownerId].planets.length > 1),
   )
 }
 
@@ -918,7 +933,10 @@ export async function doAttack(
 
   let attLoss: number, defLoss: number
   if (win) {
-    defLoss = Math.min(target.troops, Math.ceil((n * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den))
+    defLoss = Math.min(
+      target.troops,
+      Math.ceil((n * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
+    )
     attLoss = Math.floor((n * COMBAT.winAttLoss.num) / COMBAT.winAttLoss.den)
   } else {
     attLoss = Math.ceil((n * COMBAT.loseAttLoss.num) / COMBAT.loseAttLoss.den)
@@ -1045,7 +1063,6 @@ export function assignKamikazes(count: number): void {
   const ai = shuffleArr(state.players.filter((p) => !p.isHuman && p.alive))
   for (const p of ai.slice(0, count)) {
     p.kamikaze = true
-    log(`☠️ ${p.name} has sworn a KAMIKAZE oath — they hunt only your homeworld.`, 'war')
   }
 }
 
@@ -1148,8 +1165,10 @@ function aiDraftPick(p: Player, planet: Planet): number {
           // A pacifist can never attack, so a Coup is its ONLY road to conquest —
           // and its extra influence income makes the 20⭐ price affordable.
           if (pers === 'pacifist' || isPacifist(p)) score += 5
-          else if (pers === 'expansionist') score += 2 // more planets, no battle
-          else if (pers === 'opportunist') score += 1.5 // topple the leader outright
+          else if (pers === 'expansionist')
+            score += 2 // more planets, no battle
+          else if (pers === 'opportunist')
+            score += 1.5 // topple the leader outright
           else if (pers === 'militarist' || pers === 'aggressor') score += 1
         }
       } else if (it === 'PEACE') {
@@ -1463,6 +1482,7 @@ async function proposeTrade(p: Player, offer: TradeOffer): Promise<boolean> {
 
 // The juiciest planet a Coup could seize. Returns null when nothing is worth it.
 function aiPickCoupTarget(p: Player): Planet | null {
+  if (p.kamikaze) return null // a kamikaze hunts the human with rockets — never a Coup
   // A Coup is the pacifist's ONLY way to conquer, so it accepts weaker targets
   // and leans harder on eliminations to thin the field toward a full conquest.
   const pac = persOf(p) === 'pacifist' || isPacifist(p)
@@ -1667,11 +1687,18 @@ export function resolveOffer(accept: boolean): void {
 
 /* ============================ HEADLESS SIM ============================ */
 
-export async function simulateGameWithPersonalities(personalities: string[], maxTurns = 400) {
+export async function simulateGameWithPersonalities(
+  personalities: string[],
+  maxTurns = 400,
+  opts: { kamikazeCount?: number } = {},
+) {
   setState(buildState())
   for (let i = 0; i < state.players.length && i < personalities.length; i++) {
     state.players[i].personality = personalities[i]
   }
+  // Difficulty kamikazes hunt only seat 0 (the human seat) — applied AFTER
+  // buildState, which is what resets the kamikaze flags each game.
+  assignKamikazes(opts.kamikazeCount ?? 0)
   while (!state.over && state.turn < maxTurns) {
     await playTurn()
   }

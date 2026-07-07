@@ -10,7 +10,7 @@
    Recalibrate after changing game constants with:  npm run tune
    (the tuner rewrites this file with the best weights it finds).
 
-   LAST TUNED: 2026-07-06T21:59:56.171Z by npm run tune
+   LAST TUNED: 2026-07-07T16:38:00.297Z by npm run tune
    ===================================================================== */
 
 export interface AiWeights {
@@ -51,18 +51,18 @@ export interface AiWeights {
 export const AI_WEIGHTS: AiWeights = {
   planHorizon: 8,
   holdHorizon: 6,
-  buildRoiHorizon: 14,
-  minConquerProb: 0.63,
+  buildRoiHorizon: 8,
+  minConquerProb: 0.71,
   minHoldProb: 0.35,
   reserveTroops: 2,
-  denialWeight: 0.55,
+  denialWeight: 0.7,
   planStickiness: 1.15,
   aggressionRamp: 0.003,
   troopValue: 1.3,
   coupValueFloor: 10,
   peaceThreatFloor: 0.35,
   tradeAcceptRatio: 1.05,
-  willAggressive: 0.85,
+  willAggressive: 0.95,
   willNeutral: 0.5,
   willDefensive: 0.25,
 }
