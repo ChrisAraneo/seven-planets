@@ -1,3 +1,5 @@
+// NOTE: This function is not used anywhere in the current codebase.
+// It is only referenced by ai-pick-influence-play which is itself unused.
 import type { Planet, Player } from '@/game/types';
 import { getState } from '../state';
 import { aiMayTarget } from './ai-may-target';

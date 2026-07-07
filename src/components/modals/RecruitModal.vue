@@ -3,11 +3,9 @@ import { computed } from 'vue';
 import { useGameStore } from '@/stores/game';
 import ModalShell from './ModalShell.vue';
 import { canAfford, costLabel } from '@/game/constants';
-import {
-  ownedPlanets,
-  recruitCost,
-  recruitYield,
-} from '@/game/engine/index.ts';
+import { ownedPlanets } from '@/game/engine/functions/owned-planets';
+import { recruitCost } from '@/game/engine/functions/recruit-cost';
+import { recruitYield } from '@/game/shared/recruit-yield';
 
 const store = useGameStore();
 

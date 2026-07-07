@@ -11,12 +11,10 @@ import {
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
 } from '@/game/constants';
-import {
-  alivePlayers,
-  coupTargets,
-  influenceTarget,
-  isPacifist,
-} from '@/game/engine/index.ts';
+import { alivePlayers } from '@/game/engine/functions/alive-players';
+import { coupTargets } from '@/game/engine/functions/coup-targets';
+import { influenceTarget } from '@/game/engine/functions/influence-target';
+import { isPacifist } from '@/game/engine/functions/is-pacifist';
 import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types';
 
 const store = useGameStore();

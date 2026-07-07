@@ -2,7 +2,8 @@
 import { computed, ref, watch } from 'vue';
 import { useGameStore } from '@/stores/game';
 import ModalShell from './ModalShell.vue';
-import { ownedPlanets, rocketCap } from '@/game/engine/index.ts';
+import { ownedPlanets } from '@/game/engine/functions/owned-planets';
+import { rocketCap } from '@/game/shared/rocket-cap';
 
 const store = useGameStore();
 const human = store.human;

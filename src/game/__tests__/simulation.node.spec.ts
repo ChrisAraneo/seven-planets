@@ -3,7 +3,8 @@
 // True and every seat is played by the AI — letting us run whole games headless.
 import { describe, expect, it } from 'vitest';
 
-import { setSimMode, simulateGameWithPersonalities } from '@/game/engine';
+import { setSimMode } from '@/game/effects';
+import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
 
 describe('headless game simulation', () => {
   setSimMode(true); // No animation delays — pure logic speed

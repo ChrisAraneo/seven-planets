@@ -1,3 +1,5 @@
+// NOTE: This function is not used anywhere in the current codebase.
+// It was part of the old non-mastermind AI personality system.
 import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
 import { ACTION_TYPES } from '@/game/constants';
 import { aiMayTarget } from './ai-may-target';

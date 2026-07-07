@@ -7,7 +7,21 @@ import {
   getDifficulty,
 } from '@/game/difficulty';
 import { getFastMode, setFastMode } from '@/game/effects';
-import * as engine from '@/game/engine';
+import { setAiDifficulty } from '@/game/ai/functions/set-ai-difficulty';
+import { buildState, setState } from '@/game/engine/state';
+import { AUTO_HUMAN } from '@/game/engine/functions/auto-human';
+import { assignKamikazes } from '@/game/engine/functions/assign-kamikazes';
+import { runGame } from '@/game/engine/functions/run-game';
+import { humanPoolClick } from '@/game/engine/functions/human-pool-click';
+import { endHumanTurn } from '@/game/engine/functions/end-human-turn';
+import { recruit as engineRecruit } from '@/game/engine/functions/recruit';
+import { setBusy } from '@/game/engine/functions/set-busy';
+import { doAttack } from '@/game/engine/functions/do-attack';
+import { moveTroops } from '@/game/engine/functions/move-troops';
+import { aiEvaluateTrade } from '@/game/engine/functions/ai-evaluate-trade';
+import { execTrade } from '@/game/engine/functions/exec-trade';
+import { useInfluenceCard } from '@/game/engine/functions/use-influence-card';
+import { resolveOffer } from '@/game/engine/functions/resolve-offer';
 import type {
   ActionType,
   Cost,
@@ -28,8 +42,8 @@ export type ModalName =
 export const useGameStore = defineStore('game', () => {
   // The single reactive game state. New Game / Play Again reload the page
   // (matching the original), so this object never needs to be rebuilt.
-  const state = reactive(engine.buildState());
-  engine.setState(state);
+  const state = reactive(buildState());
+  setState(state);
 
   const modal = ref<ModalName>(null);
   const started = ref(false);
@@ -64,7 +78,7 @@ export const useGameStore = defineStore('game', () => {
       return;
     }
     // Demo mode ("?auto") runs at full tilt with no difficulty prompt.
-    if (engine.AUTO_HUMAN) {
+    if (AUTO_HUMAN) {
       setFast(true);
       chooseDifficulty(DEFAULT_DIFFICULTY);
     }
@@ -80,10 +94,10 @@ export const useGameStore = defineStore('game', () => {
     const def = getDifficulty(level);
     // Apply this level's handicap to every mastermind AI before the loop runs,
     // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
-    engine.setAiDifficulty(def.ai);
-    engine.assignKamikazes(def.kamikazeCount);
+    setAiDifficulty(def.ai);
+    assignKamikazes(def.kamikazeCount);
     started.value = true;
-    void engine.runGame();
+    void runGame();
   }
 
   function newGame(): void {
@@ -107,16 +121,16 @@ export const useGameStore = defineStore('game', () => {
   /* ---------------- human interactions ---------------- */
 
   function pickCard(idx: number): void {
-    engine.humanPoolClick(idx);
+    humanPoolClick(idx);
   }
 
   function endTurn(): void {
-    engine.endHumanTurn();
+    endHumanTurn();
   }
 
   function recruit(planetId: number): void {
     closeModal();
-    engine.recruit(human.value, state.planets[planetId]);
+    engineRecruit(human.value, state.planets[planetId]);
   }
 
   async function attack(
@@ -125,45 +139,45 @@ export const useGameStore = defineStore('game', () => {
     n: number,
   ): Promise<void> {
     closeModal();
-    engine.setBusy(true);
-    await engine.doAttack(
+    setBusy(true);
+    await doAttack(
       human.value,
       state.planets[sourceId],
       state.planets[targetId],
       n,
     );
-    engine.setBusy(false);
+    setBusy(false);
   }
 
   async function move(fromId: number, toId: number, n: number): Promise<void> {
     closeModal();
-    engine.setBusy(true);
-    await engine.moveTroops(
+    setBusy(true);
+    await moveTroops(
       human.value,
       state.planets[fromId],
       state.planets[toId],
       n,
     );
-    engine.setBusy(false);
+    setBusy(false);
   }
 
   /** Evaluate + (if accepted) execute a human-initiated trade. Returns acceptance. */
   function proposeTrade(partnerId: number, gives: Cost, gets: Cost): boolean {
     const partner = state.players[partnerId];
-    const accept = engine.aiEvaluateTrade(partner, gets, gives, human.value);
+    const accept = aiEvaluateTrade(partner, gets, gives, human.value);
     if (accept) {
-      engine.execTrade(human.value, partner, gives, gets);
+      execTrade(human.value, partner, gives, gets);
     }
     return accept;
   }
 
   function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
     closeModal();
-    engine.useInfluenceCard(human.value, type, opts);
+    useInfluenceCard(human.value, type, opts);
   }
 
   function resolveOffer(accept: boolean): void {
-    engine.resolveOffer(accept);
+    resolveOffer(accept);
   }
 
   return {

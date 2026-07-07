@@ -8,17 +8,15 @@ import {
   HOME_FIELD,
   SHIELD_DEFENSE,
 } from '@/game/constants';
-import { battleWinProb } from '@/game/ai/index.ts';
-import {
-  handSize,
-  isPacifist,
-  ownedPlanets,
-  pacifistDefBonus,
-  rocketCap,
-  siloBonus,
-  singularityDefBonus,
-  underTruce,
-} from '@/game/engine/index.ts';
+import { battleWinProb } from '@/game/ai/functions/battle-win-prob';
+import { handSize } from '@/game/engine/functions/hand-size';
+import { isPacifist } from '@/game/engine/functions/is-pacifist';
+import { ownedPlanets } from '@/game/engine/functions/owned-planets';
+import { pacifistDefBonus } from '@/game/engine/functions/pacifist-def-bonus';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { siloBonus } from '@/game/shared/silo-bonus';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+import { underTruce } from '@/game/engine/functions/under-truce';
 
 const store = useGameStore();
 const state = store.state;

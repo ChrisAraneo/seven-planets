@@ -1,3 +1,5 @@
+// NOTE: This function is not used anywhere in the current codebase.
+// It was part of the old non-mastermind AI personality system.
 import { CARDS, RESOURCE_TYPES } from '@/game/constants';
 import type { Player, TradeOffer } from '@/game/types';
 import { alivePlayers } from './alive-players';

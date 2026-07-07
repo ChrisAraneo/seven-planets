@@ -1,3 +1,5 @@
+// NOTE: This function is not used anywhere in the current codebase.
+// Only referenced by ai-pick-attack and ai-pick-influence-play, both of which are unused.
 import { BUILD_ORDER, BUILDINGS, handValue } from '@/game/constants';
 import type { Player } from '@/game/types';
 import { ownedPlanets } from './owned-planets';

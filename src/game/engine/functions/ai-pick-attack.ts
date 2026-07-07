@@ -1,3 +1,5 @@
+// NOTE: This function is not used anywhere in the current codebase.
+// It was part of the old non-mastermind AI personality system.
 import {
   ACTION_CARDS_FROM_TURN,
   COMBAT,

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { canAfford, INFLUENCE_TYPES } from '@/game/constants';
-import {
-  hasBuilding,
-  ownedPlanets,
-  recruitCost,
-  isPacifist,
-  hasActionCard,
-  totalTroops,
-  alivePlayers,
-} from '@/game/engine';
+import { hasBuilding } from '@/game/engine/functions/has-building';
+import { ownedPlanets } from '@/game/engine/functions/owned-planets';
+import { recruitCost } from '@/game/engine/functions/recruit-cost';
+import { isPacifist } from '@/game/engine/functions/is-pacifist';
+import { hasActionCard } from '@/game/engine/functions/has-action-card';
+import { totalTroops } from '@/game/engine/functions/total-troops';
+import { alivePlayers } from '@/game/engine/functions/alive-players';
 import { useGameStore } from '@/stores/game';
 import { computed } from 'vue';
 

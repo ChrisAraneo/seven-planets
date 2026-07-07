@@ -3,24 +3,20 @@
 // Can be tested headless; full games run with AUTO_HUMAN (no `document`).
 import { describe, expect, it } from 'vitest';
 
-import {
-  battleWinProb,
-  bestAttackNow,
-  buildCandidates,
-  evaluateAttacks,
-  holdProbability,
-  mastermindDraftPick,
-  minTroopsToConquer,
-  planFor,
-  resetAiWeights,
-  survivorsAfterWin,
-} from '@/game/ai';
+import { battleWinProb } from '@/game/ai/functions/battle-win-prob';
+import { bestAttackNow } from '@/game/ai/functions/best-attack-now';
+import { buildCandidates } from '@/game/ai/functions/build-candidates';
+import { evaluateAttacks } from '@/game/ai/functions/evaluate-attacks';
+import { holdProbability } from '@/game/ai/functions/hold-probability';
+import { mastermindDraftPick } from '@/game/ai/functions/mastermind-draft-pick';
+import { minTroopsToConquer } from '@/game/ai/functions/min-troops-to-conquer';
+import { planFor } from '@/game/ai/functions/plan-for';
+import { resetAiWeights } from '@/game/ai/functions/reset-ai-weights';
+import { survivorsAfterWin } from '@/game/ai/functions/survivors-after-win';
 import { COMBAT } from '@/game/constants';
-import {
-  buildState,
-  setSimMode,
-  simulateGameWithPersonalities,
-} from '@/game/engine';
+import { buildState } from '@/game/engine/state';
+import { setSimMode } from '@/game/effects';
+import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
 import type { GameState } from '@/game/types';
 
 setSimMode(true);

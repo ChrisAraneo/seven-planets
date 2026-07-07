@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildingCost, canAfford } from '@/game/constants';
-import { buildState } from '@/game/engine';
+import { buildState } from '@/game/engine/state';
 
 describe('Seven Planets engine', () => {
   it('builds a fresh 7-seat galaxy', () => {

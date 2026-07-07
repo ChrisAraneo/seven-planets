@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@/game/constants';
 import { anims } from '@/game/effects';
-import { underTruce } from '@/game/engine';
+import { underTruce } from '@/game/engine/functions/under-truce';
 import type { Planet } from '@/game/types';
 import { useGameStore } from '@/stores/game';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
