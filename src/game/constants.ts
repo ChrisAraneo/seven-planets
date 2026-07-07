@@ -480,11 +480,6 @@ export const AI_COLORS = [
   '#f25f5c',
 ];
 
-export const PERSONALITY_TAG: Record<string, string> = {
-  human: 'COMMANDER',
-  mastermind: 'MASTERMIND',
-};
-
 // Build/upgrade priorities — mastermind uses this as a static fallback only;
 // the advanced AI (./ai) plans dynamically by expected return-on-investment.
 export const PRIORITIES: Record<string, BuildingType[]> = {

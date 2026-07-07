@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue';
 import { useGameStore } from '@/stores/game';
 import ModalShell from './ModalShell.vue';
-import { CARDS, PERSONALITY_TAG, RESOURCE_TYPES } from '@/game/constants';
+import { CARDS, RESOURCE_TYPES } from '@/game/constants';
 import { alivePlayers, hasActionCard } from '@/game/engine/engine.ts';
 import type { Cost } from '@/game/types';
 
@@ -80,7 +80,7 @@ function propose(): void {
         :value="partnerId"
         @change="changePartner(+($event.target as HTMLSelectElement).value)">
         <option v-for="p in partners" :key="p.id" :value="p.id">
-          {{ p.name }} ({{ PERSONALITY_TAG[p.personality] }})
+          {{ p.name }}
         </option>
       </select>
     </p>

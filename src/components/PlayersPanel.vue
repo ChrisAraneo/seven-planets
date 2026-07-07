@@ -2,7 +2,6 @@
 import { useGameStore } from '@/stores/game';
 import {
   CARDS,
-  PERSONALITY_TAG,
   RESOURCE_TYPES,
   ACTION_TYPES,
   INFLUENCE_TYPES,
@@ -40,7 +39,6 @@ function actLine(p: Player): string {
       <span class="pname" :style="{ color: p.color }"
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
-      <span class="ptag">{{ PERSONALITY_TAG[p.personality] }}</span>
       <div class="pstats">
         🪐{{ p.planets.length }} 🔬T{{ techLevel(p) }} 🪖{{
           totalTroops(p)
