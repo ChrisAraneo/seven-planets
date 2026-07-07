@@ -498,9 +498,6 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
   ],
 };
 
-// The only AI personality in the game.
-export const AI_PERSONALITIES = Object.keys(PRIORITIES);
-
 export const AI_LINEUP: string[] = Array(6).fill('mastermind');
 
 export const TAUNTS: string[] = [

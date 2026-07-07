@@ -9,7 +9,7 @@ import {
   INFLUENCE_CARDS,
   maxLevel,
 } from '@/game/constants';
-import { canPickCard, homePlanet } from '@/game/engine/engine';
+import { canPickCard, homePlanet } from '@/game/engine';
 import type { BuildingType, InfluenceType, PoolType } from '@/game/types';
 
 const store = useGameStore();

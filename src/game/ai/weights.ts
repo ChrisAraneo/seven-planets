@@ -13,7 +13,7 @@
    LAST TUNED: 2026-07-07T17:28:05.796Z by npm run tune
    ===================================================================== */
 
-export interface AiWeights {
+export interface Weights {
   /** Strategy look-ahead window in turns (the "next 5-10 turns" plan). */
   planHorizon: number;
   /** Retention forecast window — will a conquest be retaken within this many turns? */
@@ -48,7 +48,7 @@ export interface AiWeights {
   willDefensive: number;
 }
 
-export const AI_WEIGHTS: AiWeights = {
+export const WEIGHTS: Weights = {
   planHorizon: 8,
   holdHorizon: 6,
   buildRoiHorizon: 6,

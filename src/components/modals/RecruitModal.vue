@@ -7,7 +7,7 @@ import {
   ownedPlanets,
   recruitCost,
   recruitYield,
-} from '@/game/engine/engine.ts';
+} from '@/game/engine/index.ts';
 
 const store = useGameStore();
 

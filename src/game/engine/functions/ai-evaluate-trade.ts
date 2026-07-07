@@ -1,4 +1,4 @@
-import { mastermindEvaluateTrade } from '@/game/ai/ai';
+import { mastermindEvaluateTrade } from '@/game/ai';
 import { RESOURCE_TYPES } from '@/game/constants';
 import type { Cost, Player } from '@/game/types';
 import { getState } from '../state';

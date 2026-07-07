@@ -1,5 +1,5 @@
 import type { Player } from '@/game/types';
-import { mastermindAction } from '@/game/ai/ai';
+import { mastermindAction } from '@/game/ai';
 import { getState } from '../state';
 import { doAttack } from './do-attack';
 import { hasActionCard } from './has-action-card';

@@ -7,7 +7,7 @@ import {
   getDifficulty,
 } from '@/game/difficulty';
 import { getFastMode, setFastMode } from '@/game/effects';
-import * as engine from '@/game/engine/engine';
+import * as engine from '@/game/engine';
 import type {
   ActionType,
   Cost,

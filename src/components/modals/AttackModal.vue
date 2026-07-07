@@ -8,7 +8,7 @@ import {
   HOME_FIELD,
   SHIELD_DEFENSE,
 } from '@/game/constants';
-import { battleWinProb } from '@/game/ai/ai.ts';
+import { battleWinProb } from '@/game/ai/index.ts';
 import {
   handSize,
   isPacifist,
@@ -18,7 +18,7 @@ import {
   siloBonus,
   singularityDefBonus,
   underTruce,
-} from '@/game/engine/engine.ts';
+} from '@/game/engine/index.ts';
 
 const store = useGameStore();
 const state = store.state;

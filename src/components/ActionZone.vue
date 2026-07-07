@@ -8,7 +8,7 @@ import {
   hasActionCard,
   totalTroops,
   alivePlayers,
-} from '@/game/engine/engine';
+} from '@/game/engine';
 import { useGameStore } from '@/stores/game';
 import { computed } from 'vue';
 

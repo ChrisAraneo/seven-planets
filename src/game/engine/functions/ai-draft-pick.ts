@@ -1,4 +1,4 @@
-import { mastermindDraftPick } from '@/game/ai/ai';
+import { mastermindDraftPick } from '@/game/ai';
 import type { Planet, Player } from '@/game/types';
 import { getState } from '../state';
 import { canPickCard } from './can-pick-card';
