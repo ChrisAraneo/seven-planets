@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useGameStore } from '@/stores/game';
 import { canAfford, INFLUENCE_TYPES } from '@/game/constants';
 import {
-  alivePlayers,
-  hasActionCard,
   hasBuilding,
-  isPacifist,
   ownedPlanets,
   recruitCost,
+  isPacifist,
+  hasActionCard,
   totalTroops,
-} from '@/game/engine';
+  alivePlayers,
+} from '@/game/engine/engine';
+import { useGameStore } from '@/stores/game';
+import { computed } from 'vue';
 
 const store = useGameStore();
 

@@ -200,7 +200,7 @@ async function main(): Promise<void> {
     `\nDone in ${elapsed}s — final win rate ${(bestRate * 100).toFixed(1)}%`,
   );
 
-  const weightsPath = resolve(process.cwd(), 'src/game/ai-weights.ts');
+  const weightsPath = resolve(process.cwd(), 'src/game/ai/ai-weights.ts');
   writeFileSync(weightsPath, weightsFileContent(best), 'utf8');
   console.log(`Weights written to ${weightsPath}`);
 

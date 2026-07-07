@@ -7,7 +7,7 @@ import {
   ACTION_TYPES,
   INFLUENCE_TYPES,
 } from '@/game/constants';
-import { buildingCount, techLevel, totalTroops } from '@/game/engine';
+import { buildingCount, techLevel, totalTroops } from '@/game/engine/engine';
 import type { Player } from '@/game/types';
 
 const store = useGameStore();

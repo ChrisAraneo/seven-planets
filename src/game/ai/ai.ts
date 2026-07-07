@@ -48,7 +48,7 @@ import {
   SHIELD_DEFENSE,
   SILO_HIT_BONUS,
   SINGULARITY_DEF_BONUS,
-} from './constants';
+} from '../constants';
 import type {
   ActionType,
   BuildingType,
@@ -60,7 +60,7 @@ import type {
   Planet,
   Player,
   PoolType,
-} from './types';
+} from '../types';
 
 /* ============================ WEIGHTS ============================ */
 

@@ -3,7 +3,7 @@ import { computed, reactive, ref } from 'vue';
 import { useGameStore } from '@/stores/game';
 import ModalShell from './ModalShell.vue';
 import { CARDS, PERSONALITY_TAG, RESOURCE_TYPES } from '@/game/constants';
-import { alivePlayers, hasActionCard } from '@/game/engine';
+import { alivePlayers, hasActionCard } from '@/game/engine/engine.ts';
 import type { Cost } from '@/game/types';
 
 const store = useGameStore();

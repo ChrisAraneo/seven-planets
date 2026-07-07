@@ -16,7 +16,7 @@ import {
   coupTargets,
   influenceTarget,
   isPacifist,
-} from '@/game/engine';
+} from '@/game/engine/engine.ts';
 import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types';
 
 const store = useGameStore();

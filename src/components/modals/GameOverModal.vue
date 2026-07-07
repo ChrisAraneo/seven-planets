@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game';
 import ModalShell from './ModalShell.vue';
-import { buildingCount, totalTroops } from '@/game/engine';
+import { buildingCount, totalTroops } from '@/game/engine/engine.ts';
 
 const store = useGameStore();
 const over = computed(() => store.state.over);
