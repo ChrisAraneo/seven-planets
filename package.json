@@ -2,7 +2,7 @@
   "name": "seven-planets",
   "author": "Krzysztof Pająk (Chris Araneo) <chris.araneo@gmail.com>",
   "license": "MIT",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
