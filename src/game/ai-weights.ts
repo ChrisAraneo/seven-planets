@@ -10,48 +10,48 @@
    Recalibrate after changing game constants with:  npm run tune
    (the tuner rewrites this file with the best weights it finds).
 
-   LAST TUNED: 2026-07-07T16:38:00.297Z by npm run tune
+   LAST TUNED: 2026-07-07T17:28:05.796Z by npm run tune
    ===================================================================== */
 
 export interface AiWeights {
   /** Strategy look-ahead window in turns (the "next 5-10 turns" plan). */
-  planHorizon: number
+  planHorizon: number;
   /** Retention forecast window — will a conquest be retaken within this many turns? */
-  holdHorizon: number
+  holdHorizon: number;
   /** A build must repay its cost within this many turns to be "worth it". */
-  buildRoiHorizon: number
+  buildRoiHorizon: number;
   /** Never launch a conquest below this win probability (relaxes late game). */
-  minConquerProb: number
+  minConquerProb: number;
   /** ...nor when the retention forecast falls below this. */
-  minHoldProb: number
+  minHoldProb: number;
   /** Defenders left at home when a strike launches. */
-  reserveTroops: number
+  reserveTroops: number;
   /** How aggressively to hate-draft cards rivals want (0 = never deny). */
-  denialWeight: number
+  denialWeight: number;
   /** Multiplier protecting the current plan from turn-to-turn thrashing. */
-  planStickiness: number
+  planStickiness: number;
   /** Per-turn loosening of the conquest thresholds (endgame decisiveness). */
-  aggressionRamp: number
+  aggressionRamp: number;
   /** Strategic value of one troop when pricing expected battle losses. */
-  troopValue: number
+  troopValue: number;
   /** Minimum planet value that justifies a 20-star Coup d'Etat. */
-  coupValueFloor: number
+  coupValueFloor: number;
   /** P(losing a planet this coming turn) that triggers a held Peace Treaty. */
-  peaceThreatFloor: number
+  peaceThreatFloor: number;
   /** Accept incoming trades when valueIn >= valueOut * this. */
-  tradeAcceptRatio: number
+  tradeAcceptRatio: number;
   /** How likely an aggressive rival is to actually launch a viable attack. */
-  willAggressive: number
+  willAggressive: number;
   /** ...a neutral/unknown rival (balanced, random, the human player). */
-  willNeutral: number
+  willNeutral: number;
   /** ...a defensive rival (fortifier, economist, trader, ...). */
-  willDefensive: number
+  willDefensive: number;
 }
 
 export const AI_WEIGHTS: AiWeights = {
   planHorizon: 8,
   holdHorizon: 6,
-  buildRoiHorizon: 8,
+  buildRoiHorizon: 6,
   minConquerProb: 0.71,
   minHoldProb: 0.35,
   reserveTroops: 2,
@@ -65,4 +65,4 @@ export const AI_WEIGHTS: AiWeights = {
   willAggressive: 0.95,
   willNeutral: 0.5,
   willDefensive: 0.25,
-}
+};

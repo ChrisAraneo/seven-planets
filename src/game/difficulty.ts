@@ -10,31 +10,31 @@
    for future buffs (currently identical to Normal).
    ===================================================================== */
 
-export type Difficulty = 'casual' | 'easy' | 'normal' | 'hard' | 'impossible'
+export type Difficulty = 'casual' | 'easy' | 'normal' | 'hard' | 'impossible';
 
 /** Per-difficulty handicaps applied to the mastermind AI (see ai.setAiDifficulty). */
 export interface AiHandicap {
   /** Chance [0..1] a mastermind drafts a RANDOM pickable card instead of its best. */
-  randomPickChance: number
+  randomPickChance: number;
   /** Multiplies the AI's conquer-probability threshold (lower ⇒ attacks more recklessly). */
-  minConquerProbMult: number
+  minConquerProbMult: number;
   /** Added to the AI's strategy look-ahead window in turns (negative ⇒ shorter sight). */
-  planHorizonDelta: number
+  planHorizonDelta: number;
   /** Multiplies the AI's hate-draft weight (lower ⇒ rarely denies rivals the cards they need). */
-  denialWeightMult: number
+  denialWeightMult: number;
 }
 
 export interface DifficultyDef {
-  id: Difficulty
-  name: string
-  icon: string
-  blurb: string
-  ai: AiHandicap
+  id: Difficulty;
+  name: string;
+  icon: string;
+  blurb: string;
+  ai: AiHandicap;
   /**
    * How many AI are flagged KAMIKAZE at game start (Hard = 2). A kamikaze hunts
    * only the human; every other AI ignores it entirely (see engine.assignKamikazes).
    */
-  kamikazeCount: number
+  kamikazeCount: number;
 }
 
 // Normal = the untouched baseline the AI was tuned at.
@@ -43,7 +43,7 @@ const NO_HANDICAP: AiHandicap = {
   minConquerProbMult: 1,
   planHorizonDelta: 0,
   denialWeightMult: 1,
-}
+};
 
 export const DIFFICULTIES: DifficultyDef[] = [
   {
@@ -56,7 +56,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
       randomPickChance: 0.8, // 80% of AI draft picks are random
       minConquerProbMult: 1.25, // AI attacks only at very high odds
       planHorizonDelta: -4, // AI barely plans ahead
-      denialWeightMult: 0.05, // effectively never hate-drafts the cards you need
+      denialWeightMult: 0.05, // Effectively never hate-drafts the cards you need
     },
     kamikazeCount: 0,
   },
@@ -70,7 +70,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
       randomPickChance: 0.6, // 60% of AI draft picks are random
       minConquerProbMult: 0.82, // AI attacks at lower odds
       planHorizonDelta: -3, // AI plans three turns less far ahead
-      denialWeightMult: 0.35, // rarely hate-drafts the cards rivals need
+      denialWeightMult: 0.35, // Rarely hate-drafts the cards rivals need
     },
     kamikazeCount: 0,
   },
@@ -84,7 +84,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
       randomPickChance: 0.2, // 20% of AI draft picks are random
       minConquerProbMult: 0.875, // AI attacks at lower odds
       planHorizonDelta: -2, // AI plans one turn less far ahead
-      denialWeightMult: 0.5, // rarely hate-drafts the cards rivals need
+      denialWeightMult: 0.5, // Rarely hate-drafts the cards rivals need
     },
     kamikazeCount: 0,
   },
@@ -94,7 +94,7 @@ export const DIFFICULTIES: DifficultyDef[] = [
     icon: '🔥',
     blurb: 'Good luck commander!',
     ai: NO_HANDICAP,
-    kamikazeCount: 0, // one AI hunt only the human; every other AI ignores them
+    kamikazeCount: 0, // One AI hunt only the human; every other AI ignores them
   },
   {
     id: 'impossible',
@@ -102,15 +102,16 @@ export const DIFFICULTIES: DifficultyDef[] = [
     icon: '🖤',
     blurb: 'There is no hope.',
     ai: NO_HANDICAP,
-    kamikazeCount: 1, // three AI hunt only the human; every other AI ignores them
+    kamikazeCount: 1, // Three AI hunt only the human; every other AI ignores them
   },
-]
+];
 
-export const DEFAULT_DIFFICULTY: Difficulty = 'normal'
+export const DEFAULT_DIFFICULTY: Difficulty = 'normal';
 
 /** Look up a difficulty by id (falls back to the default). */
 export function getDifficulty(id: Difficulty): DifficultyDef {
   return (
-    DIFFICULTIES.find((d) => d.id === id) ?? DIFFICULTIES.find((d) => d.id === DEFAULT_DIFFICULTY)!
-  )
+    DIFFICULTIES.find((d) => d.id === id) ??
+    DIFFICULTIES.find((d) => d.id === DEFAULT_DIFFICULTY)!
+  );
 }

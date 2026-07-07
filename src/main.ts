@@ -1,11 +1,12 @@
-import './assets/game.css'
+import './assets/game.css';
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
+import { createPinia } from 'pinia';
+import { createApp } from 'vue';
 
-const app = createApp(App)
+import App from './App.vue';
 
-app.use(createPinia())
+const app = createApp(App);
 
-app.mount('#app')
+app.use(createPinia());
+
+app.mount('#app');

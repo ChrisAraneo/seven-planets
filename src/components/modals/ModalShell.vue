@@ -1,6 +1,6 @@
 <script setup lang="ts">
-defineProps<{ closeOnOverlay?: boolean }>()
-const emit = defineEmits<{ close: [] }>()
+defineProps<{ closeOnOverlay?: boolean }>();
+const emit = defineEmits<{ close: [] }>();
 </script>
 
 <template>

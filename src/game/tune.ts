@@ -16,29 +16,29 @@
               npm run tune 500 3        (custom games-per-eval, passes)
    ===================================================================== */
 
-import { mkdirSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-import { getAiWeights, setAiWeights } from './ai'
-import type { AiWeights } from './ai-weights'
-import { PRIORITIES } from './constants'
-import { setSimMode, simulateGameWithPersonalities } from './engine'
+import { getAiWeights, setAiWeights } from './ai';
+import type { AiWeights } from './ai-weights';
+import { PRIORITIES } from './constants';
+import { setSimMode, simulateGameWithPersonalities } from './engine';
 
-setSimMode(true) // no animation delays — pure logic speed
+setSimMode(true); // no animation delays — pure logic speed
 
-const SEATS = 7
-const DEFAULT_GAMES = 240
-const DEFAULT_PASSES = 2
+const SEATS = 7;
+const DEFAULT_GAMES = 240;
+const DEFAULT_PASSES = 2;
 
 // Opponents are drawn from every personality EXCEPT the mastermind itself.
-const OTHERS = Object.keys(PRIORITIES).filter((s) => s !== 'mastermind')
+const OTHERS = Object.keys(PRIORITIES).filter((s) => s !== 'mastermind');
 
 interface ParamSpec {
-  key: keyof AiWeights
-  step: number // absolute step size tried in both directions
-  min: number
-  max: number
-  int?: boolean // keep the value an integer (turn counts, troop counts)
+  key: keyof AiWeights;
+  step: number; // absolute step size tried in both directions
+  min: number;
+  max: number;
+  int?: boolean; // keep the value an integer (turn counts, troop counts)
 }
 
 // The search space. holdHorizon stays >= 5 by design: the retention forecast
@@ -60,55 +60,69 @@ const SPECS: ParamSpec[] = [
   { key: 'willAggressive', step: 0.1, min: 0.4, max: 1 },
   { key: 'willNeutral', step: 0.1, min: 0.2, max: 0.9 },
   { key: 'willDefensive', step: 0.1, min: 0.05, max: 0.7 },
-]
+];
 
 function fisherYates<T>(arr: T[]): T[] {
-  const a = arr.slice()
+  const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return a
+  return a;
 }
 
 function round3(n: number): number {
-  return Math.round(n * 1000) / 1000
+  return Math.round(n * 1000) / 1000;
 }
 
 /** Win rate of one mastermind seated among 6 random rival personalities. */
 async function winRate(weights: AiWeights, games: number): Promise<number> {
-  setAiWeights(weights)
-  let wins = 0
+  setAiWeights(weights);
+  let wins = 0;
   for (let g = 0; g < games; g++) {
-    const lineup = fisherYates(['mastermind', ...fisherYates(OTHERS).slice(0, SEATS - 1)])
-    const result = await simulateGameWithPersonalities(lineup)
-    if (result.winner?.personality === 'mastermind') wins++
+    const lineup = fisherYates([
+      'mastermind',
+      ...fisherYates(OTHERS).slice(0, SEATS - 1),
+    ]);
+    const result = await simulateGameWithPersonalities(lineup);
+    if (result.winner?.personality === 'mastermind') wins++;
   }
-  return wins / games
+  return wins / games;
 }
 
 /** Regenerate src/game/ai-weights.ts with the tuned values. */
 function weightsFileContent(w: AiWeights): string {
   const doc: Record<keyof AiWeights, string> = {
-    planHorizon: 'Strategy look-ahead window in turns (the "next 5-10 turns" plan).',
+    planHorizon:
+      'Strategy look-ahead window in turns (the "next 5-10 turns" plan).',
     holdHorizon:
       'Retention forecast window — will a conquest be retaken within this many turns?',
-    buildRoiHorizon: 'A build must repay its cost within this many turns to be "worth it".',
-    minConquerProb: 'Never launch a conquest below this win probability (relaxes late game).',
+    buildRoiHorizon:
+      'A build must repay its cost within this many turns to be "worth it".',
+    minConquerProb:
+      'Never launch a conquest below this win probability (relaxes late game).',
     minHoldProb: '...nor when the retention forecast falls below this.',
     reserveTroops: 'Defenders left at home when a strike launches.',
-    denialWeight: 'How aggressively to hate-draft cards rivals want (0 = never deny).',
-    planStickiness: 'Multiplier protecting the current plan from turn-to-turn thrashing.',
-    aggressionRamp: 'Per-turn loosening of the conquest thresholds (endgame decisiveness).',
-    troopValue: 'Strategic value of one troop when pricing expected battle losses.',
-    coupValueFloor: "Minimum planet value that justifies a 20-star Coup d'Etat.",
-    peaceThreatFloor: 'P(losing a planet this coming turn) that triggers a held Peace Treaty.',
+    denialWeight:
+      'How aggressively to hate-draft cards rivals want (0 = never deny).',
+    planStickiness:
+      'Multiplier protecting the current plan from turn-to-turn thrashing.',
+    aggressionRamp:
+      'Per-turn loosening of the conquest thresholds (endgame decisiveness).',
+    troopValue:
+      'Strategic value of one troop when pricing expected battle losses.',
+    coupValueFloor:
+      "Minimum planet value that justifies a 20-star Coup d'Etat.",
+    peaceThreatFloor:
+      'P(losing a planet this coming turn) that triggers a held Peace Treaty.',
     tradeAcceptRatio: 'Accept incoming trades when valueIn >= valueOut * this.',
-    willAggressive: 'How likely an aggressive rival is to actually launch a viable attack.',
-    willNeutral: '...a neutral/unknown rival (balanced, random, the human player).',
+    willAggressive:
+      'How likely an aggressive rival is to actually launch a viable attack.',
+    willNeutral:
+      '...a neutral/unknown rival (balanced, random, the human player).',
     willDefensive: '...a defensive rival (fortifier, economist, trader, ...).',
-  }
-  const lines = SPECS.map((spec) => `  ${spec.key}: ${w[spec.key]},`)
+  };
+  const lines = SPECS.map((spec) => `  ${spec.key}: ${w[spec.key]},`);
   return `/* =====================================================================
    SEVEN PLANETS — MASTERMIND AI weights.
 
@@ -131,61 +145,72 @@ ${SPECS.map((spec) => `  /** ${doc[spec.key]} */\n  ${spec.key}: number`).join('
 export const AI_WEIGHTS: AiWeights = {
 ${lines.join('\n')}
 }
-`
+`;
 }
 
 async function main(): Promise<void> {
-  const games = Math.max(20, Number(process.argv[2]) || DEFAULT_GAMES)
-  const passes = Math.max(1, Number(process.argv[3]) || DEFAULT_PASSES)
+  const games = Math.max(20, Number(process.argv[2]) || DEFAULT_GAMES);
+  const passes = Math.max(1, Number(process.argv[3]) || DEFAULT_PASSES);
 
-  let best: AiWeights = getAiWeights()
-  const t0 = Date.now()
-  const history: string[] = []
+  let best: AiWeights = getAiWeights();
+  const t0 = Date.now();
+  const history: string[] = [];
 
-  console.log(`MASTERMIND tuner — ${games} games per candidate, ${passes} pass(es)`)
-  console.log(`Baseline (no-edge) win rate for 1 of ${SEATS} seats: ${(100 / SEATS).toFixed(1)}%\n`)
+  console.log(
+    `MASTERMIND tuner — ${games} games per candidate, ${passes} pass(es)`,
+  );
+  console.log(
+    `Baseline (no-edge) win rate for 1 of ${SEATS} seats: ${(100 / SEATS).toFixed(1)}%\n`,
+  );
 
-  let bestRate = await winRate(best, games)
-  console.log(`baseline weights ................ ${(bestRate * 100).toFixed(1)}%`)
-  history.push(`| — | baseline | — | ${(bestRate * 100).toFixed(1)}% | kept |`)
+  let bestRate = await winRate(best, games);
+  console.log(
+    `baseline weights ................ ${(bestRate * 100).toFixed(1)}%`,
+  );
+  history.push(`| — | baseline | — | ${(bestRate * 100).toFixed(1)}% | kept |`);
 
   for (let pass = 1; pass <= passes; pass++) {
-    console.log(`\n— pass ${pass}/${passes} —`)
+    console.log(`\n— pass ${pass}/${passes} —`);
     for (const spec of SPECS) {
       for (const dir of [1, -1]) {
-        const raw = best[spec.key] + dir * spec.step
-        const clamped = Math.min(spec.max, Math.max(spec.min, raw))
-        const value = spec.int ? Math.round(clamped) : round3(clamped)
-        if (value === best[spec.key]) continue
-        const rate = await winRate({ ...best, [spec.key]: value }, games)
+        const raw = best[spec.key] + dir * spec.step;
+        const clamped = Math.min(spec.max, Math.max(spec.min, raw));
+        const value = spec.int ? Math.round(clamped) : round3(clamped);
+        if (value === best[spec.key]) continue;
+        const rate = await winRate({ ...best, [spec.key]: value }, games);
         // Only adopt improvements that clear half a standard error of noise.
-        const se = Math.sqrt((bestRate * (1 - bestRate)) / games)
-        const keep = rate > bestRate + 0.5 * se
+        const se = Math.sqrt((bestRate * (1 - bestRate)) / games);
+        const keep = rate > bestRate + 0.5 * se;
         console.log(
           `${spec.key}: ${best[spec.key]} → ${value} ..... ${(rate * 100).toFixed(1)}% ${keep ? '✓ kept' : '✗'}`,
-        )
+        );
         history.push(
           `| ${pass} | ${spec.key} | ${best[spec.key]} → ${value} | ${(rate * 100).toFixed(1)}% | ${keep ? 'kept' : 'rejected'} |`,
-        )
+        );
         if (keep) {
-          best = { ...best, [spec.key]: value }
-          bestRate = rate
+          best = { ...best, [spec.key]: value };
+          bestRate = rate;
         }
       }
     }
   }
 
-  const elapsed = ((Date.now() - t0) / 1000).toFixed(0)
-  console.log(`\nDone in ${elapsed}s — final win rate ${(bestRate * 100).toFixed(1)}%`)
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(0);
+  console.log(
+    `\nDone in ${elapsed}s — final win rate ${(bestRate * 100).toFixed(1)}%`,
+  );
 
-  const weightsPath = resolve(process.cwd(), 'src/game/ai-weights.ts')
-  writeFileSync(weightsPath, weightsFileContent(best), 'utf8')
-  console.log(`Weights written to ${weightsPath}`)
+  const weightsPath = resolve(process.cwd(), 'src/game/ai-weights.ts');
+  writeFileSync(weightsPath, weightsFileContent(best), 'utf8');
+  console.log(`Weights written to ${weightsPath}`);
 
-  const stamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+$/, '')
-  const reportsDir = resolve(process.cwd(), 'reports')
-  mkdirSync(reportsDir, { recursive: true })
-  const reportPath = resolve(reportsDir, `tuning-${stamp}.md`)
+  const stamp = new Date()
+    .toISOString()
+    .replace(/:/g, '-')
+    .replace(/\..+$/, '');
+  const reportsDir = resolve(process.cwd(), 'reports');
+  mkdirSync(reportsDir, { recursive: true });
+  const reportPath = resolve(reportsDir, `tuning-${stamp}.md`);
   const report = [
     '# Seven Planets — MASTERMIND tuning report',
     '',
@@ -208,12 +233,12 @@ async function main(): Promise<void> {
     '| ---: | :--- | :--- | ---: | :--- |',
     ...history,
     '',
-  ].join('\n')
-  writeFileSync(reportPath, report + '\n', 'utf8')
-  console.log(`Report written to ${reportPath}`)
+  ].join('\n');
+  writeFileSync(reportPath, report + '\n', 'utf8');
+  console.log(`Report written to ${reportPath}`);
 }
 
 main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+  console.error(err);
+  process.exit(1);
+});

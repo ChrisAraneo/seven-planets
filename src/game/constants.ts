@@ -4,9 +4,11 @@
    ===================================================================== */
 
 import type {
+  ActionType,
   BuildingDef,
   BuildingType,
   CardDef,
+  CardType,
   Cost,
   Hand,
   InfluenceCardDef,
@@ -14,32 +16,87 @@ import type {
   PlanetStyle,
   PoolType,
   ResourceType,
-  ActionType,
-  CardType,
-} from './types'
+} from './types';
 
-export const RESOURCE_TYPES: ResourceType[] = ['ORE', 'CRYSTAL', 'ENERGY', 'SPICE', 'RELIC']
-export const ACTION_TYPES: ActionType[] = ['RECRUIT', 'ATTACK', 'MOVE', 'TRADE']
-export const CARD_TYPES: CardType[] = [...RESOURCE_TYPES, ...ACTION_TYPES]
+export const RESOURCE_TYPES: ResourceType[] = [
+  'ORE',
+  'CRYSTAL',
+  'ENERGY',
+  'SPICE',
+  'RELIC',
+];
+export const ACTION_TYPES: ActionType[] = [
+  'RECRUIT',
+  'ATTACK',
+  'MOVE',
+  'TRADE',
+];
+export const CARD_TYPES: CardType[] = [...RESOURCE_TYPES, ...ACTION_TYPES];
 
-export const BUILDINGS_FROM_TURN = 6 // turns 1-5 deal only resource cards; buildings join at 6
-export const ACTION_CARDS_FROM_TURN = 10 // ⚔️ Attack, 🪖 Recruit & 🔁 Trade cards are dealt from turn 10
-export const MOVE_CARDS_FROM_TURN = 20 // 🛸 Move cards join the action deck at turn 20
-export const ADVANCED_FROM_TURN = 10 // the Research Lab card is dealt from turn 10
-export const INFLUENCE_CARDS_FROM_TURN = 30
+export const BUILDINGS_FROM_TURN = 6; // Turns 1-5 deal only resource cards; buildings join at 6
+export const ACTION_CARDS_FROM_TURN = 10; // ⚔️ Attack, 🪖 Recruit & 🔁 Trade cards are dealt from turn 10
+export const MOVE_CARDS_FROM_TURN = 20; // 🛸 Move cards join the action deck at turn 20
+export const ADVANCED_FROM_TURN = 10; // The Research Lab card is dealt from turn 10
+export const INFLUENCE_CARDS_FROM_TURN = 30;
 
 export const CARDS: Record<string, CardDef> = {
-  ORE: { name: 'Ore', icon: '⛏️', color: '#c98f5a', weight: 30, value: 1.0 },
-  CRYSTAL: { name: 'Crystal', icon: '💎', color: '#7fd9ff', weight: 24, value: 1.3 },
-  ENERGY: { name: 'Energy', icon: '⚡', color: '#ffe066', weight: 24, value: 1.3 },
-  SPICE: { name: 'Spice', icon: '✨', color: '#ff9e3d', weight: 14, value: 2.2 },
-  RELIC: { name: 'Relic', icon: '🔮', color: '#c77dff', weight: 5, value: 3.0 },
+  ORE: { name: 'Ore', icon: '⛏️', color: '#c98f5a', weight: 30, value: 1 },
+  CRYSTAL: {
+    name: 'Crystal',
+    icon: '💎',
+    color: '#7fd9ff',
+    weight: 24,
+    value: 1.3,
+  },
+  ENERGY: {
+    name: 'Energy',
+    icon: '⚡',
+    color: '#ffe066',
+    weight: 24,
+    value: 1.3,
+  },
+  SPICE: {
+    name: 'Spice',
+    icon: '✨',
+    color: '#ff9e3d',
+    weight: 14,
+    value: 2.2,
+  },
+  RELIC: { name: 'Relic', icon: '🔮', color: '#c77dff', weight: 5, value: 3 },
   // Action cards — performing an action spends the matching card.
-  RECRUIT: { name: 'Recruit', icon: '🪖', color: '#8fb4e8', weight: 30, value: 1.2, action: true },
-  ATTACK: { name: 'Attack', icon: '⚔️', color: '#ff5470', weight: 10, value: 1.4, action: true },
-  MOVE: { name: 'Move', icon: '🛸', color: '#6da2ff', weight: 6, value: 0.9, action: true },
-  TRADE: { name: 'Trade', icon: '🔁', color: '#ffd23d', weight: 18, value: 1.0, action: true },
-}
+  RECRUIT: {
+    name: 'Recruit',
+    icon: '🪖',
+    color: '#8fb4e8',
+    weight: 30,
+    value: 1.2,
+    action: true,
+  },
+  ATTACK: {
+    name: 'Attack',
+    icon: '⚔️',
+    color: '#ff5470',
+    weight: 10,
+    value: 1.4,
+    action: true,
+  },
+  MOVE: {
+    name: 'Move',
+    icon: '🛸',
+    color: '#6da2ff',
+    weight: 6,
+    value: 0.9,
+    action: true,
+  },
+  TRADE: {
+    name: 'Trade',
+    icon: '🔁',
+    color: '#ffd23d',
+    weight: 18,
+    value: 1,
+    action: true,
+  },
+};
 
 // Every building has up to 3 LEVELS — picking its card again upgrades it.
 export const BUILDINGS: Record<BuildingType, BuildingDef> = {
@@ -146,7 +203,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     cardColor: '#3df0ff',
     short: 'tech↑ +pick/lvl',
   },
-}
+};
 
 export const BUILD_ORDER: BuildingType[] = [
   'MINE',
@@ -160,7 +217,7 @@ export const BUILD_ORDER: BuildingType[] = [
   'EMBASSY',
   'LAB',
   'SINGULARITY',
-]
+];
 
 // Max level per building (default 3). Income buildings, Spaceport and Embassy cap at level 2.
 const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
@@ -171,23 +228,27 @@ const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   SPACEPORT: 2,
   EMBASSY: 2,
   SINGULARITY: 4, // L4 is the apex, unlocked only by TECHNOLOGY 4 (a fully-built planet)
-}
+};
 export function maxLevel(id: BuildingType): number {
-  return BUILDING_MAX_LEVEL[id] || 3
+  return BUILDING_MAX_LEVEL[id] || 3;
 }
 
 // Level N of a building costs N× its base cost.
 export function buildingCost(id: BuildingType, level: number): Cost {
-  const base = BUILDINGS[id].cost
-  if (level <= 1) return base
-  const c: Cost = {}
-  for (const t in base) c[t] = base[t] * level
-  return c
+  const base = BUILDINGS[id].cost;
+  if (level <= 1) {
+    return base;
+  }
+  const c: Cost = {};
+  for (const t in base) {
+    c[t] = base[t] * level;
+  }
+  return c;
 }
 
 // Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
 export function incomeAmount(id: BuildingType, lvl: number): number {
-  return id === 'MINE' && lvl >= 2 ? 3 : lvl
+  return id === 'MINE' && lvl >= 2 ? 3 : lvl;
 }
 
 // Building cards live in the pool alongside resources & actions.
@@ -199,7 +260,7 @@ for (const b of BUILD_ORDER) {
     weight: BUILDINGS[b].cardWeight,
     value: 0,
     building: true,
-  }
+  };
 }
 
 // INFLUENCE CARDS — dealt into the pool from turn 30.
@@ -246,8 +307,8 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
     cost: 4,
     desc: 'All your planets are under truce for 1 turn',
   },
-}
-export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[]
+};
+export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[];
 for (const k of INFLUENCE_TYPES) {
   CARDS[k] = {
     name: INFLUENCE_CARDS[k].name,
@@ -256,40 +317,44 @@ for (const k of INFLUENCE_TYPES) {
     weight: 1,
     value: 0,
     influenceCard: true,
-  }
+  };
 }
-export const POOL_TYPES: PoolType[] = [...CARD_TYPES, ...BUILD_ORDER, ...INFLUENCE_TYPES]
+export const POOL_TYPES: PoolType[] = [
+  ...CARD_TYPES,
+  ...BUILD_ORDER,
+  ...INFLUENCE_TYPES,
+];
 
-export const BASE_ROCKET_CAP = 3 // each Silo LEVEL doubles it: 3 → 6 → 12 → 24
-export const SILO_HIT_BONUS = 2 // ...and adds +2 strike per level
-export const SHIELD_DEFENSE = 4 // per shield level (L1:+4, L2:+8, L3:+12)
-export const HOME_FIELD = 1 // flat defense bonus for defenders
-export const SINGULARITY_DEF_BONUS = 8 // a level-4 Singularity warps local space: +8 planet defense
+export const BASE_ROCKET_CAP = 3; // Each Silo LEVEL doubles it: 3 → 6 → 12 → 24
+export const SILO_HIT_BONUS = 2; // ...and adds +2 strike per level
+export const SHIELD_DEFENSE = 4; // Per shield level (L1:+4, L2:+8, L3:+12)
+export const HOME_FIELD = 1; // Flat defense bonus for defenders
+export const SINGULARITY_DEF_BONUS = 8; // A level-4 Singularity warps local space: +8 planet defense
 
 // COMBAT MATH — the single source of truth for battle resolution, shared by
-// the engine (doAttack) and every AI that predicts battle outcomes (./ai).
+// The engine (doAttack) and every AI that predicts battle outcomes (./ai).
 // Change these numbers and both the game AND the AI's risk calculations
-// follow automatically. Casualty fractions are exact integer num/den pairs.
+// Follow automatically. Casualty fractions are exact integer num/den pairs.
 export const COMBAT = {
-  attackPerTroop: 2, // strike power contributed by each attacking troop
-  defensePerTroop: 2, // defense contributed by each defending troop
-  attackRoll: 4, // attacker adds randInt(0, attackRoll) to the strike (more swing)
-  defenseRoll: 4, // defender adds randInt(0, defenseRoll) to the defense (more swing)
-  winDefLoss: { num: 1, den: 2 }, // win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
-  winAttLoss: { num: 1, den: 3 }, // win: attackers lose floor(n/3)
-  loseAttLoss: { num: 3, den: 4 }, // loss: attackers lose ceil(3n/4)
-  loseDefLoss: { num: 1, den: 4 }, // loss: defenders lose floor(n/4)
-} as const
-export const CONQUEST_TRUCE = 3 // a freshly conquered planet cannot be attacked for this many turns
-export const PEACE_TRUCE = 1 // Peace Treaty card: planets are under truce for this many turns
-export const SKIP_TURNS = 1 // ⏭️ skip influence cards (Sabotage/Uprising/…) paralyse a rival for this many turns
+  attackPerTroop: 2, // Strike power contributed by each attacking troop
+  defensePerTroop: 2, // Defense contributed by each defending troop
+  attackRoll: 4, // Attacker adds randInt(0, attackRoll) to the strike (more swing)
+  defenseRoll: 4, // Defender adds randInt(0, defenseRoll) to the defense (more swing)
+  winDefLoss: { num: 1, den: 2 }, // Win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
+  winAttLoss: { num: 1, den: 3 }, // Win: attackers lose floor(n/3)
+  loseAttLoss: { num: 3, den: 4 }, // Loss: attackers lose ceil(3n/4)
+  loseDefLoss: { num: 1, den: 4 }, // Loss: defenders lose floor(n/4)
+} as const;
+export const CONQUEST_TRUCE = 3; // A freshly conquered planet cannot be attacked for this many turns
+export const PEACE_TRUCE = 1; // Peace Treaty card: planets are under truce for this many turns
+export const SKIP_TURNS = 1; // ⏭️ skip influence cards (Sabotage/Uprising/…) paralyse a rival for this many turns
 
 // PACIFIST STATUS — a player who launches no attack for this many turns turns
-// permanently pacifist: they can never attack again, but each of their planets
-// gains a flat defense bonus and produces extra influence every turn.
-export const PACIFIST_TURNS = 50
-export const PACIFIST_DEF_BONUS = 4 // added to every pacifist planet's defense
-export const PACIFIST_INFLUENCE = 2 // extra ⭐ per pacifist planet every turn
+// Permanently pacifist: they can never attack again, but each of their planets
+// Gains a flat defense bonus and produces extra influence every turn.
+export const PACIFIST_TURNS = 50;
+export const PACIFIST_DEF_BONUS = 4; // Added to every pacifist planet's defense
+export const PACIFIST_INFLUENCE = 2; // Extra ⭐ per pacifist planet every turn
 
 export const PLANET_STYLES: PlanetStyle[] = [
   { light: '#4fd8c0', dark: '#0e4f63', feature: 'continents' }, //  0 Terra Prime (human)
@@ -308,11 +373,11 @@ export const PLANET_STYLES: PlanetStyle[] = [
   { light: '#30c0d8', dark: '#0a3048', feature: 'ocean' }, // 13 endless ocean world
   { light: '#ffb0d8', dark: '#503060', feature: 'nebula' }, // 14 nebula heart world
   { light: '#b8ff70', dark: '#204010', feature: 'radiation' }, // 15 irradiated world
-]
+];
 
 // Full roster of possible AI opponents. Six are drawn at random each game.
 // Independent pools: each game randomizes a commander's name, homeworld and
-// color separately (see buildState) — none is tied to any fixed character.
+// Color separately (see buildState) — none is tied to any fixed character.
 export const AI_NAMES = [
   'Baron Harkan',
   'Feyd Rakeen',
@@ -345,7 +410,7 @@ export const AI_NAMES = [
   'Oracle Sygne',
   'Regent Calyx',
   'Marshal Dren',
-]
+];
 
 export const AI_PLANET_NAMES = [
   'Giedi Secundus',
@@ -379,7 +444,7 @@ export const AI_PLANET_NAMES = [
   'Zephyra',
   'Obsidia',
   'Halcyon',
-]
+];
 
 export const AI_COLORS = [
   '#ff9e3d',
@@ -413,7 +478,7 @@ export const AI_COLORS = [
   '#4fb0c6',
   '#e07a5f',
   '#f25f5c',
-]
+];
 
 export const PERSONALITY_TAG: Record<string, string> = {
   aggressor: 'WARLORD',
@@ -432,7 +497,7 @@ export const PERSONALITY_TAG: Record<string, string> = {
   blitzer: 'BLITZ',
   pacifist: 'PACIFIST',
   mastermind: 'MASTERMIND',
-}
+};
 
 // Build/upgrade priorities per personality.
 export const PRIORITIES: Record<string, BuildingType[]> = {
@@ -607,9 +672,9 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
     'EMBASSY',
   ],
   // Pacifist: front-load income + defense (like an economist/hoarder) — Shield
-  // and Barracks come early so it can recruit DEFENDERS (recruiting isn't
-  // attacking), and the Embassy fuels the influence it banks for Coups. It never
-  // builds a Silo: its whole plan is to survive and win by Coup (aiPickInfluencePlay).
+  // And Barracks come early so it can recruit DEFENDERS (recruiting isn't
+  // Attacking), and the Embassy fuels the influence it banks for Coups. It never
+  // Builds a Silo: its whole plan is to survive and win by Coup (aiPickInfluencePlay).
   pacifist: [
     'MINE',
     'EXTRACTOR',
@@ -624,7 +689,7 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
     'SILO',
   ],
   // Mastermind: this static list is only a FALLBACK — the advanced AI (./ai)
-  // plans its builds dynamically by expected return-on-investment every turn.
+  // Plans its builds dynamically by expected return-on-investment every turn.
   mastermind: [
     'MINE',
     'EXTRACTOR',
@@ -638,10 +703,10 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
     'EMBASSY',
     'SPACEPORT',
   ],
-}
+};
 
 // The full pool of AI personalities (every key in PRIORITIES).
-export const AI_PERSONALITIES = Object.keys(PRIORITIES)
+export const AI_PERSONALITIES = Object.keys(PRIORITIES);
 
 /* =====================================================================
    AI LINEUP — the personalities of the 6 AI opponents in the human game.
@@ -659,8 +724,8 @@ export const AI_PERSONALITIES = Object.keys(PRIORITIES)
      all random:                  Array(6).fill('RANDOM')
      a hand-picked rogues' gallery: ['militarist','blitzer','hoarder','trader','fortifier','rusher']
    ===================================================================== */
-export const RANDOM_SEAT = 'RANDOM' as const
-export const AI_LINEUP: string[] = Array(6).fill('mastermind')
+export const RANDOM_SEAT = 'RANDOM' as const;
+export const AI_LINEUP: string[] = Array(6).fill('mastermind');
 
 export const TAUNTS: Record<string, string[]> = {
   aggressor: [
@@ -668,69 +733,97 @@ export const TAUNTS: Record<string, string[]> = {
     '"Weakness invites the blade."',
     '"The spice throne will be mine!"',
   ],
-  builder: ['"Progress demands sacrifice."', '"You stand in the way of science."'],
-  hoarder: ['"Nothing personal. Just business."', '"Your assets are... undervalued."'],
+  builder: [
+    '"Progress demands sacrifice."',
+    '"You stand in the way of science."',
+  ],
+  hoarder: [
+    '"Nothing personal. Just business."',
+    '"Your assets are... undervalued."',
+  ],
   balanced: ['"A necessary maneuver."', '"The calculus favors me."'],
   militarist: [
     '"Resistance is futile."',
     '"Overwhelming force is my language."',
     '"Conquest is efficiency."',
   ],
-  fortifier: ['"You cannot breach these walls."', '"My shields will outlast your patience."'],
-  rusher: ['"Speed is the only constant."', '"The stars fall before my ambition."'],
-  expansionist: ['"Every planet I take multiplies my power."', '"Your borders are an invitation."'],
+  fortifier: [
+    '"You cannot breach these walls."',
+    '"My shields will outlast your patience."',
+  ],
+  rusher: [
+    '"Speed is the only constant."',
+    '"The stars fall before my ambition."',
+  ],
+  expansionist: [
+    '"Every planet I take multiplies my power."',
+    '"Your borders are an invitation."',
+  ],
   trader: ['"Everything has its price."', '"I will simply buy your defeat."'],
   pacifist: ['"War is waste."', '"I will outlast you all."'],
-  opportunist: ['"The strong fall first — count on it."', '"I strike when others look away."'],
-  blitzer: ['"Strike fast. Leave nothing standing."', '"Hesitation is defeat."'],
-  economist: ['"My treasury will outlast your armies."', '"Wealth is the only true power."'],
+  opportunist: [
+    '"The strong fall first — count on it."',
+    '"I strike when others look away."',
+  ],
+  blitzer: [
+    '"Strike fast. Leave nothing standing."',
+    '"Hesitation is defeat."',
+  ],
+  economist: [
+    '"My treasury will outlast your armies."',
+    '"Wealth is the only true power."',
+  ],
   mastermind: [
     '"Every outcome was computed before you moved."',
     '"You lost this war five turns ago."',
     '"Probability favors the prepared."',
   ],
-}
+};
 
 /* ---------------- pure numeric / formatting helpers ---------------- */
 
 export function randInt(a: number, b: number): number {
-  return a + Math.floor(Math.random() * (b - a + 1))
+  return a + Math.floor(Math.random() * (b - a + 1));
 }
 export function choice<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 // Fisher-Yates shuffle — returns a NEW array, does not mutate input.
 export function shuffleArr<T>(arr: T[]): T[] {
-  const a = [...arr]
+  const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return a
+  return a;
 }
 
 export function handValue(map: Hand | Cost): number {
-  return CARD_TYPES.reduce((s, t) => s + (map[t] || 0) * CARDS[t].value, 0)
+  return CARD_TYPES.reduce((s, t) => s + (map[t] || 0) * CARDS[t].value, 0);
 }
 
 // Relics are wildcards: they can stand in for any missing resource.
 export function canAfford(hand: Hand, cost: Cost): boolean {
-  let shortfall = 0
+  let shortfall = 0;
   for (const t in cost) {
-    const miss = cost[t] - (hand[t] || 0)
-    if (miss > 0) shortfall += miss
+    const miss = cost[t] - (hand[t] || 0);
+    if (miss > 0) {
+      shortfall += miss;
+    }
   }
-  return shortfall <= (hand.RELIC || 0) - (cost.RELIC || 0)
+  return shortfall <= (hand.RELIC || 0) - (cost.RELIC || 0);
 }
 
 export function costLabel(cost: Cost): string {
   return Object.keys(cost)
     .map((t) => `${cost[t]}${CARDS[t].icon}`)
-    .join(' ')
+    .join(' ');
 }
 
 export function fmtCards(map: Hand | Cost): string {
-  const parts = CARD_TYPES.filter((t) => (map[t] || 0) > 0).map((t) => `${map[t]}${CARDS[t].icon}`)
-  return parts.length ? parts.join(' ') : 'nothing'
+  const parts = CARD_TYPES.filter((t) => (map[t] || 0) > 0).map(
+    (t) => `${map[t]}${CARDS[t].icon}`,
+  );
+  return parts.length > 0 ? parts.join(' ') : 'nothing';
 }
