@@ -1,7 +1,9 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import * as engine from '@/game/engine'
 import { getFastMode, setFastMode } from '@/game/effects'
+import { DEFAULT_DIFFICULTY, getDifficulty, type Difficulty } from '@/game/difficulty'
+import { recordWin } from '@/game/unlocks'
 import type { ActionType, Cost, InfluenceOpts, InfluenceType } from '@/game/types'
 
 export type ModalName = 'help' | 'attack' | 'recruit' | 'move' | 'trade' | 'influence' | null
@@ -15,6 +17,10 @@ export const useGameStore = defineStore('game', () => {
   const modal = ref<ModalName>(null)
   const started = ref(false)
   const fastMode = ref(getFastMode())
+  // The human's chosen difficulty. Null until picked — the game loop waits for
+  // the choice (see start / chooseDifficulty). All levels currently behave
+  // identically; the selection is threaded through for future tuning.
+  const difficulty = ref<Difficulty | null>(null)
 
   const human = computed(() => state.players[0])
   const isHumanTurn = computed(
@@ -22,12 +28,38 @@ export const useGameStore = defineStore('game', () => {
   )
   const isPicking = computed(() => state.awaitingPick && !state.over)
 
-  /** Boot the game loop once (called from the root component on mount). */
+  // When the human wins, unlock the next difficulty rung and persist it. Fires
+  // once per game (state.over is set exactly once).
+  watch(
+    () => state.over,
+    (over) => {
+      if (over?.winner?.isHuman && difficulty.value) recordWin(difficulty.value)
+    },
+  )
+
+  /** Called from the root component on mount. In demo mode ("?auto"/headless)
+      the game starts immediately; otherwise it waits for the human to pick a
+      difficulty via the opening DifficultyModal (see chooseDifficulty). */
   function start(): void {
     if (started.value) return
+    // Demo mode ("?auto") runs at full tilt with no difficulty prompt.
+    if (engine.AUTO_HUMAN) {
+      setFast(true)
+      chooseDifficulty(DEFAULT_DIFFICULTY)
+    }
+  }
+
+  /** The human picked a difficulty on the opening screen — boot the game loop.
+      (Every level is currently identical; the choice is stored for later use.) */
+  function chooseDifficulty(level: Difficulty): void {
+    if (started.value) return
+    difficulty.value = level
+    const def = getDifficulty(level)
+    // Apply this level's handicap to every mastermind AI before the loop runs,
+    // then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
+    engine.setAiDifficulty(def.ai)
+    engine.assignKamikazes(def.kamikazeCount)
     started.value = true
-    // Demo mode ("?auto") runs at full tilt.
-    if (engine.AUTO_HUMAN) setFast(true)
     void engine.runGame()
   }
 
@@ -98,12 +130,14 @@ export const useGameStore = defineStore('game', () => {
     state,
     modal,
     fastMode,
+    difficulty,
     // derived
     human,
     isHumanTurn,
     isPicking,
     // lifecycle
     start,
+    chooseDifficulty,
     newGame,
     setFast,
     // modal control

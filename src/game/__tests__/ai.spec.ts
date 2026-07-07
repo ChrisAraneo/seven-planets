@@ -159,6 +159,63 @@ describe('mastermind drafting', () => {
   })
 })
 
+describe('kamikaze (Hard mode) targeting', () => {
+  it('a kamikaze only ever plans attacks against the human — never another AI', () => {
+    resetAiWeights()
+    const s = midGameState()
+    const kami = s.players[1]
+    kami.kamikaze = true
+    // Arm the kamikaze with a real strike force.
+    s.planets[1].buildings.SILO = 2
+    s.planets[1].troops = 16
+    kami.hand.ATTACK = 1
+    // Two equally soft targets: the human (id 0) and a rival AI (id 2).
+    s.planets[0].troops = 2 // human — the ONLY legal target
+    s.planets[2].troops = 2 // rival AI — juicy but forbidden
+    const plans = evaluateAttacks(s, kami)
+    expect(plans.length).toBeGreaterThan(0)
+    expect(plans.every((p) => s.planets[p.target.id].ownerId === 0)).toBe(true)
+    const now = bestAttackNow(s, kami)
+    expect(now).not.toBeNull()
+    expect(s.planets[now!.target.id].ownerId).toBe(0) // struck the human
+  })
+
+  it('a normal AI ignores kamikazes — never plans an attack against one', () => {
+    resetAiWeights()
+    const s = midGameState()
+    s.players[1].kamikaze = true
+    // A normal AI (id 2) with a strike force.
+    const normal = s.players[2]
+    s.planets[2].buildings.SILO = 2
+    s.planets[2].troops = 16
+    normal.hand.ATTACK = 1
+    // Make the kamikaze's planet the softest target in the galaxy.
+    s.planets[1].troops = 1
+    s.planets[0].troops = 8 // human, better defended
+    s.planets[3].troops = 8 // another rival
+    const plans = evaluateAttacks(s, normal)
+    // It may attack the human or other rivals, but NEVER the kamikaze (id 1).
+    expect(plans.every((p) => s.planets[p.target.id].ownerId !== 1)).toBe(true)
+  })
+
+  it('a kamikaze threatens the human but is no threat to other AI', () => {
+    resetAiWeights()
+    const s = midGameState()
+    const kami = s.players[1]
+    kami.kamikaze = true
+    // Heavily arm the kamikaze so it WOULD threaten anyone it could reach.
+    s.planets[1].buildings.SILO = 3
+    s.planets[1].buildings.BARRACKS = 3
+    s.planets[1].troops = 30
+    kami.hand.ATTACK = 3
+    kami.personality = 'militarist'
+    // With ONLY the kamikaze armed, a rival AI's planet is perfectly safe…
+    expect(holdProbability(s, s.players[2], s.planets[2], s.planets[2].troops)).toBe(1)
+    // …but the human's planet is not.
+    expect(holdProbability(s, s.players[0], s.planets[0], s.planets[0].troops)).toBeLessThan(1)
+  })
+})
+
 describe('mastermind in full headless games', () => {
   it('plays complete games without throwing and wins its share', async () => {
     resetAiWeights()

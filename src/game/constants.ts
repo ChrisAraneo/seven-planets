@@ -141,7 +141,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     name: 'Singularity',
     icon: '🌀',
     cost: { ORE: 4, CRYSTAL: 4, ENERGY: 4, SPICE: 4 },
-    desc: 'Raises your TECHNOLOGY: one Singularity = tech 2, two Singularities (on two planets) = tech 3. Each level on any owned planet also grants +1 draft pick AND adds 1 extra random card to the pool each turn. Requires a Research Lab of at least the same level on the same planet. Does NOT win the game',
+    desc: 'Raises your TECHNOLOGY: one Singularity = tech 2, two Singularities (on two planets) = tech 3. Each level on any owned planet also grants +1 draft pick AND adds 1 extra random card to the pool each turn. Requires a Research Lab of at least the same level on the same planet (L4 needs a maxed Lab). A LEVEL-4 Singularity — buildable only on a FULLY BUILT planet (TECHNOLOGY 4) — additionally warps space for +8 planet defense. Does NOT win the game',
     cardWeight: 4,
     cardColor: '#3df0ff',
     short: 'tech↑ +pick/lvl',
@@ -170,6 +170,7 @@ const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   HARVESTER: 2,
   SPACEPORT: 2,
   EMBASSY: 2,
+  SINGULARITY: 4, // L4 is the apex, unlocked only by TECHNOLOGY 4 (a fully-built planet)
 }
 export function maxLevel(id: BuildingType): number {
   return BUILDING_MAX_LEVEL[id] || 3
@@ -263,6 +264,7 @@ export const BASE_ROCKET_CAP = 3 // each Silo LEVEL doubles it: 3 → 6 → 12 �
 export const SILO_HIT_BONUS = 2 // ...and adds +2 strike per level
 export const SHIELD_DEFENSE = 4 // per shield level (L1:+4, L2:+8, L3:+12)
 export const HOME_FIELD = 1 // flat defense bonus for defenders
+export const SINGULARITY_DEF_BONUS = 8 // a level-4 Singularity warps local space: +8 planet defense
 
 // COMBAT MATH — the single source of truth for battle resolution, shared by
 // the engine (doAttack) and every AI that predicts battle outcomes (./ai).

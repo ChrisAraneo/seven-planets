@@ -36,6 +36,7 @@ import {
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
   HOME_FIELD,
+  SINGULARITY_DEF_BONUS,
   incomeAmount,
   INFLUENCE_CARDS,
   INFLUENCE_CARDS_FROM_TURN,
@@ -54,7 +55,11 @@ import {
   TAUNTS,
 } from './constants'
 import { animateRocket, boom, floatText, setSimMode, sleep } from './effects'
-import { mastermindAction, mastermindDraftPick, mastermindEvaluateTrade } from './ai'
+import { mastermindAction, mastermindDraftPick, mastermindEvaluateTrade, setAiDifficulty } from './ai'
+
+// Re-exported so the store can apply the chosen difficulty's AI handicap
+// without importing ./ai directly. (assignKamikazes is defined below.)
+export { setAiDifficulty }
 import type {
   ActionType,
   BuildingType,
@@ -151,6 +156,8 @@ export function buildState(): GameState {
       tradedThisTurn: false,
       lastAttackTurn: 0,
       pacifistStatus: false,
+      pacifismForfeited: false,
+      kamikaze: false,
     })),
     planets: gameDefs.map((d, i) => ({
       id: i,
@@ -174,14 +181,19 @@ export function buildState(): GameState {
 
 /* ============================ UTILS ============================ */
 
-// The Singularity card is only dealt while someone owns a Research Lab planet
-// whose Singularity is still below the Lab's level (a build/upgrade is possible).
+// A Singularity of level L needs a Research Lab of level L on the same planet —
+// except the level-4 apex, which a maxed Lab (its own ceiling) satisfies.
+function singularityLabOk(planet: Planet, nextLevel: number): boolean {
+  return (planet.buildings.LAB || 0) >= Math.min(nextLevel, maxLevel('LAB'))
+}
+// The Singularity card is only dealt while someone can still build or upgrade one:
+// the next level must be within their technology and satisfy the Lab requirement.
 function singularityInPlay(): boolean {
   return alivePlayers().some((p) =>
-    ownedPlanets(p).some(
-      (pl) =>
-        (pl.buildings.SINGULARITY || 0) < Math.min(maxLevel('SINGULARITY'), pl.buildings.LAB || 0),
-    ),
+    ownedPlanets(p).some((pl) => {
+      const next = (pl.buildings.SINGULARITY || 0) + 1
+      return next <= maxLevel('SINGULARITY') && next <= techLevel(p) && singularityLabOk(pl, next)
+    }),
   )
 }
 
@@ -275,8 +287,19 @@ export function recruitCost(planet: Planet): Cost {
   return { ORE: recruitYield(planet) }
 }
 
-// TECHNOLOGY LEVEL — caps how far any building can be upgraded.
+// A planet is FULLY BUILT once every building except the Singularity sits at its
+// maximum level and the Singularity itself has reached level 3. Owning one is what
+// grants TECHNOLOGY 4 — the tier that unlocks the level-4 Singularity.
+export function isFullyBuilt(pl: Planet): boolean {
+  return BUILD_ORDER.every((b) =>
+    b === 'SINGULARITY' ? (pl.buildings.SINGULARITY || 0) >= 3 : (pl.buildings[b] || 0) >= maxLevel(b),
+  )
+}
+
+// TECHNOLOGY LEVEL — caps how far any building can be upgraded. Two Singularities
+// give tech 3; a single FULLY BUILT planet lifts the owner to tech 4.
 export function techLevel(p: Player): number {
+  if (ownedPlanets(p).some(isFullyBuilt)) return 4
   const sings = ownedPlanets(p).filter((pl) => pl.buildings.SINGULARITY).length
   return sings >= 2 ? 3 : sings >= 1 ? 2 : 1
 }
@@ -329,14 +352,19 @@ export function isPacifist(p: Player): boolean {
 export function pacifistDefBonus(planet: Planet): number {
   return state.players[planet.ownerId]?.pacifistStatus ? PACIFIST_DEF_BONUS : 0
 }
-// Promote any player who has gone PACIFIST_TURNS without attacking. Permanent.
+// A level-4 Singularity warps local space into a shield: flat +8 defense.
+export function singularityDefBonus(planet: Planet): number {
+  return (planet.buildings.SINGULARITY || 0) >= 4 ? SINGULARITY_DEF_BONUS : 0
+}
+// Promote any player who has gone PACIFIST_TURNS without attacking. A player who
+// has once broken a pacifist vow (pacifismForfeited) can never be promoted again.
 function updatePacifistStatus(): void {
   for (const p of state.players) {
-    if (!p.alive || p.pacifistStatus) continue
+    if (!p.alive || p.pacifistStatus || p.pacifismForfeited) continue
     if (state.turn - p.lastAttackTurn >= PACIFIST_TURNS) {
       p.pacifistStatus = true
       log(
-        `☮️ ${p.name} has forsworn war for ${PACIFIST_TURNS} turns and becomes a PACIFIST — never able to attack again, but every planet gains +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per turn.`,
+        `☮️ ${p.name} has forsworn war for ${PACIFIST_TURNS} turns and becomes a PACIFIST — every planet gains +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per turn. Attacking would break the vow for good.`,
         'sys',
       )
       for (const pl of ownedPlanets(p)) floatText(pl, '☮️ PACIFIST', '#8affc0')
@@ -348,7 +376,7 @@ function singularityReadyPlanet(p: Player): Planet | undefined {
   const cap = Math.min(maxLevel('SINGULARITY'), techLevel(p))
   return ownedPlanets(p).find((pl) => {
     const next = (pl.buildings.SINGULARITY || 0) + 1
-    return next <= cap && next <= (pl.buildings.LAB || 0)
+    return next <= cap && singularityLabOk(pl, next)
   })
 }
 export function buildingCount(p: Player): number {
@@ -385,12 +413,12 @@ export function canPickCard(p: Player, t: PoolType, planet: Planet | undefined):
     const next = (planet.buildings[bt] || 0) + 1
     if (next > maxLevel(bt)) return false
     if (next > techLevel(p)) return false // upgrades are gated by technology
-    if (bt === 'SINGULARITY' && next > (planet.buildings.LAB || 0)) return false
+    if (bt === 'SINGULARITY' && !singularityLabOk(planet, next)) return false
     return canAfford(p.hand, buildingCost(bt, next))
   }
   // Influence cards cost ⭐ at pick time and go to hand; targets resolved later.
   if (CARDS[t].influenceCard) return p.influence >= INFLUENCE_CARDS[t as InfluenceType].cost
-  if (t === 'ATTACK') return !p.pacifistStatus && hasBuilding(p, 'SILO') && totalTroops(p) >= 1
+  if (t === 'ATTACK') return hasBuilding(p, 'SILO') && totalTroops(p) >= 1
   if (t === 'MOVE')
     return hasBuilding(p, 'SPACEPORT') && p.planets.length >= 2 && totalTroops(p) >= 1
   if (t === 'RECRUIT') return hasBuilding(p, 'BARRACKS')
@@ -849,9 +877,19 @@ export async function doAttack(
   target: Planet,
   n: number,
 ): Promise<void> {
-  if (att.pacifistStatus) return // pacifists have forsworn war for good
   if (underTruce(target)) return // freshly conquered planets cannot be attacked
   if (!source.buildings.SILO) return // no silo, no rockets
+  // Breaking the vow: a PACIFIST may attack, but doing so permanently strips the
+  // status and its bonuses — and pacifismForfeited bars them from ever regaining it.
+  if (att.pacifistStatus) {
+    att.pacifistStatus = false
+    att.pacifismForfeited = true
+    log(
+      `⚔️ ${att.name} breaks their pacifist vow to strike — the +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per planet are gone for good.`,
+      'war',
+    )
+    for (const pl of ownedPlanets(att)) floatText(pl, '⚔️ VOW BROKEN', '#ff6b6b')
+  }
   spendActionCard(att, 'ATTACK')
   att.lastAttackTurn = state.turn // resets the pacifist countdown
   const def = state.players[target.ownerId]
@@ -873,6 +911,7 @@ export async function doAttack(
     COMBAT.defensePerTroop * target.troops +
     shieldDef +
     pacifistDefBonus(target) +
+    singularityDefBonus(target) +
     HOME_FIELD +
     randInt(0, COMBAT.defenseRoll)
   const win = ap > dp
@@ -997,6 +1036,28 @@ function triggerGameOver(winner: Player | null, reason: 'conquest' | 'eliminated
 
 /* ============================ AI ============================ */
 
+// KAMIKAZE (Hard mode) — flag `count` random living AI as kamikazes. Their only
+// conquest target becomes the human; every other AI ignores them. Called once
+// at game start from the store (chooseDifficulty).
+export function assignKamikazes(count: number): void {
+  for (const p of state.players) p.kamikaze = false
+  if (count <= 0) return
+  const ai = shuffleArr(state.players.filter((p) => !p.isHuman && p.alive))
+  for (const p of ai.slice(0, count)) {
+    p.kamikaze = true
+    log(`☠️ ${p.name} has sworn a KAMIKAZE oath — they hunt only your homeworld.`, 'war')
+  }
+}
+
+// Targeting rule shared by every AI (mastermind or personality): may attacker
+// `att` attack/coup a planet owned by `owner`? Kamikazes strike only the human;
+// everyone else pretends kamikazes do not exist.
+export function aiMayTarget(att: Player, owner: Player): boolean {
+  if (att.kamikaze) return owner.isHuman
+  if (owner.kamikaze) return false
+  return true
+}
+
 // The next thing this player is saving for (used for drafting, trading, refusals).
 function currentGoal(p: Player): { id: BuildingType; planet: Planet; cost: Cost } | null {
   const readyPl = singularityReadyPlanet(p)
@@ -1113,7 +1174,13 @@ function aiDraftPick(p: Player, planet: Planet): number {
         if (pers === 'militarist') score += 2.0
         if (pers === 'blitzer') score += 1.8
         if (pers === 'expansionist' || pers === 'opportunist') score += 0.8
-        if (pers === 'rusher' || pers === 'fortifier' || pers === 'trader' || pers === 'pacifist')
+        if (
+          pers === 'rusher' ||
+          pers === 'fortifier' ||
+          pers === 'trader' ||
+          pers === 'pacifist' ||
+          isPacifist(p) // an earned pacifist won't attack, so an Attack card is dead weight
+        )
           score -= 2.0
         if (p.hand.ATTACK === 0 && totalTroops(p) >= 4) score += 1.0
       } else if (t === 'MOVE') {
@@ -1245,6 +1312,7 @@ function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } 
     if (pl.ownerId === p.id) continue
     if (underTruce(pl)) continue // freshly conquered planets are off-limits
     const d = state.players[pl.ownerId]
+    if (!aiMayTarget(p, d)) continue // kamikaze targets only the human; others ignore kamikazes
     // Defend-first personalities never attack for expansion — they only strike to
     // FINISH a nearly-dead rival, or to pre-empt one who has grown into a threat.
     if (defensive) {
@@ -1256,6 +1324,7 @@ function aiPickAttack(p: Player): { source: Planet; target: Planet; n: number } 
       COMBAT.defensePerTroop * pl.troops +
       (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE +
       pacifistDefBonus(pl) +
+      singularityDefBonus(pl) +
       HOME_FIELD
     const margin = COMBAT.attackPerTroop * n + myBonus - defense
     if (margin < needMargin) continue
@@ -1400,6 +1469,7 @@ function aiPickCoupTarget(p: Player): Planet | null {
   let best: Planet | null = null
   let bestScore = -Infinity
   for (const pl of coupTargets(p)) {
+    if (!aiMayTarget(p, state.players[pl.ownerId])) continue // respect kamikaze targeting
     const bLevels = Object.values(pl.buildings).reduce((a, b) => a + b, 0)
     let score = bLevels + 2 * (pl.buildings.SINGULARITY || 0) + pl.troops * 0.5
     if (state.players[pl.ownerId].planets.length === 1) score += pac ? 12 : 8 // elimination!

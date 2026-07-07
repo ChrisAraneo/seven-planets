@@ -47,6 +47,7 @@ import {
   RESOURCE_TYPES,
   SHIELD_DEFENSE,
   SILO_HIT_BONUS,
+  SINGULARITY_DEF_BONUS,
 } from './constants'
 import type {
   ActionType,
@@ -74,6 +75,39 @@ export function getAiWeights(): AiWeights {
 }
 export function resetAiWeights(): void {
   W = { ...AI_WEIGHTS }
+  randomPickChance = 0
+}
+
+/* ============================ DIFFICULTY ============================ */
+
+// Difficulty handicaps applied to EVERY mastermind. Baked into W where possible
+// (so every W.planHorizon / W.minConquerProb / W.denialWeight read picks them up
+// automatically); the draft-time random-pick chance can't be a weight, so it
+// lives here.
+let randomPickChance = 0
+
+export interface AiDifficulty {
+  /** Chance [0..1] a draft pick is made at random instead of by plan (dumber). */
+  randomPickChance?: number
+  /** Multiplies the base conquer-probability threshold (lower ⇒ more reckless). */
+  minConquerProbMult?: number
+  /** Added to the base strategy look-ahead window (negative ⇒ shorter sight). */
+  planHorizonDelta?: number
+  /** Multiplies the base hate-draft weight (lower ⇒ rarely denies rivals cards). */
+  denialWeightMult?: number
+}
+
+/** Apply a difficulty handicap to the mastermind AI. Called once at game start
+    from the store (see chooseDifficulty). Rebuilds W from the base weights so
+    repeated calls don't compound. */
+export function setAiDifficulty(d: AiDifficulty): void {
+  W = {
+    ...AI_WEIGHTS,
+    planHorizon: Math.max(1, AI_WEIGHTS.planHorizon + (d.planHorizonDelta ?? 0)),
+    minConquerProb: AI_WEIGHTS.minConquerProb * (d.minConquerProbMult ?? 1),
+    denialWeight: AI_WEIGHTS.denialWeight * (d.denialWeightMult ?? 1),
+  }
+  randomPickChance = Math.max(0, Math.min(1, d.randomPickChance ?? 0))
 }
 
 // One star (⭐) is worth roughly this many card-value units — anchored on the
@@ -86,6 +120,14 @@ const STAR_VALUE = 0.8
 
 function alive(s: GameState): Player[] {
   return s.players.filter((p) => p.alive)
+}
+// KAMIKAZE targeting rule (mirrors engine.aiMayTarget; kept local so ./ai stays
+// engine-free): a kamikaze may only strike the human, and every other AI
+// pretends kamikazes do not exist.
+function mayTarget(att: Player, owner: Player): boolean {
+  if (att.kamikaze) return owner.isHuman
+  if (owner.kamikaze) return false
+  return true
 }
 function owned(s: GameState, p: Player): Planet[] {
   return p.planets.map((id) => s.planets[id])
@@ -106,9 +148,25 @@ function rocketCap(pl: Planet): number {
 function siloBonus(pl: Planet): number {
   return SILO_HIT_BONUS * (pl.buildings.SILO || 0)
 }
+// A planet with every non-Singularity building maxed and a level-3 Singularity is
+// FULLY BUILT — owning one lifts the player to TECHNOLOGY 4 (mirrors engine).
+function isFullyBuilt(pl: Planet): boolean {
+  return BUILD_ORDER.every((b) =>
+    b === 'SINGULARITY' ? (pl.buildings.SINGULARITY || 0) >= 3 : (pl.buildings[b] || 0) >= maxLevel(b),
+  )
+}
 function techLevel(s: GameState, p: Player): number {
+  if (owned(s, p).some(isFullyBuilt)) return 4
   const sings = owned(s, p).filter((pl) => pl.buildings.SINGULARITY).length
   return sings >= 2 ? 3 : sings >= 1 ? 2 : 1
+}
+/** A level-4 Singularity's flat +8 planet defense (mirrors engine.singularityDefBonus). */
+function singularityDefBonus(pl: Planet): number {
+  return (pl.buildings.SINGULARITY || 0) >= 4 ? SINGULARITY_DEF_BONUS : 0
+}
+/** Highest Singularity level buildable on `pl`: L4's Lab requirement is a maxed Lab. */
+function singularityLabOk(pl: Planet, nextLevel: number): boolean {
+  return (pl.buildings.LAB || 0) >= Math.min(nextLevel, maxLevel('LAB'))
 }
 function recruitYieldOf(pl: Planet): number {
   const lvl = pl.buildings.BARRACKS || 0
@@ -147,7 +205,11 @@ export function attackBaseOf(n: number, source: Planet): number {
 export function defenseBaseOf(s: GameState, pl: Planet, troops = pl.troops): number {
   const pac = s.players[pl.ownerId]?.pacifistStatus ? PACIFIST_DEF_BONUS : 0
   return (
-    COMBAT.defensePerTroop * troops + (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE + pac + HOME_FIELD
+    COMBAT.defensePerTroop * troops +
+    (pl.buildings.SHIELD || 0) * SHIELD_DEFENSE +
+    pac +
+    singularityDefBonus(pl) +
+    HOME_FIELD
   )
 }
 
@@ -303,10 +365,11 @@ export function holdProbability(
   let pHold = 1
   // Local Barracks means fast reinforcement; otherwise only Move cards help.
   const reinforce = recruitRate(s, owner) * (planet.buildings.BARRACKS ? 0.7 : 0.25)
-  const shield = (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE
+  const shield = (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE + singularityDefBonus(planet)
   const pacBonus = owner.pacifistStatus ? PACIFIST_DEF_BONUS : 0
   for (const r of alive(s)) {
     if (r.id === owner.id || r.pacifistStatus) continue
+    if (!mayTarget(r, owner)) continue // a rival that would never strike this owner is no threat
     let peak = 0
     for (let t = 1; t <= horizon; t++) {
       if (s.turn + t <= protectedUntil) continue // truce still shields us
@@ -333,6 +396,7 @@ export function immediateFallProb(s: GameState, ownerP: Player, planet: Planet):
   let pSafe = 1
   for (const r of alive(s)) {
     if (r.id === ownerP.id || r.pacifistStatus || (r.hand.ATTACK || 0) < 1) continue
+    if (!mayTarget(r, ownerP)) continue // kamikaze-aware: this rival would never strike us
     const strike = projectedStrike(s, r, 0, planet.id)
     if (strike.n < minTroopsToConquer(planet.troops)) continue
     const pWin = battleWinProb(
@@ -374,11 +438,15 @@ export interface AttackPlan {
 }
 
 /** Conquest bar, loosening as the game drags on (conquest is the only way to
-    win) and in a final duel. */
-function effMinConquerProb(s: GameState): number {
+    win) and in a final duel. Kamikazes accept riskier odds by design. */
+function effMinConquerProb(s: GameState, p?: Player): number {
   const duel = alive(s).length === 2 ? 0.1 : 0
-  return Math.max(0.35, W.minConquerProb - s.turn * W.aggressionRamp - duel)
+  const reckless = p?.kamikaze ? KAMIKAZE_RISK : 0
+  return Math.max(0.25, W.minConquerProb - s.turn * W.aggressionRamp - duel - reckless)
 }
+
+// How much a kamikaze lowers its own attack thresholds — "a little more risky".
+const KAMIKAZE_RISK = 0.12
 
 /** Every attack worth considering, best first. Each plan prices the risk
     (exact win probability), runs the conquest test, counts the survivors
@@ -386,12 +454,13 @@ function effMinConquerProb(s: GameState): number {
 export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
   if (p.pacifistStatus) return []
   const avgStr = avgStrength(s)
-  const minWin = effMinConquerProb(s)
+  const minWin = effMinConquerProb(s, p)
   const plans: AttackPlan[] = []
   for (const target of s.planets) {
     if (target.ownerId === p.id) continue
     const defOwner = s.players[target.ownerId]
     if (!defOwner.alive || underTruce(s, target)) continue
+    if (!mayTarget(p, defOwner)) continue // kamikaze hits only the human; others skip kamikazes
     const def = defenseBaseOf(s, target)
     for (const source of owned(s, p)) {
       if (!source.buildings.SILO) continue
@@ -439,7 +508,9 @@ export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
           Math.ceil((n * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
         )
         const eLoss = pWin * (n - survivorsAfterWin(n)) + (1 - pWin) * lossesOnDefeat(n)
-        const leader = playerStrength(s, defOwner) > 1.3 * avgStr
+        // Kamikazes harass the human even when they can't hold ground; others
+        // only raid a runaway leader.
+        const zeal = p.kamikaze ? 1.5 : playerStrength(s, defOwner) > 1.3 * avgStr ? 1.4 : 1.05
         plans.push({
           source,
           target,
@@ -449,7 +520,7 @@ export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
           survivors: survivorsAfterWin(n),
           holdProb: 0,
           value: defLoss,
-          score: pWin * defLoss * W.troopValue * (leader ? 1.4 : 1.05) - eLoss * W.troopValue,
+          score: pWin * defLoss * W.troopValue * zeal - eLoss * W.troopValue,
         })
       }
     }
@@ -461,13 +532,16 @@ export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
     win + retention thresholds met) — or null when patience wins. */
 export function bestAttackNow(s: GameState, p: Player): AttackPlan | null {
   if ((p.hand.ATTACK || 0) < 1) return null
-  const minHold = Math.max(0.2, W.minHoldProb - s.turn * W.aggressionRamp * 0.5)
+  // Kamikazes barely care about holding the ground they take — they just want
+  // to bleed the human.
+  const holdFloor = p.kamikaze ? 0.05 : 0.2
+  const minHold = Math.max(holdFloor, W.minHoldProb * (p.kamikaze ? 0.5 : 1) - s.turn * W.aggressionRamp * 0.5)
   for (const plan of evaluateAttacks(s, p)) {
     if (plan.score <= 0) break
     if (plan.conquers) {
-      if (plan.pWin >= effMinConquerProb(s) && plan.holdProb >= minHold) return plan
+      if (plan.pWin >= effMinConquerProb(s, p) && plan.holdProb >= minHold) return plan
     } else if (plan.score > 2) {
-      return plan // profitable leader-bleeding raid
+      return plan // profitable raid (leader-bleeding, or a kamikaze harassing the human)
     }
   }
   return null
@@ -489,7 +563,7 @@ function nextLevelAllowed(s: GameState, p: Player, planet: Planet, id: BuildingT
   const next = (planet.buildings[id] || 0) + 1
   if (next > maxLevel(id)) return 0
   if (next > techLevel(s, p)) return 0
-  if (id === 'SINGULARITY' && next > (planet.buildings.LAB || 0)) return 0
+  if (id === 'SINGULARITY' && !singularityLabOk(planet, next)) return 0
   return next
 }
 
@@ -579,20 +653,21 @@ export function buildingWorth(
     }
     case 'SINGULARITY': {
       gross += avgResourceCardValue() * H + 5 // extra pick/turn + technology (draft priority, level caps)
+      if (level >= 4) gross += SINGULARITY_DEF_BONUS * 0.6 // the apex also hardens the planet (+8 def)
       break
     }
   }
   return gross - costVal
 }
 
-/** Mirrors the engine's singularityInPlay: the Singularity card is only dealt
-    while someone owns a Lab planet whose Singularity is still below it. */
+/** Mirrors the engine's singularityInPlay: the card is only dealt while someone
+    can still build/upgrade a Singularity within their tech and Lab. */
 function singularityLive(s: GameState): boolean {
   return alive(s).some((p) =>
-    owned(s, p).some(
-      (pl) =>
-        (pl.buildings.SINGULARITY || 0) < Math.min(maxLevel('SINGULARITY'), pl.buildings.LAB || 0),
-    ),
+    owned(s, p).some((pl) => {
+      const next = (pl.buildings.SINGULARITY || 0) + 1
+      return next <= maxLevel('SINGULARITY') && next <= techLevel(s, p) && singularityLabOk(pl, next)
+    }),
   )
 }
 
@@ -717,6 +792,7 @@ function computePlan(s: GameState, p: Player, prevKind: StrategyKind | null): Pl
       if (target.ownerId === p.id) continue
       const defOwner = s.players[target.ownerId]
       if (!defOwner.alive) continue
+      if (!mayTarget(p, defOwner)) continue // kamikaze musters only against the human
       // Project the defense ~3 turns out — armies are not standing still.
       const futureDef = Math.round(target.troops + recruitRate(s, defOwner) * 3)
       let need = minTroopsToConquer(futureDef)
@@ -724,6 +800,7 @@ function computePlan(s: GameState, p: Player, prevKind: StrategyKind | null): Pl
         COMBAT.defensePerTroop * futureDef +
         (target.buildings.SHIELD || 0) * SHIELD_DEFENSE +
         (defOwner.pacifistStatus ? PACIFIST_DEF_BONUS : 0) +
+        singularityDefBonus(target) +
         HOME_FIELD
       while (
         need < 80 &&
@@ -836,8 +913,10 @@ function skipTarget(s: GameState, p: Player, t: InfluenceType): Player | null {
 function bestCoupTarget(s: GameState, p: Player): { planet: Planet; value: number } | null {
   let best: { planet: Planet; value: number } | null = null
   for (const pl of s.planets) {
-    if (pl.ownerId === p.id || !s.players[pl.ownerId].alive || underTruce(s, pl)) continue
-    const value = planetValue(s, pl) + (s.players[pl.ownerId].planets.length === 1 ? 10 : 0)
+    const owner = s.players[pl.ownerId]
+    if (pl.ownerId === p.id || !owner.alive || underTruce(s, pl)) continue
+    if (!mayTarget(p, owner)) continue // kamikaze coups only the human; others skip kamikazes
+    const value = planetValue(s, pl) + (owner.planets.length === 1 ? 10 : 0)
     if (!best || value > best.value) best = { planet: pl, value }
   }
   return best
@@ -862,7 +941,7 @@ function singularityReadyFor(s: GameState, r: Player): boolean {
   const cap = Math.min(maxLevel('SINGULARITY'), techLevel(s, r))
   return owned(s, r).some((pl) => {
     const next = (pl.buildings.SINGULARITY || 0) + 1
-    return next <= cap && next <= (pl.buildings.LAB || 0)
+    return next <= cap && singularityLabOk(pl, next)
   })
 }
 
@@ -992,6 +1071,13 @@ export function mastermindDraftPick(
   draftPlanet: Planet,
   pickable: boolean[],
 ): number {
+  // Difficulty handicap (easy mode): occasionally draft a random pickable card
+  // instead of the planned best one.
+  if (randomPickChance > 0 && Math.random() < randomPickChance) {
+    const options: number[] = []
+    for (let i = 0; i < s.pool.length; i++) if (pickable[i]) options.push(i)
+    if (options.length) return options[Math.floor(Math.random() * options.length)]
+  }
   const plan = planFor(s, p)
   let bestIdx = -1
   let bestScore = -Infinity
@@ -1017,6 +1103,7 @@ export function mastermindDraftPick(
 /** Is rival `r` in a position to launch a conquest against us right now? */
 function imminentAttacker(s: GameState, us: Player, r: Player): boolean {
   if (r.pacifistStatus || (r.hand.ATTACK || 0) < 1) return false
+  if (!mayTarget(r, us)) return false // a rival that would never strike us is no threat
   for (const pl of owned(s, us)) {
     if (underTruce(s, pl)) continue
     const strike = projectedStrike(s, r, 0, pl.id)
