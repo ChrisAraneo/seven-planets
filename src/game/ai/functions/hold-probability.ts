@@ -14,7 +14,7 @@ import { mayTarget } from './may-target';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { projectedStrike } from './projected-strike';
 import { recruitRate } from './recruit-rate';
-import { singularityDefBonus } from './singularity-def-bonus';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 
 export function holdProbability(
   s: GameState,

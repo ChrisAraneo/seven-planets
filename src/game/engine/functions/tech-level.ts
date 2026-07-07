@@ -2,7 +2,7 @@
 
 import type { Player } from '@/game/types';
 import { ownedPlanets } from './owned-planets';
-import { isFullyBuilt } from './is-fully-built';
+import { isFullyBuilt } from '@/game/shared/is-fully-built';
 
 // Give tech 3; a single FULLY BUILT planet lifts the owner to tech 4.
 export function techLevel(p: Player): number {

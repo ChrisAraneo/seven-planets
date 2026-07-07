@@ -1,5 +1,5 @@
 import type { GameState, Player } from '@/game/types';
-import { isFullyBuilt } from './is-fully-built';
+import { isFullyBuilt } from '@/game/shared/is-fully-built';
 import { owned } from './owned';
 
 export function techLevel(s: GameState, p: Player): number {

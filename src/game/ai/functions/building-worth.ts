@@ -18,8 +18,8 @@ import { holdProbability } from './hold-probability';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
-import { recruitYieldOf } from './recruit-yield-of';
-import { rocketCap } from './rocket-cap';
+import { recruitYield } from '@/game/shared/recruit-yield';
+import { rocketCap } from '@/game/shared/rocket-cap';
 import { totalTroops } from './total-troops';
 import { underTruce } from './under-truce';
 
@@ -50,8 +50,8 @@ export function buildingWorth(
         gross += 3;
       } else {
         const delta =
-          recruitYieldOf({ ...planet, buildings: { BARRACKS: level } }) -
-          recruitYieldOf(planet);
+          recruitYield({ ...planet, buildings: { BARRACKS: level } }) -
+          recruitYield(planet);
         gross += delta * H * 0.5;
       }
       if (planet.buildings.SILO) {

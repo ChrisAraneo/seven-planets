@@ -1,8 +1,8 @@
 import type { GameState, Player } from '@/game/types';
 import { owned } from './owned';
 import { recruitRate } from './recruit-rate';
-import { rocketCap } from './rocket-cap';
-import { siloBonus } from './silo-bonus';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { siloBonus } from '@/game/shared/silo-bonus';
 
 export function projectedStrike(
   s: GameState,

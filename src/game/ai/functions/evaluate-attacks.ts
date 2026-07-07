@@ -19,8 +19,8 @@ import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
 import { playerStrength } from './player-strength';
-import { rocketCap } from './rocket-cap';
-import { siloBonus } from './silo-bonus';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { siloBonus } from '@/game/shared/silo-bonus';
 import { survivorsAfterWin } from './survivors-after-win';
 import { underTruce } from './under-truce';
 

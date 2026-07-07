@@ -18,8 +18,8 @@ import { influencePlay } from './influence-play';
 import { owned } from './owned';
 import { planFor } from './plan-for';
 import { planTradeOffer } from './plan-trade-offer';
-import { recruitYieldOf } from './recruit-yield-of';
-import { rocketCap } from './rocket-cap';
+import { recruitYield } from '@/game/shared/recruit-yield';
+import { rocketCap } from '@/game/shared/rocket-cap';
 
 export type MastermindDecision =
   | { kind: 'influence'; type: InfluenceType; opts: InfluenceOpts }
@@ -59,7 +59,7 @@ export function mastermindAction(
   if ((p.hand.RECRUIT || 0) > 0) {
     const affordable = (pl: Planet) =>
       (pl.buildings.BARRACKS || 0) > 0 &&
-      canAfford(p.hand, { ORE: recruitYieldOf(pl) });
+      canAfford(p.hand, { ORE: recruitYield(pl) });
     const danger = pls
       .filter((pl) => affordable(pl) && immediateFallProb(s, p, pl) >= 0.2)
       .sort((a, b) => immediateFallProb(s, p, b) - immediateFallProb(s, p, a));

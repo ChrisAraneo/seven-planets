@@ -1,7 +1,7 @@
 import { maxLevel } from '@/game/constants';
 import type { BuildingType, GameState, Planet, Player } from '@/game/types';
 import { techLevel } from './tech-level';
-import { singularityLabOk } from './singularity-lab-ok';
+import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 
 export function nextLevelAllowed(
   s: GameState,
@@ -16,7 +16,7 @@ export function nextLevelAllowed(
   if (next > techLevel(s, p)) {
     return 0;
   }
-  if (id === 'SINGULARITY' && !singularityLabOk(planet, next)) {
+  if (id === 'SINGULARITY' && !isSingularityLabOk(planet, next)) {
     return 0;
   }
   return next;

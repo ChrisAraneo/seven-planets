@@ -25,8 +25,8 @@ import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
 import { recruitRate } from './recruit-rate';
-import { rocketCap } from './rocket-cap';
-import { singularityDefBonus } from './singularity-def-bonus';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import { survivorsAfterWin } from './survivors-after-win';
 
 export function computePlan(

@@ -15,9 +15,9 @@ import { isPacifist } from './is-pacifist';
 import { ownedPlanets } from './owned-planets';
 import { pacifistDefBonus } from './pacifist-def-bonus';
 import { playerStrength } from './player-strength';
-import { rocketCap } from './rocket-cap';
-import { siloBonus } from './silo-bonus';
-import { singularityDefBonus } from './singularity-def-bonus';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { siloBonus } from '@/game/shared/silo-bonus';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import { underTruce } from './under-truce';
 
 export function aiPickAttack(

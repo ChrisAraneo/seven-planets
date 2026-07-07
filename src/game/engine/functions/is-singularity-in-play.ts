@@ -1,7 +1,7 @@
 import { maxLevel } from '@/game/constants';
 import { alivePlayers } from './alive-players';
 import { ownedPlanets } from './owned-planets';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
+import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 import { techLevel } from './tech-level';
 
 // The Singularity card is only dealt while someone can still build or upgrade one:

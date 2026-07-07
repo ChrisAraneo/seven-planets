@@ -13,7 +13,7 @@ import type {
   PoolType,
 } from '@/game/types';
 import { hasBuilding } from './has-building';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
+import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
 

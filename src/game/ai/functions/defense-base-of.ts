@@ -5,7 +5,7 @@ import {
   SHIELD_DEFENSE,
 } from '@/game/constants';
 import type { GameState, Planet } from '@/game/types';
-import { singularityDefBonus } from './singularity-def-bonus';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 
 export function defenseBaseOf(
   s: GameState,

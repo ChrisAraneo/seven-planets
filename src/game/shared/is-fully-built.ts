@@ -1,8 +1,9 @@
 import { BUILD_ORDER, maxLevel } from '@/game/constants';
 import type { Planet } from '@/game/types';
 
-// A planet with every non-Singularity building maxed and a level-3 Singularity is
-// FULLY BUILT — owning one lifts the player to TECHNOLOGY 4.
+// A planet is FULLY BUILT once every building except the Singularity sits at its
+// maximum level and the Singularity itself has reached level 3. Owning one grants
+// TECHNOLOGY 4 — the tier that unlocks the level-4 Singularity.
 export function isFullyBuilt(pl: Planet): boolean {
   return BUILD_ORDER.every((b) =>
     b === 'SINGULARITY'

@@ -1,6 +1,6 @@
 import { buildingCost, maxLevel } from '@/game/constants';
 import type { BuildingType, Planet, Player } from '@/game/types';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
+import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 import { ownedPlanets } from './owned-planets';
 import { techLevel } from './tech-level';
 

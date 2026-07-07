@@ -4,7 +4,7 @@ import type { Planet, Player } from '@/game/types';
 import { log } from './log';
 import { payCost } from './pay-cost';
 import { recruitCost } from './recruit-cost';
-import { recruitYield } from './recruit-yield';
+import { recruitYield } from '@/game/shared/recruit-yield';
 import { spendActionCard } from './spend-action-card';
 
 // Recruiting REQUIRES a Barracks on the target planet.

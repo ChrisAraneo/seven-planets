@@ -1,6 +1,6 @@
 // Re-export barrel — all engine functions live in ./functions/
 export { AUTO_HUMAN } from './functions/auto-human';
-export { recruitYield } from './functions/recruit-yield';
+export { recruitYield } from '@/game/shared/recruit-yield';
 export { recruitCost } from './functions/recruit-cost';
 export { persOf } from './functions/pers-of';
 export { alivePlayers } from './functions/alive-players';
@@ -8,12 +8,12 @@ export { ownedPlanets } from './functions/owned-planets';
 export { homePlanet } from './functions/home-planet';
 export { hasBuilding } from './functions/has-building';
 export { totalTroops } from './functions/total-troops';
-export { rocketCap } from './functions/rocket-cap';
-export { siloBonus } from './functions/silo-bonus';
+export { rocketCap } from '@/game/shared/rocket-cap';
+export { siloBonus } from '@/game/shared/silo-bonus';
 export { underTruce } from './functions/under-truce';
 export { isPacifist } from './functions/is-pacifist';
 export { pacifistDefBonus } from './functions/pacifist-def-bonus';
-export { singularityDefBonus } from './functions/singularity-def-bonus';
+export { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 export { buildingCount } from './functions/building-count';
 export { hasActionCard } from './functions/has-action-card';
 export { spendActionCard } from './functions/spend-action-card';
@@ -76,9 +76,9 @@ export { buildState, getState, setState } from './state';
 
 // Re-export functions already in functions/
 export { handSize } from './functions/hand-size';
-export { isFullyBuilt } from './functions/is-fully-built';
+export { isFullyBuilt } from '@/game/shared/is-fully-built';
 export { isSingularityInPlay } from './functions/is-singularity-in-play';
-export { isSingularityLabOk } from './functions/is-singularity-lab-ok';
+export { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 export { mainPicks } from './functions/main-picks';
 export { makePool } from './functions/make-pool';
 export { techLevel } from './functions/tech-level';
