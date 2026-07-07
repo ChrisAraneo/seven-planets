@@ -1,7 +1,6 @@
 import {
   ACTION_CARDS_FROM_TURN,
   COMBAT,
-  handSize,
   HOME_FIELD,
   SHIELD_DEFENSE,
 } from '@/game/constants';
@@ -19,6 +18,7 @@ import { rocketCap } from '@/game/shared/rocket-cap';
 import { siloBonus } from '@/game/shared/silo-bonus';
 import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import { underTruce } from './under-truce';
+import { handSize } from './hand-size';
 
 export function aiPickAttack(
   p: Player,
