@@ -3,14 +3,14 @@
 
    Run this after changing the game's numbers (constants.ts): the mastermind
    AI derives its core math from those constants automatically, and this
-   script recalibrates the residual judgment weights (ai-weights.ts) so its
+   script recalibrates the residual judgment weights (ai/weights.ts) so its
    risk appetite matches the new balance.
 
    Method: coordinate descent. For every tunable weight it tries a step up
    and a step down, measures the mastermind's win rate over a batch of
    headless games against random personality line-ups, and keeps any change
    that beats the incumbent by more than sampling noise. The winner is
-   written back to src/game/ai-weights.ts plus a markdown report.
+   written back to src/game/ai/weights.ts plus a markdown report.
 
    Run with:  npm run tune              (240 games/candidate, 2 passes)
               npm run tune 500 3        (custom games-per-eval, passes)
@@ -19,11 +19,18 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { getAiWeights, setAiWeights } from './ai';
-import type { AiWeights } from './ai-weights';
-import { PRIORITIES } from './constants';
-import { setSimMode, simulateGameWithPersonalities } from './engine';
+import { createPinia, setActivePinia } from 'pinia';
 
+import { getAiWeights } from './ai/functions/get-ai-weights';
+import { setAiWeights } from './ai/functions/set-ai-weights';
+import type { Weights as AiWeights } from './ai/weights';
+import { PRIORITIES } from './constants';
+import { setSimMode } from './effects';
+import { simulateGameWithPersonalities } from './engine/functions/simulate-game-with-personalities';
+
+// The game state lives in Pinia stores; headless scripts must install an
+// active Pinia instance before any engine/AI function runs.
+setActivePinia(createPinia());
 setSimMode(true); // no animation delays — pure logic speed
 
 const SEATS = 7;
@@ -90,7 +97,7 @@ async function winRate(weights: AiWeights, games: number): Promise<number> {
   return wins / games;
 }
 
-/** Regenerate src/game/ai-weights.ts with the tuned values. */
+/** Regenerate src/game/ai/weights.ts with the tuned values. */
 function weightsFileContent(w: AiWeights): string {
   const doc: Record<keyof AiWeights, string> = {
     planHorizon:
@@ -138,11 +145,11 @@ function weightsFileContent(w: AiWeights): string {
    LAST TUNED: ${new Date().toISOString()} by npm run tune
    ===================================================================== */
 
-export interface AiWeights {
+export interface Weights {
 ${SPECS.map((spec) => `  /** ${doc[spec.key]} */\n  ${spec.key}: number`).join('\n')}
 }
 
-export const AI_WEIGHTS: AiWeights = {
+export const WEIGHTS: Weights = {
 ${lines.join('\n')}
 }
 `;
@@ -200,7 +207,7 @@ async function main(): Promise<void> {
     `\nDone in ${elapsed}s — final win rate ${(bestRate * 100).toFixed(1)}%`,
   );
 
-  const weightsPath = resolve(process.cwd(), 'src/game/ai/ai-weights.ts');
+  const weightsPath = resolve(process.cwd(), 'src/game/ai/weights.ts');
   writeFileSync(weightsPath, weightsFileContent(best), 'utf8');
   console.log(`Weights written to ${weightsPath}`);
 

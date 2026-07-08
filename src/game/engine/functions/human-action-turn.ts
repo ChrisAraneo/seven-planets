@@ -1,7 +1,9 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { getHumanResolve, setHumanResolve } from './resolver-state';
 
-export function humanActionTurn(state: GameState): Promise<void> {
+export function humanActionTurn(): Promise<void> {
+  const state = getGameState();
   return new Promise((res) => {
     setHumanResolve(res);
     state.awaitingAction = true;

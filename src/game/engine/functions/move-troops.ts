@@ -1,24 +1,25 @@
 import { animateRocket, floatText } from '@/game/effects';
-import type { GameState, Planet, Player } from '@/game/types';
+import type { Planet, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { hasBuilding } from './has-building';
 import { log } from './log';
 import { spendActionCard } from './spend-action-card';
 
 // Redeploy troops between two planets of the same player (spends a Move card).
 export async function moveTroops(
-  state: GameState,
   p: Player,
   from: Planet,
   to: Planet,
   n: number,
 ): Promise<void> {
-  if (!hasBuilding(state, p, 'SPACEPORT')) {
+  const state = getGameState();
+  if (!hasBuilding(p, 'SPACEPORT')) {
     return;
   }
   spendActionCard(p, 'MOVE');
   from.troops -= n;
   log(
-    state,
     `🛸 ${p.name} redeploys ${n} troop${n > 1 ? 's' : ''} from ${from.name} to ${to.name}`,
     'build',
   );

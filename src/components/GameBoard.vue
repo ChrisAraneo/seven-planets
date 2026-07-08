@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@/game/constants';
-import { anims } from '@/game/effects';
 import { underTruce } from '@/game/engine/functions/under-truce';
 import type { Planet } from '@/game/types';
+import { useEffectsStore } from '@/stores/effects';
 import { useGameStore } from '@/stores/game';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 const store = useGameStore();
+// The engine pushes animations into the effects store; this render loop
+// drains them. The array reference is stable, so destructuring is safe.
+const { anims } = useEffectsStore();
 const state = store.state;
 
 // DEBUG: set localStorage['seven-planets:debug-black-holes'] = 'true' to render
@@ -438,7 +441,7 @@ function drawPlanet(pl: Planet, now: number): void {
   ctx.font = '12px sans-serif';
   ctx.fillStyle = '#fff';
   ctx.fillText(
-    `🪖${pl.troops}${underTruce(state, pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
+    `🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
     x,
     y + r + 18,
   );

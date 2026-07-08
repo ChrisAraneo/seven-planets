@@ -1,5 +1,5 @@
 // AiDifficulty interface — defined here to break the circular dep between
-// ai-state.ts and set-ai-difficulty.ts.
+// Ai-state.ts and set-ai-difficulty.ts.
 export interface AiDifficulty {
   /** Chance [0..1] a draft pick is made at random instead of by plan (dumber). */
   randomPickChance?: number;

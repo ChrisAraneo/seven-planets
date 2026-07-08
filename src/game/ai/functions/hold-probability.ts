@@ -4,34 +4,36 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/constants';
-import type { GameState, Planet, Player } from '@/game/types';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+import type { Planet, Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { actionDrawProb } from './action-draw-prob';
 import { aggression } from './aggression';
 import { alive } from './alive';
-import { aiState } from './ai-state';
 import { battleWinProb } from './battle-win-prob';
 import { mayTarget } from './may-target';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { projectedStrike } from './projected-strike';
 import { recruitRate } from './recruit-rate';
-import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 
 export function holdProbability(
-  s: GameState,
   owner: Player,
   planet: Planet,
   garrison: number,
   protectedUntil: number = planet.protectedUntil,
-  horizon: number = aiState.W.holdHorizon,
+  horizon: number = getAiStore().W.holdHorizon,
 ): number {
+  const s = getGameState();
   let pHold = 1;
   const reinforce =
-    recruitRate(s, owner) * (planet.buildings.BARRACKS ? 0.7 : 0.25);
+    recruitRate(owner) * (planet.buildings.BARRACKS ? 0.7 : 0.25);
   const shield =
     (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE +
     singularityDefBonus(planet);
   const pacBonus = owner.pacifistStatus ? PACIFIST_DEF_BONUS : 0;
-  for (const r of alive(s)) {
+  for (const r of alive()) {
     if (r.id === owner.id || r.pacifistStatus) {
       continue;
     }
@@ -44,7 +46,7 @@ export function holdProbability(
         continue;
       }
       const g = Math.round(garrison + reinforce * t);
-      const strike = projectedStrike(s, r, t, planet.id);
+      const strike = projectedStrike(r, t, planet.id);
       if (strike.n < 2 || strike.n < minTroopsToConquer(g)) {
         continue;
       }
@@ -59,7 +61,7 @@ export function holdProbability(
     const pCard =
       (r.hand.ATTACK || 0) > 0
         ? 0.95
-        : 1 - (1 - actionDrawProb(s, 'ATTACK')) ** window;
+        : 1 - (1 - actionDrawProb('ATTACK')) ** window;
     pHold *= 1 - peak * pCard * aggression(r);
   }
   return pHold;

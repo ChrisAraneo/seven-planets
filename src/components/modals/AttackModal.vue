@@ -25,7 +25,7 @@ const human = store.human;
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPls = ownedPlanets(state, human).filter(
+const siloPls = ownedPlanets(human).filter(
   (pl) => pl.buildings.SILO && pl.troops >= 1,
 );
 const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id);
@@ -34,13 +34,13 @@ const n = ref(1);
 
 const source = computed(() => state.planets[srcId.value]);
 const sources = computed(() =>
-  ownedPlanets(state, human).filter((pl) => pl.buildings.SILO),
+  ownedPlanets(human).filter((pl) => pl.buildings.SILO),
 );
 const targets = computed(() =>
   state.planets.filter((pl: Planet) => pl.ownerId !== 0),
 );
 const openTargets = computed(() =>
-  targets.value.filter((pl: Planet) => !underTruce(state, pl)),
+  targets.value.filter((pl: Planet) => !underTruce(pl)),
 );
 const cap = computed(() =>
   Math.min(rocketCap(source.value), source.value.troops),
@@ -68,7 +68,7 @@ const preview = computed(() => {
   const dp =
     2 * target.value.troops +
     (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    pacifistDefBonus(state, target.value) +
+    pacifistDefBonus(target.value) +
     singularityDefBonus(target.value) +
     HOME_FIELD;
   const pWin = battleWinProb(ap, dp); // exact P(win), same math the dice roll
@@ -127,12 +127,12 @@ function launch(): void {
       v-for="pl in targets"
       :key="pl.id"
       class="trow"
-      :class="{ sel: pl.id === sel, truce: underTruce(state, pl) }"
-      @click="selectTarget({ id: pl.id, truce: underTruce(state, pl) })">
+      :class="{ sel: pl.id === sel, truce: underTruce(pl) }"
+      @click="selectTarget({ id: pl.id, truce: underTruce(pl) })">
       <div class="tinfo">
         <b :style="{ color: state.players[pl.ownerId].color }">{{ pl.name }}</b>
         — {{ state.players[pl.ownerId].name }}
-        <span v-if="underTruce(state, pl)" class="dimtx">
+        <span v-if="underTruce(pl)" class="dimtx">
           🕊️ truce ({{ pl.protectedUntil - state.turn + 1 }} turn{{
             pl.protectedUntil - state.turn ? 's' : ''
           }})

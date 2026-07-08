@@ -1,6 +1,7 @@
 import type { BuildingType } from '@/game/types';
-import type { AttackPlan } from './evaluate-attacks';
+
 import type { BuildCandidate } from './build-candidates';
+import type { AttackPlan } from './evaluate-attacks';
 
 export type StrategyKind =
   | 'DEVELOP'

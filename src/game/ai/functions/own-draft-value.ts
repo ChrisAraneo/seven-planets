@@ -1,41 +1,38 @@
 import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/constants';
-import type {
-  GameState,
-  InfluenceType,
-  Planet,
-  Player,
-  PoolType,
-} from '@/game/types';
-import { aiState } from './ai-state';
+import { buildingCost } from '@/game/constants';
+import type { InfluenceType, Planet, Player, PoolType } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { buildingWorth } from './building-worth';
 import { handAfterCost } from './hand-after-cost';
 import { hasB } from './has-b';
 import { influenceDraftValue } from './influence-draft-value';
 import { nextLevelAllowed } from './next-level-allowed';
 import { owned } from './owned';
-import { totalTroops } from './total-troops';
 import type { Plan } from './plan-types';
-import { buildingCost } from '@/game/constants';
+import { totalTroops } from './total-troops';
 
-function garrisonFloor(s: GameState): number {
+function garrisonFloor(): number {
+  const s = getGameState();
   return 2 + Math.min(8, Math.floor(s.turn / 4));
 }
 
 export function ownDraftValue(
-  s: GameState,
   p: Player,
   draftPlanet: Planet,
   t: PoolType,
   plan: Plan,
 ): number {
+  const s = getGameState();
   const def = CARDS[t];
   if (def.building) {
-    const id = t as Parameters<typeof nextLevelAllowed>[3];
-    const level = nextLevelAllowed(s, p, draftPlanet, id);
+    const id = t as Parameters<typeof nextLevelAllowed>[2];
+    const level = nextLevelAllowed(p, draftPlanet, id);
     if (!level) {
       return -1;
     }
-    const worth = buildingWorth(s, p, id, draftPlanet, level);
+    const worth = buildingWorth(p, id, draftPlanet, level);
     let v = 1.5 + worth / 6;
     if (plan.buildQueue[0]?.id === id) {
       v += 2;
@@ -52,7 +49,7 @@ export function ownDraftValue(
     return v;
   }
   if (def.influenceCard) {
-    return influenceDraftValue(s, p, t as InfluenceType, plan);
+    return influenceDraftValue(p, t as InfluenceType, plan);
   }
   if (t === 'ATTACK') {
     if (p.pacifistStatus) {
@@ -61,15 +58,11 @@ export function ownDraftValue(
     let v = 1.2;
     if (
       (plan.kind === 'STRIKE' || plan.kind === 'MILITARIZE') &&
-      hasB(s, p, 'SILO')
+      hasB(p, 'SILO')
     ) {
       v += 1.6;
     }
-    if (
-      (p.hand.ATTACK || 0) === 0 &&
-      hasB(s, p, 'SILO') &&
-      totalTroops(s, p) >= 4
-    ) {
+    if ((p.hand.ATTACK || 0) === 0 && hasB(p, 'SILO') && totalTroops(p) >= 4) {
       v += 1;
     }
     return v - (p.hand.ATTACK || 0) * 0.5;
@@ -77,8 +70,8 @@ export function ownDraftValue(
   if (t === 'RECRUIT') {
     let v = 1.3;
     if (
-      hasB(s, p, 'BARRACKS') &&
-      owned(s, p).some((pl) => pl.troops < garrisonFloor(s))
+      hasB(p, 'BARRACKS') &&
+      owned(p).some((pl) => pl.troops < garrisonFloor())
     ) {
       v += 1.5;
     }
@@ -90,14 +83,14 @@ export function ownDraftValue(
   }
   if (t === 'MOVE') {
     let v = 0.8;
-    if (p.planets.length >= 2 && hasB(s, p, 'SPACEPORT')) {
+    if (p.planets.length >= 2 && hasB(p, 'SPACEPORT')) {
       v += 0.8;
     }
     return v - (p.hand.MOVE || 0) * 0.6;
   }
   if (t === 'TRADE') {
     let v = 1;
-    if (hasB(s, p, 'EMBASSY')) {
+    if (hasB(p, 'EMBASSY')) {
       v += 0.6;
     }
     return v - (p.hand.TRADE || 0) * 0.5;

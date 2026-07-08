@@ -38,9 +38,9 @@ const sub = computed(() => {
     <div class="gostats">
       {{ sub }}<br /><br />
       Turns played: {{ store.state.turn }} · Planets held:
-      {{ human.planets.length }} · Buildings:
-      {{ buildingCount(state, human) }} · Troops:
-      {{ totalTroops(state, human) }}
+      {{ human.planets.length }} · Buildings: {{ buildingCount(human) }} ·
+      Troops:
+      {{ totalTroops(human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
       <button class="btn" @click="store.newGame()">🔄 Play Again</button>

@@ -8,13 +8,16 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/constants';
-import type { GameState, Player } from '@/game/types';
-import { aiState } from './ai-state';
-import type { Plan, StrategyKind } from './plan-types';
-import type { BuildCandidate } from './build-candidates';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+import type { Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { battleWinProb } from './battle-win-prob';
 import { bestAttackNow } from './best-attack-now';
 import { bestCoupTarget } from './best-coup-target';
+import type { BuildCandidate } from './build-candidates';
 import { buildCandidates } from './build-candidates';
 import { effMinConquerProb } from './eff-min-conquer-prob';
 import { hasB } from './has-b';
@@ -23,18 +26,15 @@ import { influenceIncome } from './influence-income';
 import { mayTarget } from './may-target';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
+import type { Plan, StrategyKind } from './plan-types';
 import { planetValue } from './planet-value';
 import { recruitRate } from './recruit-rate';
-import { rocketCap } from '@/game/shared/rocket-cap';
-import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import { survivorsAfterWin } from './survivors-after-win';
 
-export function computePlan(
-  s: GameState,
-  p: Player,
-  prevKind: StrategyKind | null,
-): Plan {
-  let queue = buildCandidates(s, p);
+export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
+  const aiState = getAiStore();
+  const s = getGameState();
+  let queue = buildCandidates(p);
 
   const tempo = Math.min(1.8, 0.8 + s.turn / 50);
   const ecoTempo = Math.max(0.45, 1.15 - s.turn / 90);
@@ -44,14 +44,14 @@ export function computePlan(
     0.45 *
     ecoTempo;
 
-  const strike = bestAttackNow(s, p);
+  const strike = bestAttackNow(p);
   const strikeScore =
     strike && strike.conquers ? strike.score * 1.25 * tempo : 0;
 
   let militarize = 0;
   let targetId: number | null = null;
   let troopsNeeded = 0;
-  const silos = owned(s, p).filter((pl) => pl.buildings.SILO);
+  const silos = owned(p).filter((pl) => pl.buildings.SILO);
   const staging =
     silos.length > 0
       ? silos.reduce((a, b) =>
@@ -62,7 +62,7 @@ export function computePlan(
         )
       : null;
   if (!p.pacifistStatus) {
-    const rr = Math.max(0.4, recruitRate(s, p));
+    const rr = Math.max(0.4, recruitRate(p));
     const bonus = staging ? (staging.buildings.SILO || 0) * 2 : 0;
     for (const target of s.planets) {
       if (target.ownerId === p.id) {
@@ -75,9 +75,7 @@ export function computePlan(
       if (!mayTarget(p, defOwner)) {
         continue;
       }
-      const futureDef = Math.round(
-        target.troops + recruitRate(s, defOwner) * 3,
-      );
+      const futureDef = Math.round(target.troops + recruitRate(defOwner) * 3);
       let need = minTroopsToConquer(futureDef);
       const defB =
         COMBAT.defensePerTroop * futureDef +
@@ -88,7 +86,7 @@ export function computePlan(
       while (
         need < 80 &&
         battleWinProb(COMBAT.attackPerTroop * need + bonus, defB) <
-          effMinConquerProb(s)
+          effMinConquerProb()
       ) {
         need++;
       }
@@ -107,14 +105,13 @@ export function computePlan(
         continue;
       }
       const hold = holdProbability(
-        s,
         p,
         target,
         survivorsAfterWin(need),
         s.turn + CONQUEST_TRUCE,
       );
       const value =
-        planetValue(s, target) + (defOwner.planets.length === 1 ? 10 : 0);
+        planetValue(target) + (defOwner.planets.length === 1 ? 10 : 0);
       const sc =
         (value * 0.75 * hold * 0.9 ** eta - need * aiState.W.troopValue * 0.3) *
         tempo;
@@ -127,19 +124,19 @@ export function computePlan(
   }
 
   let threat = 0;
-  for (const pl of owned(s, p)) {
+  for (const pl of owned(p)) {
     threat +=
-      (1 - holdProbability(s, p, pl, pl.troops)) *
-      planetValue(s, pl) *
+      (1 - holdProbability(p, pl, pl.troops)) *
+      planetValue(pl) *
       (p.planets.length === 1 ? 3 : 0.6);
   }
   const fortify = threat * 0.9;
 
   const coupCost = INFLUENCE_CARDS.COUP.cost;
-  const coupTgt = bestCoupTarget(s, p);
+  const coupTgt = bestCoupTarget(p);
   let coupBank = 0;
   if (coupTgt && s.turn >= ACTION_CARDS_FROM_TURN) {
-    const starIncome = influenceIncome(s, p);
+    const starIncome = influenceIncome(p);
     const turnsTo =
       p.influence >= coupCost
         ? 0
@@ -177,15 +174,14 @@ export function computePlan(
   const enabler =
     kind === 'MILITARIZE' || kind === 'STRIKE'
       ? (c: BuildCandidate) =>
-          (c.id === 'BARRACKS' && !hasB(s, p, 'BARRACKS')) ||
-          (c.id === 'SILO' && !hasB(s, p, 'SILO'))
+          (c.id === 'BARRACKS' && !hasB(p, 'BARRACKS')) ||
+          (c.id === 'SILO' && !hasB(p, 'SILO'))
       : kind === 'FORTIFY'
         ? (c: BuildCandidate) =>
-            (c.id === 'BARRACKS' && !hasB(s, p, 'BARRACKS')) ||
-            c.id === 'SHIELD'
+            (c.id === 'BARRACKS' && !hasB(p, 'BARRACKS')) || c.id === 'SHIELD'
         : null;
   if (enabler) {
-    queue = [...queue.filter(enabler), ...queue.filter((c) => !enabler!(c))];
+    queue = [...queue.filter(enabler), ...queue.filter((c) => !enabler(c))];
   }
 
   return {

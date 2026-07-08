@@ -1,7 +1,8 @@
 import type { Player } from '@/game/types';
-import { aiState } from './ai-state';
+import { getAiStore } from '@/stores/ai';
 
 export function activateWeightsFor(p: Player): void {
+  const aiState = getAiStore();
   const { difficulty, tuned } = aiState;
   if (difficulty && !p.isHuman) {
     aiState.W = {

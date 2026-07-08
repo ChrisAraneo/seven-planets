@@ -1,8 +1,10 @@
-import { MOVE_CARDS_FROM_TURN, CARDS } from '@/game/constants';
-import type { GameState, PoolType, ActionType } from '@/game/types';
+import { CARDS, MOVE_CARDS_FROM_TURN } from '@/game/constants';
+import type { ActionType, PoolType } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
 // Draw one action card. Attack/Recruit/Trade from turn 10; Move from turn 20.
-export function drawActionCard(state: GameState): PoolType {
+export function drawActionCard(): PoolType {
+  const state = getGameState();
   const types: ActionType[] = ['ATTACK', 'RECRUIT', 'TRADE'];
   if (state.turn >= MOVE_CARDS_FROM_TURN) {
     types.push('MOVE');

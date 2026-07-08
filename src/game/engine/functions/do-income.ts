@@ -5,11 +5,13 @@ import {
   incomeAmount,
   PACIFIST_INFLUENCE,
 } from '@/game/constants';
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { log } from './log';
 import { ownedPlanets } from './owned-planets';
 
-export function doIncome(state: GameState): void {
+export function doIncome(): void {
+  const state = getGameState();
   const gains: Record<number, Record<string, number>> = {};
   const moveGains: Record<number, number> = {}; // L2 Spaceport: free Move card every 3 turns
   const infGains: Record<number, number> = {}; // L2 Embassy: +1 ⭐ Influence every turn
@@ -48,28 +50,24 @@ export function doIncome(state: GameState): void {
   }
   for (const id in gains) {
     log(
-      state,
       `⚙️ ${state.players[id].name} produces ${fmtCards(gains[id])}`,
       'draft',
     );
   }
   for (const id in moveGains) {
     log(
-      state,
       `🛰️ ${state.players[id].name} receives +${moveGains[id]}🛸 Move (L2 Spaceport)`,
       'draft',
     );
   }
   for (const id in infGains) {
     log(
-      state,
       `⭐ ${state.players[id].name} gains +${infGains[id]} Influence (L2 Embassy)`,
       'draft',
     );
   }
   for (const id in pacGains) {
     log(
-      state,
       `☮️ ${state.players[id].name} gains +${pacGains[id]} Influence (Pacifist)`,
       'draft',
     );

@@ -1,16 +1,18 @@
 import { fmtCards } from '@/game/constants';
-import type { Cost, GameState, Player } from '@/game/types';
+import type { Cost, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { log } from './log';
 import { spendActionCard } from './spend-action-card';
 
 // `a` is the initiator and pays the TRADE action card.
 export function execTrade(
-  state: GameState,
   a: Player,
   b: Player,
   aGives: Cost,
   bGives: Cost,
 ): void {
+  const state = getGameState();
   spendActionCard(a, 'TRADE');
   for (const t in aGives) {
     a.hand[t] -= aGives[t];
@@ -22,7 +24,6 @@ export function execTrade(
   }
   a.influence++;
   log(
-    state,
     `🔁 ${a.name} trades ${fmtCards(aGives)} to ${b.name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
     'trade',
   );

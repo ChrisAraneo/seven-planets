@@ -1,10 +1,14 @@
-import type { GameState, Player } from '@/game/types';
-import { aiState } from './ai-state';
-import { alive } from './alive';
-import { KAMIKAZE_RISK } from './ai-constants';
+import type { Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
 
-export function effMinConquerProb(s: GameState, p?: Player): number {
-  const duel = alive(s).length === 2 ? 0.1 : 0;
+import { KAMIKAZE_RISK } from './ai-constants';
+import { alive } from './alive';
+
+export function effMinConquerProb(p?: Player): number {
+  const aiState = getAiStore();
+  const s = getGameState();
+  const duel = alive().length === 2 ? 0.1 : 0;
   const reckless = p?.kamikaze ? KAMIKAZE_RISK : 0;
   return Math.max(
     0.25,

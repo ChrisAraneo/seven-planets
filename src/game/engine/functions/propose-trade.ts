@@ -1,40 +1,41 @@
 import { CARDS, RESOURCE_TYPES } from '@/game/constants';
-import { AUTO_HUMAN } from './auto-human';
-import { log } from './log';
-import { setStatus } from './set-status';
-import type { GameState, Player, TradeOffer } from '@/game/types';
+import type { Player, TradeOffer } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { aiEvaluateTrade } from './ai-evaluate-trade';
 import { askHumanOffer } from './ask-human-offer';
+import { AUTO_HUMAN } from './auto-human';
 import { execTrade } from './exec-trade';
+import { log } from './log';
+import { setStatus } from './set-status';
 
 export async function proposeTrade(
-  state: GameState,
   p: Player,
   offer: TradeOffer,
 ): Promise<boolean> {
+  const state = getGameState();
   const { partner } = offer;
   const wantKey = Object.keys(offer.gets)[0];
   if (wantKey && RESOURCE_TYPES.includes(wantKey as never)) {
     log(
-      state,
       `📡 ${p.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
       'trade',
     );
   }
   let accept: boolean;
   if (partner.isHuman && !AUTO_HUMAN) {
-    setStatus(state, `${p.name} is hailing you with a trade offer…`);
-    accept = await askHumanOffer(state, p, offer);
+    setStatus(`${p.name} is hailing you with a trade offer…`);
+    accept = await askHumanOffer(p, offer);
   } else {
-    accept = aiEvaluateTrade(state, partner, offer.gets, offer.gives, p);
+    accept = aiEvaluateTrade(partner, offer.gets, offer.gives, p);
   }
   if (state.over) {
     return false;
   }
   if (accept) {
-    execTrade(state, p, partner, offer.gives, offer.gets);
+    execTrade(p, partner, offer.gives, offer.gets);
     return true;
   }
-  log(state, `🔁 ${partner.name} declines ${p.name}'s trade offer.`, 'trade');
+  log(`🔁 ${partner.name} declines ${p.name}'s trade offer.`, 'trade');
   return false;
 }

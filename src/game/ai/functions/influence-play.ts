@@ -1,10 +1,7 @@
-import type {
-  GameState,
-  InfluenceOpts,
-  InfluenceType,
-  Player,
-} from '@/game/types';
-import { aiState } from './ai-state';
+import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { alive } from './alive';
 import { avgStrength } from './avg-strength';
 import { bestCoupTarget } from './best-coup-target';
@@ -18,12 +15,13 @@ import { skipTarget } from './skip-target';
 import { underTruce } from './under-truce';
 
 export function influencePlay(
-  s: GameState,
   p: Player,
 ): { type: InfluenceType; opts: InfluenceOpts; ev: number } | null {
-  const plan = planFor(s, p);
+  const aiState = getAiStore();
+  const s = getGameState();
+  const plan = planFor(p);
   if ((p.hand.COUP || 0) > 0) {
-    const tgt = bestCoupTarget(s, p);
+    const tgt = bestCoupTarget(p);
     if (tgt && tgt.value >= aiState.W.coupValueFloor) {
       return { type: 'COUP', opts: { planet: tgt.planet }, ev: tgt.value };
     }
@@ -31,13 +29,13 @@ export function influencePlay(
   if ((p.hand.PEACE || 0) > 0) {
     const worst = Math.max(
       0,
-      ...owned(s, p).map((pl) => immediateFallProb(s, p, pl)),
+      ...owned(p).map((pl) => immediateFallProb(p, pl)),
     );
     if (worst >= aiState.W.peaceThreatFloor) {
       return { type: 'PEACE', opts: {}, ev: worst * 10 };
     }
   }
-  const avg = avgStrength(s);
+  const avg = avgStrength();
   for (const t of [
     'SKIP_ARMY',
     'SKIP_PLANETS',
@@ -47,24 +45,24 @@ export function influencePlay(
     if ((p.hand[t] || 0) < 1) {
       continue;
     }
-    const target = skipTarget(s, p, t);
+    const target = skipTarget(p, t);
     if (!target) {
       continue;
     }
     const scary =
-      playerStrength(s, target) >= avg * 1.15 ||
-      imminentAttacker(s, p, target) ||
-      alive(s).length === 2;
+      playerStrength(target) >= avg * 1.15 ||
+      imminentAttacker(p, target) ||
+      alive().length === 2;
     if (scary) {
       return { type: t, opts: {}, ev: 3 };
     }
   }
   if ((p.hand.STEAL_ACTION || 0) > 0) {
-    const rivals = alive(s).filter((x) => x.id !== p.id);
+    const rivals = alive().filter((x) => x.id !== p.id);
     const byStrength = (a: Player, b: Player) =>
-      playerStrength(s, b) - playerStrength(s, a);
+      playerStrength(b) - playerStrength(a);
     const danger = rivals
-      .filter((r) => imminentAttacker(s, p, r))
+      .filter((r) => imminentAttacker(p, r))
       .sort(byStrength);
     if (danger.length > 0) {
       return {
@@ -76,7 +74,7 @@ export function influencePlay(
     if (
       (plan.kind === 'STRIKE' || plan.kind === 'MILITARIZE') &&
       (p.hand.ATTACK || 0) === 0 &&
-      hasB(s, p, 'SILO')
+      hasB(p, 'SILO')
     ) {
       const holder = rivals
         .filter((r) => (r.hand.ATTACK || 0) > 0)
@@ -90,15 +88,15 @@ export function influencePlay(
       }
     }
     const wants: ('RECRUIT' | 'TRADE')[] = [];
-    if (hasB(s, p, 'BARRACKS') && (p.hand.RECRUIT || 0) === 0) {
+    if (hasB(p, 'BARRACKS') && (p.hand.RECRUIT || 0) === 0) {
       wants.push('RECRUIT');
     }
-    if (hasB(s, p, 'EMBASSY') && (p.hand.TRADE || 0) === 0) {
+    if (hasB(p, 'EMBASSY') && (p.hand.TRADE || 0) === 0) {
       wants.push('TRADE');
     }
     for (const a of wants) {
       const holder = rivals
-        .filter((r) => (r.hand[a] || 0) > 0 && playerStrength(s, r) >= avg)
+        .filter((r) => (r.hand[a] || 0) > 0 && playerStrength(r) >= avg)
         .sort(byStrength)[0];
       if (holder) {
         return {

@@ -1,4 +1,6 @@
-import type { GameState, Player } from '@/game/types';
+import type { Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { endHumanTurn } from './end-human-turn';
 import { log } from './log';
 import { resolveOffer } from './resolve-offer';
@@ -6,35 +8,29 @@ import { getPoolResolve, setPoolResolve } from './resolver-state';
 import { setStatus } from './set-status';
 
 export function triggerGameOver(
-  state: GameState,
   winner: Player | null,
   reason: 'conquest' | 'eliminated',
 ): void {
+  const state = getGameState();
   if (state.over) {
     return;
   }
   state.over = { winner, reason };
   if (reason === 'conquest' && winner) {
     log(
-      state,
       `🏴 ${winner.name} rules all seven planets! The galaxy has one master.`,
       'win',
     );
   }
   if (reason === 'eliminated') {
-    log(
-      state,
-      '☠️ Your homeworld has fallen. The galaxy forgets Terra Prime.',
-      'win',
-    );
+    log('☠️ Your homeworld has fallen. The galaxy forgets Terra Prime.', 'win');
   }
   setStatus(
-    state,
     winner
       ? `GAME OVER — ${winner.name} wins by ${reason}.`
       : 'GAME OVER — your homeworld has fallen.',
   );
-  endHumanTurn(state);
+  endHumanTurn();
   const r = getPoolResolve();
   if (r) {
     setPoolResolve(null);
@@ -42,6 +38,6 @@ export function triggerGameOver(
     r(0);
   }
   if (state.pendingOffer) {
-    resolveOffer(state, false);
+    resolveOffer(false);
   }
 }

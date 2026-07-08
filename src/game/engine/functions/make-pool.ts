@@ -8,14 +8,17 @@ import {
   INFLUENCE_CARDS_FROM_TURN,
   shuffleArr,
 } from '@/game/constants';
-import { drawResourceCard } from './draw-resource-card';
-import type { GameState, InfluenceType, PoolType } from '@/game/types';
-import { isSingularityInPlay } from './is-singularity-in-play';
-import { drawActionCard } from './draw-action-card';
+import type { InfluenceType, PoolType } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { alivePlayers } from './alive-players';
+import { drawActionCard } from './draw-action-card';
+import { drawResourceCard } from './draw-resource-card';
+import { isSingularityInPlay } from './is-singularity-in-play';
 import { singularityTotal } from './singularity-total';
 
-export function makePool(state: GameState): PoolType[] {
+export function makePool(): PoolType[] {
+  const state = getGameState();
   // Turns 1–5: pure resource draft, 14 random resource cards.
   if (state.turn < BUILDINGS_FROM_TURN) {
     const pool: PoolType[] = [];
@@ -31,7 +34,7 @@ export function makePool(state: GameState): PoolType[] {
       return false;
     }
     if (b === 'SINGULARITY') {
-      return isSingularityInPlay(state);
+      return isSingularityInPlay();
     }
     return true;
   });
@@ -41,7 +44,7 @@ export function makePool(state: GameState): PoolType[] {
     drawResourceCard(),
   );
   const actionSlots = Array.from({ length: actionCount }, () =>
-    drawActionCard(state),
+    drawActionCard(),
   );
 
   // From turn 30: 2 random influence cards join every pool.
@@ -53,12 +56,9 @@ export function makePool(state: GameState): PoolType[] {
       : [];
 
   // Each Singularity level across all alive players adds 1 extra random card.
-  const singBonus = alivePlayers(state).reduce(
-    (s, p) => s + singularityTotal(state, p),
-    0,
-  );
+  const singBonus = alivePlayers().reduce((s, p) => s + singularityTotal(p), 0);
   const bonusSlots = Array.from({ length: singBonus }, () =>
-    Math.random() < 0.55 ? drawResourceCard() : drawActionCard(state),
+    Math.random() < 0.55 ? drawResourceCard() : drawActionCard(),
   );
 
   return shuffleArr([

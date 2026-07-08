@@ -1,17 +1,19 @@
 import { ADVANCED_FROM_TURN, BUILD_ORDER, maxLevel } from '@/game/constants';
-import type { GameState } from '@/game/types';
+import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
+import { getGameState } from '@/stores/game-state';
+
 import { alive } from './alive';
 import { owned } from './owned';
-import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 import { techLevel } from './tech-level';
 
-export function singularityLive(s: GameState): boolean {
-  return alive(s).some((p) =>
-    owned(s, p).some((pl) => {
+export function singularityLive(): boolean {
+  const s = getGameState();
+  return alive().some((p) =>
+    owned(p).some((pl) => {
       const next = (pl.buildings.SINGULARITY || 0) + 1;
       return (
         next <= maxLevel('SINGULARITY') &&
-        next <= techLevel(s, p) &&
+        next <= techLevel(p) &&
         isSingularityLabOk(pl, next)
       );
     }),

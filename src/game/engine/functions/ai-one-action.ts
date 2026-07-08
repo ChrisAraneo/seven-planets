@@ -1,9 +1,9 @@
-import type { GameState, Player } from '@/game/types';
+import type { Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { mastermindOneAction } from './mastermind-one-action';
 
-export async function aiOneAction(
-  state: GameState,
-  player: Player,
-): Promise<boolean> {
-  return mastermindOneAction(state, player);
+export async function aiOneAction(player: Player): Promise<boolean> {
+  const state = getGameState();
+  return mastermindOneAction(player);
 }

@@ -1,18 +1,21 @@
 // NOTE: This function is not used anywhere in the current codebase.
 // It was part of the old non-mastermind AI personality system.
 import { CARDS, RESOURCE_TYPES } from '@/game/constants';
-import type { GameState, Player, TradeOffer } from '@/game/types';
+import type { Player, TradeOffer } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { alivePlayers } from './alive-players';
 import { AUTO_HUMAN } from './auto-human';
 import { currentGoal } from './current-goal';
 import { hasActionCard } from './has-action-card';
 import { hasBuilding } from './has-building';
 
-export function aiPlanTrade(state: GameState, p: Player): TradeOffer | null {
-  if (!hasActionCard(p, 'TRADE') || !hasBuilding(state, p, 'EMBASSY')) {
+export function aiPlanTrade(p: Player): TradeOffer | null {
+  const state = getGameState();
+  if (!hasActionCard(p, 'TRADE') || !hasBuilding(p, 'EMBASSY')) {
     return null;
   }
-  const goal = currentGoal(state, p);
+  const goal = currentGoal(p);
   if (!goal) {
     return null;
   }
@@ -49,7 +52,7 @@ export function aiPlanTrade(state: GameState, p: Player): TradeOffer | null {
     return null;
   }
 
-  const partners = alivePlayers(state)
+  const partners = alivePlayers()
     .filter((x) => x.id !== p.id && x.hand[want] > 0)
     .sort((a, b) => b.hand[want] - a.hand[want]);
   if (partners.length === 0) {

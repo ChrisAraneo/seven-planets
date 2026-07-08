@@ -1,13 +1,15 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { aiActionTurn } from './ai-action-turn';
 import { AUTO_HUMAN } from './auto-human';
 import { humanActionTurn } from './human-action-turn';
 import { setStatus } from './set-status';
 import { turnOrder } from './turn-order';
 
-export async function runActionPhase(state: GameState): Promise<void> {
+export async function runActionPhase(): Promise<void> {
+  const state = getGameState();
   state.phase = 'action';
-  for (const p of turnOrder(state)) {
+  for (const p of turnOrder()) {
     if (state.over) {
       return;
     }
@@ -16,14 +18,11 @@ export async function runActionPhase(state: GameState): Promise<void> {
     }
     state.activeId = p.id;
     if (p.isHuman && !AUTO_HUMAN) {
-      setStatus(
-        state,
-        'YOUR TURN — recruit, attack or trade. End turn when done.',
-      );
-      await humanActionTurn(state);
+      setStatus('YOUR TURN — recruit, attack or trade. End turn when done.');
+      await humanActionTurn();
     } else {
-      setStatus(state, `${p.name} is taking actions…`);
-      await aiActionTurn(state, p);
+      setStatus(`${p.name} is taking actions…`);
+      await aiActionTurn(p);
     }
     if (state.over) {
       return;

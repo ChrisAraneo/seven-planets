@@ -1,18 +1,20 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { canPickCard } from './can-pick-card';
 import { homePlanet } from './home-planet';
 import { getPoolResolve, setPoolResolve } from './resolver-state';
 
-export function humanPoolClick(state: GameState, idx: number): void {
+export function humanPoolClick(idx: number): void {
+  const state = getGameState();
   if (!getPoolResolve() || state.phase !== 'draft') {
     return;
   }
   const human = state.players[0];
-  const planet = state.planets[state.draftPlanetId] || homePlanet(state, human);
+  const planet = state.planets[state.draftPlanetId] || homePlanet(human);
   if (
     idx < 0 ||
     idx >= state.pool.length ||
-    !canPickCard(state, human, state.pool[idx], planet)
+    !canPickCard(human, state.pool[idx], planet)
   ) {
     return;
   }

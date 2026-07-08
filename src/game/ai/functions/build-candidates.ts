@@ -1,12 +1,8 @@
 import { BUILD_ORDER, buildingCost } from '@/game/constants';
-import type {
-  BuildingType,
-  Cost,
-  GameState,
-  Planet,
-  Player,
-} from '@/game/types';
-import { aiState } from './ai-state';
+import type { BuildingType, Cost, Planet, Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { affordEta } from './afford-eta';
 import { buildingWorth } from './building-worth';
 import { cardAppearProb } from './card-appear-prob';
@@ -22,22 +18,24 @@ export interface BuildCandidate {
   pComplete: number;
 }
 
-export function buildCandidates(s: GameState, p: Player): BuildCandidate[] {
+export function buildCandidates(p: Player): BuildCandidate[] {
+  const aiState = getAiStore();
+  const s = getGameState();
   const all: BuildCandidate[] = [];
-  for (const planet of owned(s, p)) {
+  for (const planet of owned(p)) {
     for (const id of BUILD_ORDER) {
-      const level = nextLevelAllowed(s, p, planet, id);
+      const level = nextLevelAllowed(p, planet, id);
       if (!level) {
         continue;
       }
       const cost = buildingCost(id, level);
-      const worth = buildingWorth(s, p, id, planet, level);
+      const worth = buildingWorth(p, id, planet, level);
       if (worth <= 0) {
         continue;
       }
-      const eta = affordEta(s, p, cost);
+      const eta = affordEta(p, cost);
       const pComplete =
-        cardAppearProb(s, id, aiState.W.planHorizon) *
+        cardAppearProb(id, aiState.W.planHorizon) *
         Math.max(0.1, Math.min(1, 1.2 - eta / aiState.W.planHorizon));
       all.push({ id, planet, level, cost, worth, pComplete });
     }

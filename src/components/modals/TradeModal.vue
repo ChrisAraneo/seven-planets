@@ -11,7 +11,7 @@ const store = useGameStore();
 const state = store.state;
 const human = store.human;
 
-const partners = alivePlayers(state).filter((p) => !p.isHuman);
+const partners = alivePlayers().filter((p) => !p.isHuman);
 const partnerId = ref(partners[0].id);
 const partner = computed(() => state.players[partnerId.value]);
 

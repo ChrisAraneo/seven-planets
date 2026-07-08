@@ -1,5 +1,7 @@
-import type { GameState, Planet, Player } from '@/game/types';
+import type { Planet, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
-export function ownedPlanets(state: GameState, p: Player): Planet[] {
+export function ownedPlanets(p: Player): Planet[] {
+  const state = getGameState();
   return p.planets.map((id) => state.planets[id]);
 }

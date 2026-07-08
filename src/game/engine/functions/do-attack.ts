@@ -1,34 +1,36 @@
 import {
+  choice,
   COMBAT,
+  HOME_FIELD,
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
   randInt,
-  TAUNTS,
-  choice,
-  HOME_FIELD,
   SHIELD_DEFENSE,
+  TAUNTS,
 } from '@/game/constants';
 import { animateRocket, boom, floatText } from '@/game/effects';
-import type { GameState, Planet, Player } from '@/game/types';
+import { siloBonus } from '@/game/shared/silo-bonus';
+import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+import type { Planet, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { checkWin } from './check-win';
 import { conquerPlanet } from './conquer-planet';
 import { log } from './log';
 import { ownedPlanets } from './owned-planets';
 import { pacifistDefBonus } from './pacifist-def-bonus';
-import { siloBonus } from '@/game/shared/silo-bonus';
-import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import { spendActionCard } from './spend-action-card';
 import { underTruce } from './under-truce';
 
 // An attack launches from one of the attacker's planets, using THAT planet's army.
 export async function doAttack(
-  state: GameState,
   att: Player,
   source: Planet,
   target: Planet,
   n: number,
 ): Promise<void> {
-  if (underTruce(state, target)) {
+  const state = getGameState();
+  if (underTruce(target)) {
     return;
   } // Freshly conquered planets cannot be attacked
   if (!source.buildings.SILO) {
@@ -40,11 +42,10 @@ export async function doAttack(
     att.pacifistStatus = false;
     att.pacifismForfeited = true;
     log(
-      state,
       `⚔️ ${att.name} breaks their pacifist vow to strike — the +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per planet are gone for good.`,
       'war',
     );
-    for (const pl of ownedPlanets(state, att)) {
+    for (const pl of ownedPlanets(att)) {
       floatText(pl, '⚔️ VOW BROKEN', '#ff6b6b');
     }
   }
@@ -53,12 +54,11 @@ export async function doAttack(
   const def = state.players[target.ownerId];
   source.troops -= n;
   log(
-    state,
     `🚀 ${att.name} launches a rocket with ${n} troops from ${source.name} at ${target.name} (${def.name})!`,
     'war',
   );
   if (!att.isHuman && Math.random() < 0.4) {
-    log(state, `   ${att.name}: ${choice(TAUNTS)}`, 'war');
+    log(`   ${att.name}: ${choice(TAUNTS)}`, 'war');
   }
   await animateRocket(source, target, att.color);
 
@@ -72,7 +72,7 @@ export async function doAttack(
   const dp =
     COMBAT.defensePerTroop * target.troops +
     shieldDef +
-    pacifistDefBonus(state, target) +
+    pacifistDefBonus(target) +
     singularityDefBonus(target) +
     HOME_FIELD +
     randInt(0, COMBAT.defenseRoll);
@@ -96,7 +96,6 @@ export async function doAttack(
   target.troops -= defLoss;
   boom(target);
   log(
-    state,
     `💥 Battle for ${target.name}: attack ${ap} vs defense ${dp} — ${win ? `${att.name} WINS` : `${def.name} holds`}! Losses: ${att.name} -${attLoss}🪖, ${def.name} -${defLoss}🪖`,
     'war',
   );
@@ -104,7 +103,7 @@ export async function doAttack(
   if (win) {
     // No spoils for merely winning a battle — only conquest pays
     if (target.troops <= 0) {
-      conquerPlanet(state, att, target, survivors); // The surviving strike force garrisons it
+      conquerPlanet(att, target, survivors); // The surviving strike force garrisons it
     } else {
       source.troops += survivors; // Raiders fly home
       floatText(target, 'RAIDED!', '#ff8a97');
@@ -113,5 +112,5 @@ export async function doAttack(
     source.troops += survivors;
     floatText(target, 'DEFENDED!', '#7dff8a');
   }
-  checkWin(state);
+  checkWin();
 }

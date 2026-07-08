@@ -1,8 +1,11 @@
 /* =====================================================================
    SEVEN PLANETS — presentation effects bridge.
-   The engine enqueues canvas animations here; the GameBoard component
-   drains the queue in its render loop. Also owns pacing (sleep / speed).
+   The engine enqueues canvas animations via these helpers; the GameBoard
+   component drains the queue in its render loop. Also owns pacing
+   (sleep / speed). All mutable state lives in the Pinia effects store.
    ===================================================================== */
+
+import { getEffectsStore } from '@/stores/effects';
 
 import type { Planet } from './types';
 
@@ -20,29 +23,19 @@ export interface Anim {
   txt?: string;
 }
 
-/** Live animation queue, drained by the GameBoard render loop. */
-export const anims: Anim[] = [];
-
-let fastMode = false;
-let simMode = false; // Headless simulations skip all delays and animations
-
-export function setFastMode(v: boolean): void {
-  fastMode = v;
-}
-export function getFastMode(): boolean {
-  return fastMode;
-}
+/** Headless simulations skip all delays and animations. */
 export function setSimMode(v: boolean): void {
-  simMode = v;
+  getEffectsStore().simMode = v;
 }
 
 // Animation speed multiplier. Headless simulation runs at 0 (no delays).
 export function speedMult(): number {
-  return simMode ? 0 : fastMode ? 0.3 : 1;
+  const fx = getEffectsStore();
+  return fx.simMode ? 0 : fx.fastMode ? 0.3 : 1;
 }
 
 export function sleep(ms: number): Promise<void> {
-  if (simMode || speedMult() === 0) {
+  if (speedMult() === 0) {
     return Promise.resolve();
   }
   return new Promise((r) => setTimeout(r, ms * speedMult()));
@@ -57,11 +50,12 @@ export function animateRocket(
   to: Planet,
   color: string,
 ): Promise<void> {
-  if (simMode) {
+  const fx = getEffectsStore();
+  if (fx.simMode) {
     return Promise.resolve();
   }
   const dur = Math.max(50, 1000 * speedMult());
-  anims.push({
+  fx.anims.push({
     type: 'rocket',
     fx: from.x,
     fy: from.y,
@@ -75,10 +69,11 @@ export function animateRocket(
 }
 
 export function boom(planet: Planet): void {
-  if (simMode) {
+  const fx = getEffectsStore();
+  if (fx.simMode) {
     return;
   }
-  anims.push({
+  fx.anims.push({
     type: 'boom',
     x: planet.x,
     y: planet.y,
@@ -88,10 +83,11 @@ export function boom(planet: Planet): void {
 }
 
 export function floatText(planet: Planet, txt: string, color: string): void {
-  if (simMode) {
+  const fx = getEffectsStore();
+  if (fx.simMode) {
     return;
   }
-  anims.push({
+  fx.anims.push({
     type: 'text',
     x: planet.x,
     y: planet.y - planet.r,

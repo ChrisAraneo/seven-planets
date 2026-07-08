@@ -1,7 +1,9 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { getPoolResolve, setPoolResolve } from './resolver-state';
 
-export function waitHumanPoolPick(state: GameState): Promise<number> {
+export function waitHumanPoolPick(): Promise<number> {
+  const state = getGameState();
   return new Promise((res) => {
     setPoolResolve(res);
     state.awaitingPick = true;

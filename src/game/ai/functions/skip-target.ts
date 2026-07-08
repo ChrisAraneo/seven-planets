@@ -1,21 +1,18 @@
-import type { GameState, InfluenceType, Player } from '@/game/types';
+import type { InfluenceType, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { alive } from './alive';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
 
-export function skipTarget(
-  s: GameState,
-  p: Player,
-  t: InfluenceType,
-): Player | null {
-  const rivals = alive(s).filter((x) => x.id !== p.id);
+export function skipTarget(p: Player, t: InfluenceType): Player | null {
+  const s = getGameState();
+  const rivals = alive().filter((x) => x.id !== p.id);
   if (rivals.length === 0) {
     return null;
   }
   if (t === 'SKIP_ARMY') {
-    return rivals.reduce((a, b) =>
-      totalTroops(s, b) > totalTroops(s, a) ? b : a,
-    );
+    return rivals.reduce((a, b) => (totalTroops(b) > totalTroops(a) ? b : a));
   }
   if (t === 'SKIP_PLANETS') {
     return rivals.reduce((a, b) =>
@@ -26,7 +23,7 @@ export function skipTarget(
     return rivals.reduce((a, b) => (b.influence < a.influence ? b : a));
   }
   if (t === 'SKIP_TECH') {
-    return rivals.reduce((a, b) => (techLevel(s, b) > techLevel(s, a) ? b : a));
+    return rivals.reduce((a, b) => (techLevel(b) > techLevel(a) ? b : a));
   }
   return null;
 }

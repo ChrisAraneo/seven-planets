@@ -1,7 +1,9 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { getHumanResolve, setHumanResolve } from './resolver-state';
 
-export function endHumanTurn(state: GameState): void {
+export function endHumanTurn(): void {
+  const state = getGameState();
   const r = getHumanResolve();
   if (!r) {
     return;

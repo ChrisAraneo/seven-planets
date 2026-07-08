@@ -1,6 +1,9 @@
-import type { ActionType, GameState } from '@/game/types';
+import type { ActionType } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { expectedActionCopies } from './expected-action-copies';
 
-export function actionDrawProb(s: GameState, t: ActionType): number {
-  return Math.min(0.85, expectedActionCopies(s, t) * 0.6);
+export function actionDrawProb(t: ActionType): number {
+  const s = getGameState();
+  return Math.min(0.85, expectedActionCopies(t) * 0.6);
 }

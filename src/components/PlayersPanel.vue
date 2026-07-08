@@ -43,10 +43,10 @@ function actLine(p: Player): string {
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
-        🪰{{ p.planets.length }} 🔬T{{ techLevel(state, p) }} 🦵{{
-          totalTroops(state, p)
+        🪰{{ p.planets.length }} 🔬T{{ techLevel(p) }} 🦵{{
+          totalTroops(p)
         }}
-        🏛️{{ buildingCount(state, p) }} ⭐{{ p.influence
+        🏛️{{ buildingCount(p) }} ⭐{{ p.influence
         }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} · {{ resLine(p) }}
       </div>
       <div class="pstats">{{ actLine(p) }}</div>

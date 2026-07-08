@@ -18,13 +18,16 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { DIFFICULTIES } from './difficulty';
-import {
-  setAiDifficulty,
-  setSimMode,
-  simulateGameWithPersonalities,
-} from './engine';
+import { createPinia, setActivePinia } from 'pinia';
 
+import { setAiDifficulty } from './ai/functions/set-ai-difficulty';
+import { DIFFICULTIES } from './difficulty';
+import { setSimMode } from './effects';
+import { simulateGameWithPersonalities } from './engine/functions/simulate-game-with-personalities';
+
+// The game state lives in Pinia stores; headless scripts must install an
+// active Pinia instance before any engine/AI function runs.
+setActivePinia(createPinia());
 setSimMode(true); // no animation delays — pure logic speed
 
 const SEATS = 7; // seat 0 = the human proxy (standard mastermind) + 6 AI opponents

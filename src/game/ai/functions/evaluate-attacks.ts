@@ -1,11 +1,15 @@
 import {
   COMBAT,
   CONQUEST_TRUCE,
-  SHIELD_DEFENSE,
   PACIFIST_DEF_BONUS,
+  SHIELD_DEFENSE,
 } from '@/game/constants';
-import type { GameState, Planet, Player } from '@/game/types';
-import { aiState } from './ai-state';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import { siloBonus } from '@/game/shared/silo-bonus';
+import type { Planet, Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { alive } from './alive';
 import { attackBaseOf } from './attack-base-of';
 import { avgStrength } from './avg-strength';
@@ -19,8 +23,6 @@ import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
 import { playerStrength } from './player-strength';
-import { rocketCap } from '@/game/shared/rocket-cap';
-import { siloBonus } from '@/game/shared/silo-bonus';
 import { survivorsAfterWin } from './survivors-after-win';
 import { underTruce } from './under-truce';
 
@@ -36,26 +38,28 @@ export interface AttackPlan {
   score: number;
 }
 
-export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
+export function evaluateAttacks(p: Player): AttackPlan[] {
+  const aiState = getAiStore();
+  const s = getGameState();
   if (p.pacifistStatus) {
     return [];
   }
-  const avgStr = avgStrength(s);
-  const minWin = effMinConquerProb(s, p);
+  const avgStr = avgStrength();
+  const minWin = effMinConquerProb(p);
   const plans: AttackPlan[] = [];
   for (const target of s.planets) {
     if (target.ownerId === p.id) {
       continue;
     }
     const defOwner = s.players[target.ownerId];
-    if (!defOwner.alive || underTruce(s, target)) {
+    if (!defOwner.alive || underTruce(target)) {
       continue;
     }
     if (!mayTarget(p, defOwner)) {
       continue;
     }
-    const def = defenseBaseOf(s, target);
-    for (const source of owned(s, p)) {
+    const def = defenseBaseOf(target);
+    for (const source of owned(p)) {
       if (!source.buildings.SILO) {
         continue;
       }
@@ -69,9 +73,9 @@ export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
       const nConq = minTroopsToConquer(target.troops);
       if (maxN >= nConq) {
         const value =
-          planetValue(s, target) +
+          planetValue(target) +
           (defOwner.planets.length === 1 ? 10 : 0) +
-          (playerStrength(s, defOwner) > 1.25 * avgStr ? 4 : 0);
+          (playerStrength(defOwner) > 1.25 * avgStr ? 4 : 0);
         let lean = nConq;
         while (
           lean < maxN &&
@@ -84,7 +88,6 @@ export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
           const pWin = battleWinProb(attackBaseOf(n, source), def);
           const surv = survivorsAfterWin(n);
           const hold = holdProbability(
-            s,
             p,
             target,
             surv,
@@ -118,7 +121,7 @@ export function evaluateAttacks(s: GameState, p: Player): AttackPlan[] {
           pWin * (n - survivorsAfterWin(n)) + (1 - pWin) * lossesOnDefeat(n);
         const zeal = p.kamikaze
           ? 1.5
-          : playerStrength(s, defOwner) > 1.3 * avgStr
+          : playerStrength(defOwner) > 1.3 * avgStr
             ? 1.4
             : 1.05;
         plans.push({

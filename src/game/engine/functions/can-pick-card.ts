@@ -5,26 +5,27 @@ import {
   INFLUENCE_CARDS,
   maxLevel,
 } from '@/game/constants';
+import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 import type {
   BuildingType,
-  GameState,
   InfluenceType,
   Planet,
   Player,
   PoolType,
 } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { hasBuilding } from './has-building';
-import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
 
 // Can this player take pool card `t` during `planet`'s draft turn?
 export function canPickCard(
-  state: GameState,
   p: Player,
   t: PoolType,
   planet: Planet | undefined,
 ): boolean {
+  const state = getGameState();
   if (CARDS[t].building) {
     if (!planet) {
       return false;
@@ -34,7 +35,7 @@ export function canPickCard(
     if (next > maxLevel(bt)) {
       return false;
     }
-    if (next > techLevel(state, p)) {
+    if (next > techLevel(p)) {
       return false;
     } // Upgrades are gated by technology
     if (bt === 'SINGULARITY' && !isSingularityLabOk(planet, next)) {
@@ -47,20 +48,20 @@ export function canPickCard(
     return p.influence >= INFLUENCE_CARDS[t as InfluenceType].cost;
   }
   if (t === 'ATTACK') {
-    return hasBuilding(state, p, 'SILO') && totalTroops(state, p) >= 1;
+    return hasBuilding(p, 'SILO') && totalTroops(p) >= 1;
   }
   if (t === 'MOVE') {
     return (
-      hasBuilding(state, p, 'SPACEPORT') &&
+      hasBuilding(p, 'SPACEPORT') &&
       p.planets.length >= 2 &&
-      totalTroops(state, p) >= 1
+      totalTroops(p) >= 1
     );
   }
   if (t === 'RECRUIT') {
-    return hasBuilding(state, p, 'BARRACKS');
+    return hasBuilding(p, 'BARRACKS');
   }
   if (t === 'TRADE') {
-    return hasBuilding(state, p, 'EMBASSY');
+    return hasBuilding(p, 'EMBASSY');
   }
   return true;
 }

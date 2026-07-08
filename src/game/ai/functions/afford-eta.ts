@@ -1,8 +1,11 @@
-import type { Cost, GameState, Player } from '@/game/types';
+import type { Cost, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { incomePerTurn } from './income-per-turn';
 
-export function affordEta(s: GameState, p: Player, cost: Cost): number {
-  const inc = incomePerTurn(s, p);
+export function affordEta(p: Player, cost: Cost): number {
+  const s = getGameState();
+  const inc = incomePerTurn(p);
   let wildcards = (p.hand.RELIC || 0) - (cost.RELIC || 0);
   let eta = 0;
   for (const t of Object.keys(cost)) {

@@ -1,5 +1,7 @@
 import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/constants';
-import type { Cost, GameState, Player } from '@/game/types';
+import type { Cost, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { alive } from './alive';
 import { avgStrength } from './avg-strength';
 import { hasB } from './has-b';
@@ -8,10 +10,10 @@ import { planFor } from './plan-for';
 import { playerStrength } from './player-strength';
 
 export function planTradeOffer(
-  s: GameState,
   p: Player,
   plan: ReturnType<typeof planFor>,
 ): { partner: Player; gives: Cost; gets: Cost } | null {
+  const s = getGameState();
   const head = plan.buildQueue[0];
   let want: string | null = null;
   if (head) {
@@ -60,12 +62,12 @@ export function planTradeOffer(
   if (v < targetV) {
     return null;
   }
-  const avg = avgStrength(s);
-  const partners = alive(s)
-    .filter((x) => x.id !== p.id && (x.hand[want!] || 0) > 0)
-    .sort((a, b) => playerStrength(s, a) - playerStrength(s, b));
+  const avg = avgStrength();
+  const partners = alive()
+    .filter((x) => x.id !== p.id && (x.hand[want] || 0) > 0)
+    .sort((a, b) => playerStrength(a) - playerStrength(b));
   const partner =
-    partners.find((x) => playerStrength(s, x) < avg * 1.3) ?? partners[0];
+    partners.find((x) => playerStrength(x) < avg * 1.3) ?? partners[0];
   if (!partner) {
     return null;
   }

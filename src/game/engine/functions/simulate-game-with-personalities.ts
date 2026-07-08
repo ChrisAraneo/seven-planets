@@ -1,4 +1,5 @@
-import { buildState, setState } from '../state';
+import { getGameStateStore } from '@/stores/game-state';
+
 import { assignKamikazes } from './assign-kamikazes';
 import { playTurn } from './play-turn';
 
@@ -7,12 +8,17 @@ export async function simulateGameWithPersonalities(
   maxTurns = 400,
   opts: { kamikazeCount?: number } = {},
 ) {
-  const state = buildState();
-  setState(state);
-  assignKamikazes(state, opts.kamikazeCount ?? 0);
+  // Each simulated game runs on a fresh state in the game-state store; every
+  // Engine/AI function reads it from there. Games run strictly sequentially,
+  // So resetting between games is safe. `raw` skips reactivity — nothing
+  // Renders here and the proxy overhead would throttle the simulation.
+  const gameState = getGameStateStore();
+  gameState.reset({ raw: true });
+  const { state } = gameState;
+  assignKamikazes(opts.kamikazeCount ?? 0);
 
   while (!state.over && state.turn < maxTurns) {
-    await playTurn(state);
+    await playTurn();
   }
 
   return {

@@ -1,13 +1,14 @@
 import { CARDS, INFLUENCE_CARDS, RESOURCE_TYPES } from '@/game/constants';
 import type {
   BuildingType,
-  GameState,
   InfluenceType,
   Player,
   PoolType,
 } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { aggression } from './aggression';
-import { aiState } from './ai-state';
 import { alive } from './alive';
 import { avgStrength } from './avg-strength';
 import { hasB } from './has-b';
@@ -15,23 +16,22 @@ import { playerStrength } from './player-strength';
 import { rivalGoalBuilding } from './rival-goal-building';
 import { singularityReadyFor } from './singularity-ready-for';
 
-export function denialValue(s: GameState, p: Player, t: PoolType): number {
-  const avg = avgStrength(s);
+export function denialValue(p: Player, t: PoolType): number {
+  const aiState = getAiStore();
+  const s = getGameState();
+  const avg = avgStrength();
   let worst = 0;
   const def = CARDS[t];
-  for (const r of alive(s)) {
+  for (const r of alive()) {
     if (r.id === p.id) {
       continue;
     }
-    const w = Math.min(
-      2,
-      Math.max(0.3, playerStrength(s, r) / Math.max(1, avg)),
-    );
+    const w = Math.min(2, Math.max(0.3, playerStrength(r) / Math.max(1, avg)));
     let gain = 0;
     if (def.building) {
-      if (t === 'SINGULARITY' && singularityReadyFor(s, r)) {
+      if (t === 'SINGULARITY' && singularityReadyFor(r)) {
         gain = 5;
-      } else if (rivalGoalBuilding(s, r)?.id === (t as BuildingType)) {
+      } else if (rivalGoalBuilding(r)?.id === (t as BuildingType)) {
         gain = 2.5;
       }
     } else if (def.influenceCard) {
@@ -41,13 +41,13 @@ export function denialValue(s: GameState, p: Player, t: PoolType): number {
     } else if (t === 'ATTACK') {
       if (
         !r.pacifistStatus &&
-        hasB(s, r, 'SILO') &&
+        hasB(r, 'SILO') &&
         aggression(r) >= aiState.W.willNeutral
       ) {
         gain = 1.4;
       }
     } else if (RESOURCE_TYPES.includes(t as never)) {
-      const goal = rivalGoalBuilding(s, r);
+      const goal = rivalGoalBuilding(r);
       if (goal && (goal.cost[t] || 0) > (r.hand[t] || 0)) {
         gain = 0.7;
       }

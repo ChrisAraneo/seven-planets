@@ -1,10 +1,14 @@
-import type { GameState, Player } from '@/game/types';
-import { aiState } from './ai-state';
-import type { AttackPlan } from './evaluate-attacks';
+import type { Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { effMinConquerProb } from './eff-min-conquer-prob';
+import type { AttackPlan } from './evaluate-attacks';
 import { evaluateAttacks } from './evaluate-attacks';
 
-export function bestAttackNow(s: GameState, p: Player): AttackPlan | null {
+export function bestAttackNow(p: Player): AttackPlan | null {
+  const aiState = getAiStore();
+  const s = getGameState();
   if ((p.hand.ATTACK || 0) < 1) {
     return null;
   }
@@ -14,12 +18,12 @@ export function bestAttackNow(s: GameState, p: Player): AttackPlan | null {
     aiState.W.minHoldProb * (p.kamikaze ? 0.5 : 1) -
       s.turn * aiState.W.aggressionRamp * 0.5,
   );
-  for (const plan of evaluateAttacks(s, p)) {
+  for (const plan of evaluateAttacks(p)) {
     if (plan.score <= 0) {
       break;
     }
     if (plan.conquers) {
-      if (plan.pWin >= effMinConquerProb(s, p) && plan.holdProb >= minHold) {
+      if (plan.pWin >= effMinConquerProb(p) && plan.holdProb >= minHold) {
         return plan;
       }
     } else if (plan.score > 2) {

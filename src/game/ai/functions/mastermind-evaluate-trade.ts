@@ -1,21 +1,24 @@
 import { canAfford, CARDS } from '@/game/constants';
-import type { Cost, GameState, Player } from '@/game/types';
+import type { Cost, Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { activateWeightsFor } from './activate-weights-for';
-import { aiState } from './ai-state';
 import { avgStrength } from './avg-strength';
 import { handAfterCost } from './hand-after-cost';
 import { planFor } from './plan-for';
 import { playerStrength } from './player-strength';
 
 export function mastermindEvaluateTrade(
-  s: GameState,
   ai: Player,
   gives: Cost,
   gets: Cost,
   proposer: Player | null,
 ): boolean {
+  const aiState = getAiStore();
+  const s = getGameState();
   activateWeightsFor(ai);
-  const plan = planFor(s, ai);
+  const plan = planFor(ai);
   const head = plan.buildQueue[0];
   let vIn = 0;
   let vOut = 0;
@@ -41,7 +44,7 @@ export function mastermindEvaluateTrade(
   if (
     proposer &&
     proposer.id !== ai.id &&
-    playerStrength(s, proposer) > avgStrength(s) * 1.25
+    playerStrength(proposer) > avgStrength() * 1.25
   ) {
     return vIn >= vOut * 1.5;
   }

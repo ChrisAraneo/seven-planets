@@ -1,41 +1,44 @@
 import {
   BASE_ROCKET_CAP,
-  BUILDINGS,
   buildingCost,
+  BUILDINGS,
   CARDS,
   handValue,
   incomeAmount,
   maxLevel,
   SHIELD_DEFENSE,
-  SINGULARITY_DEF_BONUS,
   SILO_HIT_BONUS,
+  SINGULARITY_DEF_BONUS,
 } from '@/game/constants';
-import type { BuildingType, GameState, Planet, Player } from '@/game/types';
-import { aiState } from './ai-state';
+import { recruitYield } from '@/game/shared/recruit-yield';
+import { rocketCap } from '@/game/shared/rocket-cap';
+import type { BuildingType, Planet, Player } from '@/game/types';
+import { getAiStore } from '@/stores/ai';
+import { getGameState } from '@/stores/game-state';
+
 import { avgResourceCardValue } from './avg-resource-card-value';
 import { hasB } from './has-b';
 import { holdProbability } from './hold-probability';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
-import { recruitYield } from '@/game/shared/recruit-yield';
-import { rocketCap } from '@/game/shared/rocket-cap';
 import { totalTroops } from './total-troops';
 import { underTruce } from './under-truce';
 
 export function buildingWorth(
-  s: GameState,
   p: Player,
   id: BuildingType,
   planet: Planet,
   level: number,
 ): number {
+  const aiState = getAiStore();
+  const s = getGameState();
   const H = aiState.W.buildRoiHorizon;
   const costVal = handValue(buildingCost(id, level));
   let gross = 0;
   const inc = BUILDINGS[id].income;
   if (inc) {
-    const liquidity = inc === 'SPICE' ? (hasB(s, p, 'LAB') ? 0.6 : 0.3) : 1;
+    const liquidity = inc === 'SPICE' ? (hasB(p, 'LAB') ? 0.6 : 0.3) : 1;
     gross +=
       (incomeAmount(id, level) - incomeAmount(id, level - 1)) *
       CARDS[inc].value *
@@ -44,7 +47,7 @@ export function buildingWorth(
   }
   switch (id) {
     case 'BARRACKS': {
-      if (!hasB(s, p, 'BARRACKS')) {
+      if (!hasB(p, 'BARRACKS')) {
         gross += H + 6;
       } else if (level === 1) {
         gross += 3;
@@ -63,19 +66,19 @@ export function buildingWorth(
       if (p.pacifistStatus) {
         break;
       }
-      gross += hasB(s, p, 'SILO')
+      gross += hasB(p, 'SILO')
         ? 2 + SILO_HIT_BONUS * 0.8 + level
         : H * 0.7 + s.turn / 10;
       if (planet.buildings.BARRACKS) {
         gross += 3;
       }
-      if (hasB(s, p, 'SILO')) {
+      if (hasB(p, 'SILO')) {
         let minNeed = Infinity;
         for (const tp of s.planets) {
           if (
             tp.ownerId === p.id ||
             !s.players[tp.ownerId].alive ||
-            underTruce(s, tp)
+            underTruce(tp)
           ) {
             continue;
           }
@@ -93,17 +96,17 @@ export function buildingWorth(
       break;
     }
     case 'SHIELD': {
-      const risk = 1 - holdProbability(s, p, planet, planet.troops);
-      gross += SHIELD_DEFENSE * 0.35 + risk * planetValue(s, planet) * 0.6;
+      const risk = 1 - holdProbability(p, planet, planet.troops);
+      gross += SHIELD_DEFENSE * 0.35 + risk * planetValue(planet) * 0.6;
       break;
     }
     case 'SPACEPORT': {
       gross += p.planets.length >= 2 ? (level === 1 ? 4 : 2.5) : 0.5;
-      if (!hasB(s, p, 'SPACEPORT') && p.planets.length >= 2) {
-        const silos = owned(s, p).filter((pl) => pl.buildings.SILO);
+      if (!hasB(p, 'SPACEPORT') && p.planets.length >= 2) {
+        const silos = owned(p).filter((pl) => pl.buildings.SILO);
         if (silos.length > 0) {
           const staged = silos.reduce((x, pl) => Math.max(x, pl.troops), 0);
-          gross += Math.min(6, (totalTroops(s, p) - staged) * 0.4);
+          gross += Math.min(6, (totalTroops(p) - staged) * 0.4);
         }
       }
       break;

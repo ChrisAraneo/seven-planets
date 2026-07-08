@@ -1,5 +1,10 @@
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+
+import { DIFFICULTIES, type Difficulty } from '@/game/difficulty';
+
 /* =====================================================================
-   SEVEN PLANETS — difficulty unlocks.
+   SEVEN PLANETS — difficulty unlocks (formerly game/unlocks.ts).
 
    The three hardest levels are earned, not given: winning a game at one
    difficulty unlocks the next rung up. Progress is persisted to
@@ -8,8 +13,6 @@
    Casual / Easy / Normal are always available (they never appear as an
    unlock TARGET below, so ALWAYS_UNLOCKED derives them automatically).
    ===================================================================== */
-
-import { DIFFICULTIES, type Difficulty } from './difficulty';
 
 const STORAGE_KEY = 'seven-planets:unlocked-difficulties';
 
@@ -51,28 +54,28 @@ function write(unlocked: Set<Difficulty>): void {
   }
 }
 
-/** Is this difficulty available to pick right now? */
-export function isUnlocked(id: Difficulty): boolean {
-  return read().has(id);
-}
+export const useUnlocksStore = defineStore('unlocks', () => {
+  const unlocked = ref<Set<Difficulty>>(read());
 
-/** The full set of currently-unlocked difficulties. */
-export function unlockedDifficulties(): Set<Difficulty> {
-  return read();
-}
-
-/** Record a human victory at `level`. If it unlocks a new difficulty, persist
-    it and return the newly unlocked id; otherwise return null. */
-export function recordWin(level: Difficulty): Difficulty | null {
-  const next = UNLOCKED_BY_WIN[level];
-  if (!next) {
-    return null;
+  /** Is this difficulty available to pick right now? */
+  function isUnlocked(id: Difficulty): boolean {
+    return unlocked.value.has(id);
   }
-  const unlocked = read();
-  if (unlocked.has(next)) {
-    return null;
-  } // Already earned in a previous game
-  unlocked.add(next);
-  write(unlocked);
-  return next;
-}
+
+  /** Record a human victory at `level`. If it unlocks a new difficulty,
+      persist it and return the newly unlocked id; otherwise return null. */
+  function recordWin(level: Difficulty): Difficulty | null {
+    const next = UNLOCKED_BY_WIN[level];
+    if (!next) {
+      return null;
+    }
+    if (unlocked.value.has(next)) {
+      return null; // Already earned in a previous game
+    }
+    unlocked.value.add(next);
+    write(unlocked.value);
+    return next;
+  }
+
+  return { unlocked, isUnlocked, recordWin };
+});

@@ -1,5 +1,6 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
-export function setBusy(state: GameState, v: boolean): void {
+export function setBusy(v: boolean): void {
+  const state = getGameState();
   state.busy = v;
 }

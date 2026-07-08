@@ -1,19 +1,21 @@
-import type { GameState, Player } from '@/game/types';
+import { recruitYield } from '@/game/shared/recruit-yield';
+import type { Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { actionDrawProb } from './action-draw-prob';
 import { incomePerTurn } from './income-per-turn';
 import { owned } from './owned';
-import { recruitYield } from '@/game/shared/recruit-yield';
 
-export function recruitRate(s: GameState, p: Player): number {
+export function recruitRate(p: Player): number {
+  const s = getGameState();
   let bestYield = 0;
-  for (const pl of owned(s, p)) {
+  for (const pl of owned(p)) {
     bestYield = Math.max(bestYield, recruitYield(pl));
   }
   if (!bestYield) {
     return 0;
   }
-  const oreFlow = (incomePerTurn(s, p).ORE || 0) + (p.hand.ORE || 0) / 4;
-  const cardFlow =
-    (p.hand.RECRUIT || 0) > 0 ? 0.9 : actionDrawProb(s, 'RECRUIT');
+  const oreFlow = (incomePerTurn(p).ORE || 0) + (p.hand.ORE || 0) / 4;
+  const cardFlow = (p.hand.RECRUIT || 0) > 0 ? 0.9 : actionDrawProb('RECRUIT');
   return Math.min(bestYield, Math.max(0, oreFlow)) * cardFlow;
 }

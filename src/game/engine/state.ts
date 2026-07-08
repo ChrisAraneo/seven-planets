@@ -9,12 +9,6 @@ import {
 } from '../constants';
 import type { GameState, Hand } from '../types';
 
-let state: GameState = null as unknown as GameState;
-
-export function setState(s: GameState): void {
-  state = s;
-}
-
 function startingHand(): Hand {
   const h: Hand = {};
   for (const t of CARD_TYPES) {

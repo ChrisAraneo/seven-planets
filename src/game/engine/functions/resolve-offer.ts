@@ -1,7 +1,9 @@
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { getOfferResolve, setOfferResolve } from './resolver-state';
 
-export function resolveOffer(state: GameState, accept: boolean): void {
+export function resolveOffer(accept: boolean): void {
+  const state = getGameState();
   const r = getOfferResolve();
   if (!r) {
     return;

@@ -1,7 +1,9 @@
+import { getAiStore } from '@/stores/ai';
+
 import { WEIGHTS } from '../weights';
-import { aiState } from './ai-state';
 
 export function resetAiWeights(): void {
+  const aiState = getAiStore();
   aiState.tuned = { ...WEIGHTS };
   aiState.W = { ...WEIGHTS };
   aiState.difficulty = null;

@@ -1,10 +1,14 @@
 // @vitest-environment node
 // In a Node environment there is no `document`, so the engine's AUTO_HUMAN is
 // True and every seat is played by the AI — letting us run whole games headless.
+import { createPinia, setActivePinia } from 'pinia';
 import { describe, expect, it } from 'vitest';
 
 import { setSimMode } from '@/game/effects';
 import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
+
+// All game state lives in Pinia stores now — install one before anything runs.
+setActivePinia(createPinia());
 
 describe('headless game simulation', () => {
   setSimMode(true); // No animation delays — pure logic speed

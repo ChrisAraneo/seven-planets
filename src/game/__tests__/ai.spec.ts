@@ -1,6 +1,7 @@
 // @vitest-environment node
-// The mastermind brain is pure decision-making over a passed-in state, so it
-// Can be tested headless; full games run with AUTO_HUMAN (no `document`).
+// The mastermind brain reads the game state from the Pinia game-state store,
+// So it can be tested headless; full games run with AUTO_HUMAN (no `document`).
+import { createPinia, setActivePinia } from 'pinia';
 import { describe, expect, it } from 'vitest';
 
 import { battleWinProb } from '@/game/ai/functions/battle-win-prob';
@@ -14,16 +15,21 @@ import { planFor } from '@/game/ai/functions/plan-for';
 import { resetAiWeights } from '@/game/ai/functions/reset-ai-weights';
 import { survivorsAfterWin } from '@/game/ai/functions/survivors-after-win';
 import { COMBAT } from '@/game/constants';
-import { initializeState } from '@/game/state/initialize-state';
 import { setSimMode } from '@/game/effects';
 import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
 import type { GameState } from '@/game/types';
+import { useGameStateStore } from '@/stores/game-state';
 
+// All game state lives in Pinia stores now — install one before anything runs.
+setActivePinia(createPinia());
 setSimMode(true);
 
-/** A deterministic mid-game state: player 0 is the mastermind. */
+/** A deterministic mid-game state: player 0 is the mastermind. Installed into
+    the game-state store, which is where the AI functions read it from. */
 function midGameState(): GameState {
-  const s = initializeState();
+  const gameState = useGameStateStore();
+  gameState.reset({ raw: true }); // Headless — skip reactivity
+  const s = gameState.state;
   s.turn = 20;
   for (const p of s.players) {
     p.personality = 'mastermind';
@@ -72,17 +78,17 @@ describe('mastermind retention forecast (holdProbability)', () => {
     const me = s.players[0];
     const mine = s.planets[0];
     // No rival has a silo yet — nobody can attack, we surely hold.
-    expect(holdProbability(s, me, mine, 5)).toBe(1);
+    expect(holdProbability(me, mine, 5)).toBe(1);
     // Arm a rival heavily: retention must drop, but stay a probability.
     s.planets[1].buildings.SILO = 2;
     s.planets[1].buildings.BARRACKS = 2;
     s.planets[1].troops = 20;
     s.players[1].hand.ATTACK = 2;
-    const threatened = holdProbability(s, me, mine, 5);
+    const threatened = holdProbability(me, mine, 5);
     expect(threatened).toBeLessThan(1);
     expect(threatened).toBeGreaterThanOrEqual(0);
     // A bigger garrison holds better (or at least no worse).
-    expect(holdProbability(s, me, mine, 15)).toBeGreaterThanOrEqual(threatened);
+    expect(holdProbability(me, mine, 15)).toBeGreaterThanOrEqual(threatened);
   });
 });
 
@@ -95,7 +101,7 @@ describe('mastermind attack planning', () => {
     s.planets[0].troops = 14;
     s.planets[1].troops = 2; // Soft target
     me.hand.ATTACK = 1;
-    const plans = evaluateAttacks(s, me);
+    const plans = evaluateAttacks(me);
     expect(plans.length).toBeGreaterThan(0);
     const best = plans[0];
     expect(best.conquers).toBe(true);
@@ -105,7 +111,7 @@ describe('mastermind attack planning', () => {
     );
     expect(best.holdProb).toBeGreaterThanOrEqual(0);
     expect(best.holdProb).toBeLessThanOrEqual(1);
-    const now = bestAttackNow(s, me);
+    const now = bestAttackNow(me);
     expect(now).not.toBeNull();
     // Never commits more troops than the source can spare or the rocket holds.
     expect(now!.n).toBeLessThanOrEqual(s.planets[0].troops);
@@ -118,8 +124,8 @@ describe('mastermind attack planning', () => {
     s.planets[0].buildings.SILO = 3;
     s.planets[0].troops = 30;
     me.hand.ATTACK = 3;
-    expect(evaluateAttacks(s, me)).toHaveLength(0);
-    expect(bestAttackNow(s, me)).toBeNull();
+    expect(evaluateAttacks(me)).toHaveLength(0);
+    expect(bestAttackNow(me)).toBeNull();
   });
 });
 
@@ -131,18 +137,18 @@ describe('mastermind build planning and strategy', () => {
     me.hand.ORE = 3;
     me.hand.CRYSTAL = 3;
     me.hand.ENERGY = 3;
-    const cands = buildCandidates(s, me);
+    const cands = buildCandidates(me);
     expect(cands.length).toBeGreaterThan(0);
     for (const c of cands) {
       expect(c.worth).toBeGreaterThan(0);
       expect(c.pComplete).toBeGreaterThan(0);
       expect(c.pComplete).toBeLessThanOrEqual(1);
     }
-    const plan = planFor(s, me);
+    const plan = planFor(me);
     expect(plan.buildQueue.length).toBeGreaterThan(0);
     expect(plan.scores[plan.kind]).toBeGreaterThan(0);
     // The plan is cached for the turn (draft picks reuse one plan).
-    expect(planFor(s, me)).toBe(plan);
+    expect(planFor(me)).toBe(plan);
   });
 });
 
@@ -153,13 +159,12 @@ describe('mastermind drafting', () => {
     const me = s.players[0];
     s.pool = ['ORE', 'CRYSTAL', 'ENERGY', 'ATTACK', 'RELIC'];
     const all = s.pool.map(() => true);
-    const idx = mastermindDraftPick(s, me, s.planets[0], all);
+    const idx = mastermindDraftPick(me, s.planets[0], all);
     expect(idx).toBeGreaterThanOrEqual(0);
     expect(idx).toBeLessThan(s.pool.length);
     // Nothing pickable → pass.
     expect(
       mastermindDraftPick(
-        s,
         me,
         s.planets[0],
         s.pool.map(() => false),
@@ -167,7 +172,7 @@ describe('mastermind drafting', () => {
     ).toBe(-1);
     // Only slot 2 pickable → must take slot 2.
     const onlyTwo = s.pool.map((_, i) => i === 2);
-    expect(mastermindDraftPick(s, me, s.planets[0], onlyTwo)).toBe(2);
+    expect(mastermindDraftPick(me, s.planets[0], onlyTwo)).toBe(2);
   });
 });
 
@@ -183,10 +188,10 @@ describe('kamikaze (Hard mode) targeting', () => {
     kami.hand.ATTACK = 1;
     s.planets[0].troops = 2; // Human — the ONLY legal target
     s.planets[2].troops = 2; // Rival AI — juicy but forbidden
-    const plans = evaluateAttacks(s, kami);
+    const plans = evaluateAttacks(kami);
     expect(plans.length).toBeGreaterThan(0);
     expect(plans.every((p) => s.planets[p.target.id].ownerId === 0)).toBe(true);
-    const now = bestAttackNow(s, kami);
+    const now = bestAttackNow(kami);
     expect(now).not.toBeNull();
     expect(s.planets[now!.target.id].ownerId).toBe(0); // Struck the human
   });
@@ -204,7 +209,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     s.planets[1].troops = 1;
     s.planets[0].troops = 8; // Human, better defended
     s.planets[3].troops = 8; // Another rival
-    const plans = evaluateAttacks(s, normal);
+    const plans = evaluateAttacks(normal);
     // It may attack the human or other rivals, but NEVER the kamikaze (id 1).
     expect(plans.every((p) => s.planets[p.target.id].ownerId !== 1)).toBe(true);
   });
@@ -221,11 +226,11 @@ describe('kamikaze (Hard mode) targeting', () => {
     kami.hand.ATTACK = 3;
     // With ONLY the kamikaze armed, a rival AI's planet is perfectly safe…
     expect(
-      holdProbability(s, s.players[2], s.planets[2], s.planets[2].troops),
+      holdProbability(s.players[2], s.planets[2], s.planets[2].troops),
     ).toBe(1);
     // …but the human's planet is not.
     expect(
-      holdProbability(s, s.players[0], s.planets[0], s.planets[0].troops),
+      holdProbability(s.players[0], s.planets[0], s.planets[0].troops),
     ).toBeLessThan(1);
   });
 });

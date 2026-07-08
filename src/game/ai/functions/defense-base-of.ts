@@ -4,14 +4,12 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/constants';
-import type { GameState, Planet } from '@/game/types';
 import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+import type { Planet } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
-export function defenseBaseOf(
-  s: GameState,
-  pl: Planet,
-  troops = pl.troops,
-): number {
+export function defenseBaseOf(pl: Planet, troops = pl.troops): number {
+  const s = getGameState();
   const pac = s.players[pl.ownerId]?.pacifistStatus ? PACIFIST_DEF_BONUS : 0;
   return (
     COMBAT.defensePerTroop * troops +

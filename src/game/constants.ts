@@ -481,7 +481,7 @@ export const AI_COLORS = [
 ];
 
 // Build/upgrade priorities — mastermind uses this as a static fallback only;
-// the advanced AI (./ai) plans dynamically by expected return-on-investment.
+// The advanced AI (./ai) plans dynamically by expected return-on-investment.
 export const PRIORITIES: Record<string, BuildingType[]> = {
   mastermind: [
     'MINE',

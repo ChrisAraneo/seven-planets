@@ -4,13 +4,9 @@ import {
   PRIORITIES,
   RESOURCE_TYPES,
 } from '@/game/constants';
-import type {
-  BuildingType,
-  Cost,
-  GameState,
-  Planet,
-  Player,
-} from '@/game/types';
+import type { BuildingType, Cost, Planet, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { ownedPlanets } from './owned-planets';
 import { persOf } from './pers-of';
 import { singularityReadyPlanet } from './singularity-ready-planet';
@@ -18,10 +14,10 @@ import { techLevel } from './tech-level';
 
 // The next thing this player is saving for (used for drafting, trading, refusals).
 export function currentGoal(
-  state: GameState,
   p: Player,
 ): { id: BuildingType; planet: Planet; cost: Cost } | null {
-  const readyPl = singularityReadyPlanet(state, p);
+  const state = getGameState();
+  const readyPl = singularityReadyPlanet(p);
   if (readyPl) {
     return {
       id: 'SINGULARITY',
@@ -32,13 +28,13 @@ export function currentGoal(
       ),
     };
   }
-  const tech = techLevel(state, p);
+  const tech = techLevel(p);
   for (const id of PRIORITIES[persOf(p)]) {
     if (id === 'SINGULARITY') {
       continue;
     } // Handled above — needs a Lab of the same level
     const cap = Math.min(maxLevel(id), tech);
-    const pl = ownedPlanets(state, p).find((x) => (x.buildings[id] || 0) < cap);
+    const pl = ownedPlanets(p).find((x) => (x.buildings[id] || 0) < cap);
     if (pl) {
       return {
         id,

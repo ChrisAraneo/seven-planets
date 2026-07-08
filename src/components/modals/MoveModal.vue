@@ -10,14 +10,13 @@ const human = store.human;
 const state = store.state;
 
 const fromId = ref(
-  ownedPlanets(state, human).reduce((a, b) => (a.troops >= b.troops ? a : b))
-    .id,
+  ownedPlanets(human).reduce((a, b) => (a.troops >= b.troops ? a : b)).id,
 );
 const toId = ref(-1);
 const n = ref(1);
 
 const from = computed(() => store.state.planets[fromId.value]);
-const owned = computed(() => ownedPlanets(state, human));
+const owned = computed(() => ownedPlanets(human));
 const dests = computed(() =>
   owned.value.filter((pl) => pl.id !== fromId.value),
 );

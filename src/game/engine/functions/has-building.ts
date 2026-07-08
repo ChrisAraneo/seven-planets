@@ -1,10 +1,9 @@
-import type { BuildingType, GameState, Player } from '@/game/types';
+import type { BuildingType, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { ownedPlanets } from './owned-planets';
 
-export function hasBuilding(
-  state: GameState,
-  p: Player,
-  id: BuildingType,
-): boolean {
-  return ownedPlanets(state, p).some((pl) => pl.buildings[id]);
+export function hasBuilding(p: Player, id: BuildingType): boolean {
+  const state = getGameState();
+  return ownedPlanets(p).some((pl) => pl.buildings[id]);
 }

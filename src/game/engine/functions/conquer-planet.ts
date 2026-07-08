@@ -5,18 +5,20 @@ import {
   INFLUENCE_TYPES,
 } from '@/game/constants';
 import { floatText } from '@/game/effects';
-import type { GameState, Planet, Player } from '@/game/types';
+import type { Planet, Player } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
+
 import { checkWin } from './check-win';
 import { handSize } from './hand-size';
 import { log } from './log';
 import { stealCards } from './steal-cards';
 
 export function conquerPlanet(
-  state: GameState,
   att: Player,
   target: Planet,
   garrison: number,
 ): void {
+  const state = getGameState();
   const def = state.players[target.ownerId];
   target.ownerId = att.id;
   def.planets = def.planets.filter((id) => id !== target.id);
@@ -25,7 +27,6 @@ export function conquerPlanet(
   target.protectedUntil = state.turn + CONQUEST_TRUCE; // Truce
   floatText(target, 'CONQUERED!', '#ff9e3d');
   log(
-    state,
     `🏴 ${att.name} CONQUERS ${target.name} — ${garrison}🪖 garrison it! Under truce for ${CONQUEST_TRUCE} turns.`,
     'war',
   );
@@ -34,11 +35,7 @@ export function conquerPlanet(
     const lootN = Math.min(6, handSize(def));
     if (lootN > 0) {
       const taken = stealCards(def, att, lootN);
-      log(
-        state,
-        `💰 ${att.name} salvages ${fmtCards(taken)} from the ruins!`,
-        'war',
-      );
+      log(`💰 ${att.name} salvages ${fmtCards(taken)} from the ruins!`, 'war');
     }
     for (const t of CARD_TYPES) {
       def.hand[t] = 0;
@@ -47,17 +44,16 @@ export function conquerPlanet(
       def.hand[t] = 0;
     }
     def.alive = false;
-    log(state, `☠️ ${def.name} has been wiped from the galaxy!`, 'war');
+    log(`☠️ ${def.name} has been wiped from the galaxy!`, 'war');
   } else {
     const lootN = Math.min(5, Math.ceil(handSize(def) / 2));
     if (lootN > 0) {
       const taken = stealCards(def, att, lootN);
       log(
-        state,
         `💰 ${att.name} seizes ${fmtCards(taken)} from the fleeing ${def.name}!`,
         'war',
       );
     }
   }
-  checkWin(state);
+  checkWin();
 }

@@ -3,9 +3,11 @@ import {
   CARDS,
   MOVE_CARDS_FROM_TURN,
 } from '@/game/constants';
-import type { ActionType, GameState } from '@/game/types';
+import type { ActionType } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
-export function expectedActionCopies(s: GameState, t: ActionType): number {
+export function expectedActionCopies(t: ActionType): number {
+  const s = getGameState();
   if (s.turn < ACTION_CARDS_FROM_TURN) {
     return 0;
   }
