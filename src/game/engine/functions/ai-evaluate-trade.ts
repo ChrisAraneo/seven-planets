@@ -1,10 +1,10 @@
 import { mastermindEvaluateTrade } from '@/game/ai/functions/mastermind-evaluate-trade';
 import { RESOURCE_TYPES } from '@/game/constants';
-import type { Cost, Player } from '@/game/types';
-import { getState } from '../state';
+import type { Cost, GameState, Player } from '@/game/types';
 
 // Ai = the player being ASKED to accept. gives/gets are from ai's perspective.
 export function aiEvaluateTrade(
+  state: GameState,
   ai: Player,
   gives: Cost,
   gets: Cost,
@@ -26,5 +26,5 @@ export function aiEvaluateTrade(
       return false;
     }
   }
-  return mastermindEvaluateTrade(getState(), ai, gives, gets, proposer);
+  return mastermindEvaluateTrade(state, ai, gives, gets, proposer);
 }

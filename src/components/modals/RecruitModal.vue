@@ -10,7 +10,7 @@ import { recruitYield } from '@/game/shared/recruit-yield';
 const store = useGameStore();
 
 const barracksPls = computed(() =>
-  ownedPlanets(store.human).filter(
+  ownedPlanets(store.state, store.human).filter(
     (pl) =>
       pl.buildings.BARRACKS && canAfford(store.human.hand, recruitCost(pl)),
   ),

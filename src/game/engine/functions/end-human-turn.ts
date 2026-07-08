@@ -1,12 +1,12 @@
-import { getState } from '../state';
+import type { GameState } from '@/game/types';
 import { getHumanResolve, setHumanResolve } from './resolver-state';
 
-export function endHumanTurn(): void {
+export function endHumanTurn(state: GameState): void {
   const r = getHumanResolve();
   if (!r) {
     return;
   }
   setHumanResolve(null);
-  getState().awaitingAction = false;
+  state.awaitingAction = false;
   r();
 }

@@ -1,18 +1,18 @@
-import { getState } from '../state';
+import type { GameState } from '@/game/types';
 import { alivePlayers } from './alive-players';
 import { AUTO_HUMAN } from './auto-human';
 import { triggerGameOver } from './trigger-game-over';
 
-export function checkWin(): void {
-  if (getState().over) {
+export function checkWin(state: GameState): void {
+  if (state.over) {
     return;
   }
-  const alive = alivePlayers();
+  const alive = alivePlayers(state);
   if (alive.length === 1) {
-    triggerGameOver(alive[0], 'conquest');
+    triggerGameOver(state, alive[0], 'conquest');
     return;
   }
-  if (!AUTO_HUMAN && !getState().players[0].alive) {
-    triggerGameOver(null, 'eliminated');
+  if (!AUTO_HUMAN && !state.players[0].alive) {
+    triggerGameOver(state, null, 'eliminated');
   }
 }

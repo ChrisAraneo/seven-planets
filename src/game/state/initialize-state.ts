@@ -9,43 +9,19 @@ import {
 } from '../constants';
 import type { GameState, Hand } from '../types';
 
-let state: GameState = null as unknown as GameState;
-
-export function setState(s: GameState): void {
-  state = s;
-}
-
-function startingHand(): Hand {
-  const h: Hand = {};
-  for (const t of CARD_TYPES) {
-    h[t] = 0;
-  }
-  for (const t of INFLUENCE_TYPES) {
-    h[t] = 0;
-  } // Held influence cards (played later)
-  return h;
-}
-
-export function buildState(): GameState {
-  // All 6 AI seats are always mastermind.
-  const aiPersonalities: string[] = Array(6).fill('mastermind');
+export function initializeState(): GameState {
   // Task 3: name, homeworld, color and planet style are all randomized
   // INDEPENDENTLY of personality, so no AI is a fixed character any more.
   const names = shuffleArr(AI_NAMES).slice(0, 6);
   const planetNames = shuffleArr(AI_PLANET_NAMES).slice(0, 6);
   const colors = shuffleArr(AI_COLORS).slice(0, 6);
+
   // The human owns planet style 0 (Terra Prime); AI draw distinct styles from the rest.
   const styles = shuffleArr(
     PLANET_STYLES.map((_, i) => i).filter((i) => i !== 0),
   ).slice(0, 6);
-  const aiSlots = aiPersonalities.map((personality: string, i: number) => ({
-    name: names[i],
-    planet: planetNames[i],
-    color: colors[i],
-    personality,
-    styleIdx: styles[i],
-  }));
-  const gameDefs = [
+
+  const gameDefinitions = [
     {
       name: 'You',
       planet: 'Terra Prime',
@@ -54,9 +30,29 @@ export function buildState(): GameState {
       personality: 'human',
       styleIdx: 0,
     },
-    ...aiSlots.map((r: (typeof aiSlots)[0]) => ({ ...r, human: false })),
+    ...Array(6)
+      .fill(0)
+      .map((personality, i) => ({
+        name: names[i],
+        planet: planetNames[i],
+        color: colors[i],
+        personality,
+        styleIdx: styles[i],
+      }))
+      .map((r) => ({ ...r, human: false })),
   ];
-  return {
+
+  const startingHand: Hand = {};
+
+  for (const type of CARD_TYPES) {
+    startingHand[type] = 0;
+  }
+
+  for (const type of INFLUENCE_TYPES) {
+    startingHand[type] = 0;
+  }
+
+  return Object.freeze({
     turn: 0,
     phase: 'setup',
     over: null,
@@ -66,13 +62,13 @@ export function buildState(): GameState {
     singularityAnnounced: false,
     startIdx: 0,
     busy: false,
-    players: gameDefs.map((d, i) => ({
+    players: gameDefinitions.map((d, i) => ({
       id: i,
       name: d.name,
       color: d.color,
       isHuman: Boolean(d.human),
       personality: d.personality,
-      hand: startingHand(),
+      hand: startingHand,
       influence: 0,
       skipTurns: 0,
       skippedNow: false,
@@ -84,7 +80,7 @@ export function buildState(): GameState {
       pacifismForfeited: false,
       kamikaze: false,
     })),
-    planets: gameDefs.map((d, i) => ({
+    planets: gameDefinitions.map((d, i) => ({
       id: i,
       name: d.planet,
       ownerId: i,
@@ -101,5 +97,5 @@ export function buildState(): GameState {
     awaitingPick: false,
     awaitingAction: false,
     pendingOffer: null,
-  };
+  });
 }

@@ -438,7 +438,7 @@ function drawPlanet(pl: Planet, now: number): void {
   ctx.font = '12px sans-serif';
   ctx.fillStyle = '#fff';
   ctx.fillText(
-    `🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
+    `🪖${pl.troops}${underTruce(state, pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
     x,
     y + r + 18,
   );

@@ -1,9 +1,8 @@
-import type { Player } from '@/game/types';
-import { getState } from '../state';
+import type { GameState } from '@/game/types';
 
-export function log(msg: string, cls = 'sys'): void {
-  getState().log.push({ msg, cls });
-  while (getState().log.length > 250) {
-    getState().log.shift();
+export function log(state: GameState, msg: string, cls = 'sys'): void {
+  state.log.push({ msg, cls });
+  while (state.log.length > 250) {
+    state.log.shift();
   }
 }

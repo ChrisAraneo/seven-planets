@@ -10,8 +10,12 @@ import {
   SKIP_TURNS,
 } from '@/game/constants';
 import { boom, floatText } from '@/game/effects';
-import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
-import { getState } from '../state';
+import type {
+  GameState,
+  InfluenceOpts,
+  InfluenceType,
+  Player,
+} from '@/game/types';
 import { checkWin } from './check-win';
 import { coupTargets } from './coup-targets';
 import { handSize } from './hand-size';
@@ -23,6 +27,7 @@ import { stealCards } from './steal-cards';
 
 // Play a HELD influence card during the owner's action turn.
 export function useInfluenceCard(
+  state: GameState,
   p: Player,
   t: InfluenceType,
   opts: InfluenceOpts = {},
@@ -32,18 +37,19 @@ export function useInfluenceCard(
   }
   const C = INFLUENCE_CARDS[t];
   if (t.startsWith('SKIP_')) {
-    const target = influenceTarget(p, t);
+    const target = influenceTarget(state, p, t);
     if (!target) {
       return false;
     }
     p.hand[t]--;
-    log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
+    log(state, `⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
     target.skipTurns += SKIP_TURNS;
     log(
+      state,
       `⏭️ ${target.name} is paralysed — they skip their next ${SKIP_TURNS} turn${SKIP_TURNS === 1 ? '' : 's'}!`,
       'war',
     );
-    floatText(homePlanet(target), '⏭️ SKIPPED', '#ffb0d8');
+    floatText(homePlanet(state, target), '⏭️ SKIPPED', '#ffb0d8');
   } else {
     switch (t) {
       case 'STEAL_ACTION': {
@@ -61,29 +67,35 @@ export function useInfluenceCard(
         target.hand[cardType]--;
         p.hand[cardType]++;
         log(
+          state,
           `⭐ ${p.name} plays ${CARDS[t].icon} ${C.name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${target.name}!`,
           'war',
         );
-        floatText(homePlanet(target), `−1${CARDS[cardType].icon}`, '#ffb0d8');
+        floatText(
+          homePlanet(state, target),
+          `−1${CARDS[cardType].icon}`,
+          '#ffb0d8',
+        );
 
         break;
       }
       case 'COUP': {
         const pl = opts.planet;
-        if (!pl || !coupTargets(p).includes(pl)) {
+        if (!pl || !coupTargets(state, p).includes(pl)) {
           return false;
         }
-        const def = getState().players[pl.ownerId];
+        const def = state.players[pl.ownerId];
         p.hand[t]--;
-        log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
+        log(state, `⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
         def.planets = def.planets.filter((id) => id !== pl.id);
         p.planets.push(pl.id);
         pl.ownerId = p.id;
         pl.troops = Math.max(1, Math.floor(pl.troops / 2)); // Half disbands, the rest defect
-        pl.protectedUntil = getState().turn + CONQUEST_TRUCE;
+        pl.protectedUntil = state.turn + CONQUEST_TRUCE;
         boom(pl);
         floatText(pl, '👑 COUP!', '#ffb0d8');
         log(
+          state,
           `👑 ${pl.name} defects to ${p.name} — half of ${def.name}'s garrison disbands, ${pl.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
           'war',
         );
@@ -92,6 +104,7 @@ export function useInfluenceCard(
           if (lootN > 0) {
             const taken = stealCards(def, p, lootN);
             log(
+              state,
               `💰 ${p.name} salvages ${fmtCards(taken)} from the toppled regime!`,
               'war',
             );
@@ -104,24 +117,26 @@ export function useInfluenceCard(
           }
           def.alive = false;
           log(
+            state,
             `☠️ ${def.name} has been wiped from the galaxy — overthrown without a shot!`,
             'war',
           );
-          checkWin();
+          checkWin(state);
         }
 
         break;
       }
       case 'PEACE': {
         p.hand[t]--;
-        log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
-        for (const pl of ownedPlanets(p)) {
+        log(state, `⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
+        for (const pl of ownedPlanets(state, p)) {
           pl.protectedUntil = Math.max(
             pl.protectedUntil,
-            getState().turn + PEACE_TRUCE,
+            state.turn + PEACE_TRUCE,
           );
         }
         log(
+          state,
           `🕊️ ${p.name}'s planets are under truce for ${PEACE_TRUCE} turn${PEACE_TRUCE === 1 ? '' : 's'} — no attacks allowed!`,
           'sys',
         );

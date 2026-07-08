@@ -1,6 +1,5 @@
-import type { Planet, Player } from '@/game/types';
-import { getState } from '../state';
+import type { GameState, Planet, Player } from '@/game/types';
 
-export function homePlanet(p: Player): Planet {
-  return getState().planets[p.planets[0]];
+export function homePlanet(state: GameState, p: Player): Planet {
+  return state.planets[p.planets[0]];
 }

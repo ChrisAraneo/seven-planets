@@ -21,7 +21,7 @@ import { moveTroops } from '@/game/engine/functions/move-troops';
 import { aiEvaluateTrade } from '@/game/engine/functions/ai-evaluate-trade';
 import { execTrade } from '@/game/engine/functions/exec-trade';
 import { useInfluenceCard } from '@/game/engine/functions/use-influence-card';
-import { resolveOffer } from '@/game/engine/functions/resolve-offer';
+import { resolveOffer as engineResolveOffer } from '@/game/engine/functions/resolve-offer';
 import type {
   ActionType,
   Cost,
@@ -95,9 +95,9 @@ export const useGameStore = defineStore('game', () => {
     // Apply this level's handicap to every mastermind AI before the loop runs,
     // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
     setAiDifficulty(def.ai);
-    assignKamikazes(def.kamikazeCount);
+    assignKamikazes(state, def.kamikazeCount);
     started.value = true;
-    void runGame();
+    void runGame(state);
   }
 
   function newGame(): void {
@@ -121,16 +121,16 @@ export const useGameStore = defineStore('game', () => {
   /* ---------------- human interactions ---------------- */
 
   function pickCard(idx: number): void {
-    humanPoolClick(idx);
+    humanPoolClick(state, idx);
   }
 
   function endTurn(): void {
-    endHumanTurn();
+    endHumanTurn(state);
   }
 
   function recruit(planetId: number): void {
     closeModal();
-    engineRecruit(human.value, state.planets[planetId]);
+    engineRecruit(state, human.value, state.planets[planetId]);
   }
 
   async function attack(
@@ -139,45 +139,47 @@ export const useGameStore = defineStore('game', () => {
     n: number,
   ): Promise<void> {
     closeModal();
-    setBusy(true);
+    setBusy(state, true);
     await doAttack(
+      state,
       human.value,
       state.planets[sourceId],
       state.planets[targetId],
       n,
     );
-    setBusy(false);
+    setBusy(state, false);
   }
 
   async function move(fromId: number, toId: number, n: number): Promise<void> {
     closeModal();
-    setBusy(true);
+    setBusy(state, true);
     await moveTroops(
+      state,
       human.value,
       state.planets[fromId],
       state.planets[toId],
       n,
     );
-    setBusy(false);
+    setBusy(state, false);
   }
 
   /** Evaluate + (if accepted) execute a human-initiated trade. Returns acceptance. */
   function proposeTrade(partnerId: number, gives: Cost, gets: Cost): boolean {
     const partner = state.players[partnerId];
-    const accept = aiEvaluateTrade(partner, gets, gives, human.value);
+    const accept = aiEvaluateTrade(state, partner, gets, gives, human.value);
     if (accept) {
-      execTrade(human.value, partner, gives, gets);
+      execTrade(state, human.value, partner, gives, gets);
     }
     return accept;
   }
 
   function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
     closeModal();
-    useInfluenceCard(human.value, type, opts);
+    useInfluenceCard(state, human.value, type, opts);
   }
 
   function resolveOffer(accept: boolean): void {
-    resolveOffer(accept);
+    engineResolveOffer(state, accept);
   }
 
   return {

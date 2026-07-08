@@ -1,5 +1,5 @@
-import { getState } from '../state';
+import type { GameState } from '@/game/types';
 
-export function setBusy(v: boolean): void {
-  getState().busy = v;
+export function setBusy(state: GameState, v: boolean): void {
+  state.busy = v;
 }

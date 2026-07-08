@@ -1,6 +1,5 @@
-import type { Player } from '@/game/types';
-import { getState } from '../state';
+import type { GameState, Player } from '@/game/types';
 
-export function alivePlayers(): Player[] {
-  return getState().players.filter((p) => p.alive);
+export function alivePlayers(state: GameState): Player[] {
+  return state.players.filter((p) => p.alive);
 }

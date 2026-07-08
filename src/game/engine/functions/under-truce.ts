@@ -1,6 +1,5 @@
-import type { Planet } from '@/game/types';
-import { getState } from '../state';
+import type { GameState, Planet } from '@/game/types';
 
-export function underTruce(planet: Planet): boolean {
-  return getState().turn <= planet.protectedUntil;
+export function underTruce(state: GameState, planet: Planet): boolean {
+  return state.turn <= planet.protectedUntil;
 }

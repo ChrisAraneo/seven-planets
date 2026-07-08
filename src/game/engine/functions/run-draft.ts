@@ -1,7 +1,6 @@
 import { CARDS, INFLUENCE_CARDS } from '@/game/constants';
 import { sleep } from '@/game/effects';
-import type { BuildingType, InfluenceType } from '@/game/types';
-import { getState } from '../state';
+import type { BuildingType, GameState, InfluenceType } from '@/game/types';
 import { aiDraftPick } from './ai-draft-pick';
 import { AUTO_HUMAN } from './auto-human';
 import { buildBuilding } from './build-building';
@@ -12,30 +11,31 @@ import { mainPicks } from './main-picks';
 import { setStatus } from './set-status';
 import { waitHumanPoolPick } from './wait-human-pool-pick';
 
-export async function runDraft(): Promise<void> {
-  getState().phase = 'draft';
+export async function runDraft(state: GameState): Promise<void> {
+  state.phase = 'draft';
 
-  for (const p of draftOrder()) {
+  for (const p of draftOrder(state)) {
     if (p.skippedNow) {
       continue;
     } // Paralysed by an influence card
     for (let s = 0; s < p.planets.length; s++) {
-      if (getState().over) {
+      if (state.over) {
         return;
       }
-      if (!p.alive || getState().pool.length === 0) {
+      if (!p.alive || state.pool.length === 0) {
         continue;
       }
-      const planet = getState().planets[p.planets[s]];
-      const picks = s === 0 ? mainPicks(p) : 1;
-      getState().activeId = p.id;
-      getState().draftPlanetId = planet.id;
-      for (let k = 0; k < picks && getState().pool.length > 0; k++) {
+      const planet = state.planets[p.planets[s]];
+      const picks = s === 0 ? mainPicks(state, p) : 1;
+      state.activeId = p.id;
+      state.draftPlanetId = planet.id;
+      for (let k = 0; k < picks && state.pool.length > 0; k++) {
         let idx: number;
         if (p.isHuman && !AUTO_HUMAN) {
-          if (!getState().pool.some((t) => canPickCard(p, t, planet))) {
-            setStatus(`No card you can take — ${planet.name} passes.`);
+          if (!state.pool.some((t) => canPickCard(state, p, t, planet))) {
+            setStatus(state, `No card you can take — ${planet.name} passes.`);
             log(
+              state,
               `🃏 ${p.name} passes (nothing pickable for ${planet.name})`,
               'draft',
             );
@@ -43,28 +43,30 @@ export async function runDraft(): Promise<void> {
             continue;
           }
           setStatus(
+            state,
             `YOUR PICK — ${planet.name} drafts card ${k + 1} of ${picks}${s > 0 ? ' (extra planet turn)' : ''}`,
           );
-          idx = await waitHumanPoolPick();
+          idx = await waitHumanPoolPick(state);
         } else {
-          setStatus(`${p.name} is drafting for ${planet.name}…`);
+          setStatus(state, `${p.name} is drafting for ${planet.name}…`);
           await sleep(300);
-          idx = aiDraftPick(p, planet);
+          idx = aiDraftPick(state, p, planet);
           if (idx < 0) {
             log(
+              state,
               `🃏 ${p.name} passes (nothing pickable for ${planet.name})`,
               'draft',
             );
             continue;
           }
         }
-        if (getState().over) {
+        if (state.over) {
           return;
         }
-        const type = getState().pool.splice(idx, 1)[0];
+        const type = state.pool.splice(idx, 1)[0];
         if (CARDS[type].building) {
-          buildBuilding(p, planet, type as BuildingType); // Pays cost from hand, may win the game
-          if (getState().over) {
+          buildBuilding(state, p, planet, type as BuildingType); // Pays cost from hand, may win the game
+          if (state.over) {
             return;
           }
         } else if (CARDS[type].influenceCard) {
@@ -72,12 +74,14 @@ export async function runDraft(): Promise<void> {
           p.influence -= INFLUENCE_CARDS[it].cost;
           p.hand[it]++;
           log(
+            state,
             `⭐ ${p.name} drafts ${CARDS[it].icon} ${CARDS[it].name} (−${INFLUENCE_CARDS[it].cost}⭐) — holds it for a later action turn`,
             'draft',
           );
         } else {
           p.hand[type]++;
           log(
+            state,
             `🃏 ${p.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${s > 0 ? ` (${planet.name}'s turn)` : ''}`,
             'draft',
           );
@@ -85,5 +89,5 @@ export async function runDraft(): Promise<void> {
       }
     }
   }
-  getState().draftPlanetId = -1;
+  state.draftPlanetId = -1;
 }

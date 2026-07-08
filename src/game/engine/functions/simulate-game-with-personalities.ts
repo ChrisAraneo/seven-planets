@@ -1,4 +1,4 @@
-import { buildState, getState, setState } from '../state';
+import { buildState, setState } from '../state';
 import { assignKamikazes } from './assign-kamikazes';
 import { playTurn } from './play-turn';
 
@@ -7,23 +7,24 @@ export async function simulateGameWithPersonalities(
   maxTurns = 400,
   opts: { kamikazeCount?: number } = {},
 ) {
-  setState(buildState());
-  assignKamikazes(opts.kamikazeCount ?? 0);
+  const state = buildState();
+  setState(state);
+  assignKamikazes(state, opts.kamikazeCount ?? 0);
 
-  while (!getState().over && getState().turn < maxTurns) {
-    await playTurn();
+  while (!state.over && state.turn < maxTurns) {
+    await playTurn(state);
   }
 
   return {
-    turns: getState().turn,
+    turns: state.turn,
     winner:
-      getState().over && getState().over?.winner
+      state.over && state.over?.winner
         ? {
-            id: getState().over?.winner?.id,
-            name: getState().over?.winner?.name,
-            personality: getState().over?.winner?.personality,
+            id: state.over?.winner?.id,
+            name: state.over?.winner?.name,
+            personality: state.over?.winner?.personality,
           }
         : null,
-    reason: getState().over ? getState()?.over?.reason || 'timeout' : 'timeout',
+    reason: state.over ? state?.over?.reason || 'timeout' : 'timeout',
   };
 }

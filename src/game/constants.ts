@@ -498,8 +498,6 @@ export const PRIORITIES: Record<string, BuildingType[]> = {
   ],
 };
 
-export const AI_LINEUP: string[] = Array(6).fill('mastermind');
-
 export const TAUNTS: string[] = [
   '"Every outcome was computed before you moved."',
   '"You lost this war five turns ago."',

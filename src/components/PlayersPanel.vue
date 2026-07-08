@@ -12,6 +12,7 @@ import { totalTroops } from '@/game/engine/functions/total-troops';
 import type { Player } from '@/game/types';
 
 const store = useGameStore();
+const state = store.state;
 
 function resLine(p: Player): string {
   return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${p.hand[t]}`).join(' ');
@@ -42,10 +43,10 @@ function actLine(p: Player): string {
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
-        🪐{{ p.planets.length }} 🔬T{{ techLevel(p) }} 🪖{{
-          totalTroops(p)
+        🪰{{ p.planets.length }} 🔬T{{ techLevel(state, p) }} 🦵{{
+          totalTroops(state, p)
         }}
-        🏛️{{ buildingCount(p) }} ⭐{{ p.influence
+        🏛️{{ buildingCount(state, p) }} ⭐{{ p.influence
         }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} · {{ resLine(p) }}
       </div>
       <div class="pstats">{{ actLine(p) }}</div>

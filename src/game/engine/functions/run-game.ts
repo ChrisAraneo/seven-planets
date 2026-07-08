@@ -1,15 +1,16 @@
-import { getState } from '../state';
+import type { GameState } from '@/game/types';
 import { log } from './log';
 import { playTurn } from './play-turn';
 
-export async function runGame(): Promise<void> {
-  log('SEVEN PLANETS — seven worlds, one victor.', 'sys');
+export async function runGame(state: GameState): Promise<void> {
+  log(state, 'SEVEN PLANETS — seven worlds, one victor.', 'sys');
   log(
+    state,
     'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
     'sys',
   );
-  while (!getState().over && getState().turn < 400) {
-    await playTurn();
+  while (!state.over && state.turn < 400) {
+    await playTurn(state);
   }
-  getState().activeId = -1;
+  state.activeId = -1;
 }

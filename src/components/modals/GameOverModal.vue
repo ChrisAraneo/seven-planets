@@ -6,6 +6,7 @@ import { buildingCount } from '@/game/engine/functions/building-count';
 import { totalTroops } from '@/game/engine/functions/total-troops';
 
 const store = useGameStore();
+const state = store.state;
 const over = computed(() => store.state.over);
 const human = store.human;
 const humanWon = computed(
@@ -37,8 +38,9 @@ const sub = computed(() => {
     <div class="gostats">
       {{ sub }}<br /><br />
       Turns played: {{ store.state.turn }} · Planets held:
-      {{ human.planets.length }} · Buildings: {{ buildingCount(human) }} ·
-      Troops: {{ totalTroops(human) }}
+      {{ human.planets.length }} · Buildings:
+      {{ buildingCount(state, human) }} · Troops:
+      {{ totalTroops(state, human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
       <button class="btn" @click="store.newGame()">🔄 Play Again</button>

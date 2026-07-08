@@ -1,5 +1,5 @@
-import { getState } from '../state';
+import type { GameState } from '@/game/types';
 
-export function setStatus(msg: string): void {
-  getState().status = msg;
+export function setStatus(state: GameState, msg: string): void {
+  state.status = msg;
 }

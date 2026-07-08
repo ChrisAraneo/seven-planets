@@ -44,10 +44,11 @@ const poolCards = computed<PoolCardVM[]>(() => {
   if (state.phase !== 'draft' || state.over) return [];
   const picking = store.isPicking;
   const human = state.players[0];
-  const draftPl = state.planets[state.draftPlanetId] || homePlanet(human);
-  return state.pool.map((t, i) => {
+  const draftPl =
+    state.planets[state.draftPlanetId] || homePlanet(state, human);
+  return state.pool.map((t: PoolType, i: number) => {
     const c = CARDS[t];
-    const valid = picking && canPickCard(human, t, draftPl);
+    const valid = picking && canPickCard(state, human, t, draftPl);
     const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${c.action ? 'action' : ''}`;
     if (c.building) {
       const bt = t as BuildingType;

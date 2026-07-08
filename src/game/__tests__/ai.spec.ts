@@ -14,7 +14,7 @@ import { planFor } from '@/game/ai/functions/plan-for';
 import { resetAiWeights } from '@/game/ai/functions/reset-ai-weights';
 import { survivorsAfterWin } from '@/game/ai/functions/survivors-after-win';
 import { COMBAT } from '@/game/constants';
-import { buildState } from '@/game/engine/state';
+import { initializeState } from '@/game/state/initialize-state';
 import { setSimMode } from '@/game/effects';
 import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
 import type { GameState } from '@/game/types';
@@ -23,7 +23,7 @@ setSimMode(true);
 
 /** A deterministic mid-game state: player 0 is the mastermind. */
 function midGameState(): GameState {
-  const s = buildState();
+  const s = initializeState();
   s.turn = 20;
   for (const p of s.players) {
     p.personality = 'mastermind';

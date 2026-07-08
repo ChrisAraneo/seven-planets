@@ -19,6 +19,7 @@ import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types';
 
 const store = useGameStore();
 const human = store.human;
+const state = store.state;
 
 type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
@@ -26,14 +27,14 @@ const view = ref<View>('main');
 const held = computed(() =>
   INFLUENCE_TYPES.filter((t) => (human.hand[t] || 0) > 0),
 );
-const coupList = computed(() => coupTargets(human));
+const coupList = computed(() => coupTargets(state, human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
-const rivals = computed(() => alivePlayers().filter((x) => !x.isHuman));
+const rivals = computed(() => alivePlayers(state).filter((x) => !x.isHuman));
 
 function skipTarget(t: InfluenceType): Player | null {
-  return t.startsWith('SKIP_') ? influenceTarget(human, t) : null;
+  return t.startsWith('SKIP_') ? influenceTarget(state, human, t) : null;
 }
 
 function chooseCard(t: InfluenceType): void {

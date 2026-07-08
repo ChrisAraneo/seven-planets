@@ -8,6 +8,7 @@ import {
   HOME_FIELD,
   SHIELD_DEFENSE,
 } from '@/game/constants';
+import type { Planet } from '@/game/types';
 import { battleWinProb } from '@/game/ai/functions/battle-win-prob';
 import { handSize } from '@/game/engine/functions/hand-size';
 import { isPacifist } from '@/game/engine/functions/is-pacifist';
@@ -24,7 +25,7 @@ const human = store.human;
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPls = ownedPlanets(human).filter(
+const siloPls = ownedPlanets(state, human).filter(
   (pl) => pl.buildings.SILO && pl.troops >= 1,
 );
 const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id);
@@ -33,11 +34,13 @@ const n = ref(1);
 
 const source = computed(() => state.planets[srcId.value]);
 const sources = computed(() =>
-  ownedPlanets(human).filter((pl) => pl.buildings.SILO),
+  ownedPlanets(state, human).filter((pl) => pl.buildings.SILO),
 );
-const targets = computed(() => state.planets.filter((pl) => pl.ownerId !== 0));
+const targets = computed(() =>
+  state.planets.filter((pl: Planet) => pl.ownerId !== 0),
+);
 const openTargets = computed(() =>
-  targets.value.filter((pl) => !underTruce(pl)),
+  targets.value.filter((pl: Planet) => !underTruce(state, pl)),
 );
 const cap = computed(() =>
   Math.min(rocketCap(source.value), source.value.troops),
@@ -47,7 +50,7 @@ const cap = computed(() =>
 watch(
   [openTargets, srcId],
   () => {
-    if (!openTargets.value.some((pl) => pl.id === sel.value))
+    if (!openTargets.value.some((pl: Planet) => pl.id === sel.value))
       sel.value = openTargets.value.length ? openTargets.value[0].id : -1;
     n.value = Math.max(1, Math.min(n.value, cap.value));
   },
@@ -65,7 +68,7 @@ const preview = computed(() => {
   const dp =
     2 * target.value.troops +
     (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    pacifistDefBonus(target.value) +
+    pacifistDefBonus(state, target.value) +
     singularityDefBonus(target.value) +
     HOME_FIELD;
   const pWin = battleWinProb(ap, dp); // exact P(win), same math the dice roll
@@ -124,12 +127,12 @@ function launch(): void {
       v-for="pl in targets"
       :key="pl.id"
       class="trow"
-      :class="{ sel: pl.id === sel, truce: underTruce(pl) }"
-      @click="selectTarget({ id: pl.id, truce: underTruce(pl) })">
+      :class="{ sel: pl.id === sel, truce: underTruce(state, pl) }"
+      @click="selectTarget({ id: pl.id, truce: underTruce(state, pl) })">
       <div class="tinfo">
         <b :style="{ color: state.players[pl.ownerId].color }">{{ pl.name }}</b>
         — {{ state.players[pl.ownerId].name }}
-        <span v-if="underTruce(pl)" class="dimtx">
+        <span v-if="underTruce(state, pl)" class="dimtx">
           🕊️ truce ({{ pl.protectedUntil - state.turn + 1 }} turn{{
             pl.protectedUntil - state.turn ? 's' : ''
           }})

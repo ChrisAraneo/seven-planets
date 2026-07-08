@@ -1,6 +1,11 @@
 // NOTE: This function is not used anywhere in the current codebase.
 // It was part of the old non-mastermind AI personality system.
-import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
+import type {
+  GameState,
+  InfluenceOpts,
+  InfluenceType,
+  Player,
+} from '@/game/types';
 import { ACTION_TYPES } from '@/game/constants';
 import { aiMayTarget } from './ai-may-target';
 import { aiPickCoupTarget } from './ai-pick-coup-target';
@@ -13,13 +18,14 @@ import { underTruce } from './under-truce';
 
 // Decide whether (and how) to play a held influence card this action.
 export function aiPickInfluencePlay(
+  state: GameState,
   p: Player,
 ): (InfluenceOpts & { type: InfluenceType }) | null {
-  const allStr = alivePlayers().map((x) => playerStrength(x));
+  const allStr = alivePlayers(state).map((x) => playerStrength(state, x));
   const avgStr = allStr.reduce((a, b) => a + b, 0) / (allStr.length || 1);
   // Coup: seize the most developed rival planet as soon as one is worth it.
   if ((p.hand.COUP || 0) >= 1) {
-    const planet = aiPickCoupTarget(p);
+    const planet = aiPickCoupTarget(state, p);
     if (planet) {
       return { type: 'COUP', planet };
     }
@@ -34,25 +40,28 @@ export function aiPickInfluencePlay(
     if ((p.hand[t] || 0) < 1) {
       continue;
     }
-    const target = influenceTarget(p, t);
+    const target = influenceTarget(state, p, t);
     if (!target) {
       continue;
     }
-    if (playerStrength(target) >= avgStr || alivePlayers().length === 2) {
+    if (
+      playerStrength(state, target) >= avgStr ||
+      alivePlayers(state).length === 2
+    ) {
       return { type: t };
     }
   }
   // Extortion: grab a card this player can use — or deny the strongest rival their Attack cards.
   if ((p.hand.STEAL_ACTION || 0) >= 1) {
-    const rivals = alivePlayers().filter((x) => x.id !== p.id);
+    const rivals = alivePlayers(state).filter((x) => x.id !== p.id);
     const wants = ACTION_TYPES.filter((a) =>
       a === 'ATTACK'
-        ? hasBuilding(p, 'SILO')
+        ? hasBuilding(state, p, 'SILO')
         : a === 'RECRUIT'
-          ? hasBuilding(p, 'BARRACKS')
+          ? hasBuilding(state, p, 'BARRACKS')
           : a === 'MOVE'
-            ? hasBuilding(p, 'SPACEPORT') && p.planets.length >= 2
-            : hasBuilding(p, 'EMBASSY'),
+            ? hasBuilding(state, p, 'SPACEPORT') && p.planets.length >= 2
+            : hasBuilding(state, p, 'EMBASSY'),
     );
     if (!wants.includes('ATTACK')) {
       wants.push('ATTACK');
@@ -60,7 +69,7 @@ export function aiPickInfluencePlay(
     for (const a of wants) {
       const holders = rivals
         .filter((x) => x.hand[a] > 0)
-        .sort((x, y) => playerStrength(y) - playerStrength(x));
+        .sort((x, y) => playerStrength(state, y) - playerStrength(state, x));
       if (holders.length > 0) {
         return { type: 'STEAL_ACTION', target: holders[0], cardType: a };
       }
@@ -69,7 +78,9 @@ export function aiPickInfluencePlay(
   // Peace Treaty: pop it when a garrison runs dangerously thin.
   if (
     (p.hand.PEACE || 0) >= 1 &&
-    ownedPlanets(p).some((pl) => pl.troops <= 2 && !underTruce(pl))
+    ownedPlanets(state, p).some(
+      (pl) => pl.troops <= 2 && !underTruce(state, pl),
+    )
   ) {
     return { type: 'PEACE' };
   }

@@ -9,16 +9,15 @@ import {
   shuffleArr,
 } from '@/game/constants';
 import { drawResourceCard } from './draw-resource-card';
-import type { InfluenceType, PoolType } from '@/game/types';
-import { getState } from '../state';
+import type { GameState, InfluenceType, PoolType } from '@/game/types';
 import { isSingularityInPlay } from './is-singularity-in-play';
 import { drawActionCard } from './draw-action-card';
 import { alivePlayers } from './alive-players';
 import { singularityTotal } from './singularity-total';
 
-export function makePool(): PoolType[] {
+export function makePool(state: GameState): PoolType[] {
   // Turns 1–5: pure resource draft, 14 random resource cards.
-  if (getState().turn < BUILDINGS_FROM_TURN) {
+  if (state.turn < BUILDINGS_FROM_TURN) {
     const pool: PoolType[] = [];
     for (let i = 0; i < 14; i++) {
       pool.push(drawResourceCard());
@@ -28,35 +27,38 @@ export function makePool(): PoolType[] {
 
   // Turn 6+: 5 unique buildings + 11 other cards = 16 total.
   const eligibleBuildings = BUILD_ORDER.filter((b) => {
-    if (b === 'LAB' && getState().turn < ADVANCED_FROM_TURN) {
+    if (b === 'LAB' && state.turn < ADVANCED_FROM_TURN) {
       return false;
     }
     if (b === 'SINGULARITY') {
-      return isSingularityInPlay();
+      return isSingularityInPlay(state);
     }
     return true;
   });
   const buildingSlots = shuffleArr([...eligibleBuildings]).slice(0, 5);
-  const actionCount = getState().turn >= ACTION_CARDS_FROM_TURN ? 6 : 0;
+  const actionCount = state.turn >= ACTION_CARDS_FROM_TURN ? 6 : 0;
   const resourceSlots = Array.from({ length: 11 - actionCount }, () =>
     drawResourceCard(),
   );
   const actionSlots = Array.from({ length: actionCount }, () =>
-    drawActionCard(),
+    drawActionCard(state),
   );
 
   // From turn 30: 2 random influence cards join every pool.
   const influenceSlots: PoolType[] =
-    getState().turn >= INFLUENCE_CARDS_FROM_TURN
+    state.turn >= INFLUENCE_CARDS_FROM_TURN
       ? Array.from({ length: 2 }, () =>
           choice(Object.keys(INFLUENCE_CARDS) as InfluenceType[]),
         )
       : [];
 
   // Each Singularity level across all alive players adds 1 extra random card.
-  const singBonus = alivePlayers().reduce((s, p) => s + singularityTotal(p), 0);
+  const singBonus = alivePlayers(state).reduce(
+    (s, p) => s + singularityTotal(state, p),
+    0,
+  );
   const bonusSlots = Array.from({ length: singBonus }, () =>
-    Math.random() < 0.55 ? drawResourceCard() : drawActionCard(),
+    Math.random() < 0.55 ? drawResourceCard() : drawActionCard(state),
   );
 
   return shuffleArr([

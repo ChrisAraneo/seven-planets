@@ -11,22 +11,25 @@ import { useGameStore } from '@/stores/game';
 import { computed } from 'vue';
 
 const store = useGameStore();
+const state = store.state;
 
 const my = computed(() => store.isHumanTurn);
 const human = computed(() => store.human);
 
-const hasBarracks = computed(() => hasBuilding(human.value, 'BARRACKS'));
-const hasPort = computed(() => hasBuilding(human.value, 'SPACEPORT'));
-const hasEmbassy = computed(() => hasBuilding(human.value, 'EMBASSY'));
+const hasBarracks = computed(() => hasBuilding(state, human.value, 'BARRACKS'));
+const hasPort = computed(() => hasBuilding(state, human.value, 'SPACEPORT'));
+const hasEmbassy = computed(() => hasBuilding(state, human.value, 'EMBASSY'));
 const canRecruitSomewhere = computed(() =>
-  ownedPlanets(human.value).some(
+  ownedPlanets(state, human.value).some(
     (pl) =>
       pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl)),
   ),
 );
 const isPeaceful = computed(() => isPacifist(human.value));
 const canLaunchSomewhere = computed(() =>
-  ownedPlanets(human.value).some((pl) => pl.buildings.SILO && pl.troops >= 1),
+  ownedPlanets(state, human.value).some(
+    (pl) => pl.buildings.SILO && pl.troops >= 1,
+  ),
 );
 const heldInf = computed(() =>
   INFLUENCE_TYPES.reduce((s, t) => s + (human.value.hand[t] || 0), 0),
@@ -61,7 +64,7 @@ const influenceTitle = computed(() =>
 );
 
 function onRecruit(): void {
-  const pls = ownedPlanets(human.value).filter(
+  const pls = ownedPlanets(state, human.value).filter(
     (pl) =>
       pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl)),
   );
@@ -97,7 +100,7 @@ function onRecruit(): void {
         !hasActionCard(human, 'MOVE') ||
         !hasPort ||
         human.planets.length < 2 ||
-        totalTroops(human) < 1
+        totalTroops(state, human) < 1
       "
       :title="moveTitle"
       @click="store.openModal('move')">
@@ -109,7 +112,7 @@ function onRecruit(): void {
         !my ||
         !hasActionCard(human, 'TRADE') ||
         !hasEmbassy ||
-        alivePlayers().length < 2
+        alivePlayers(state).length < 2
       "
       :title="tradeTitle"
       @click="store.openModal('trade')">
