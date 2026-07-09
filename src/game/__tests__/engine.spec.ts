@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildingCost, canAfford } from '@/game/constants';
-import { buildState } from '@/game/engine/state';
+import { initializeState } from '@/game/engine/initialize-state/initialize-state';
 
 describe('Seven Planets engine', () => {
   it('builds a fresh 7-seat galaxy', () => {
-    const s = buildState();
+    const s = initializeState();
     expect(s.players).toHaveLength(7);
     expect(s.planets).toHaveLength(7);
     expect(s.players[0].isHuman).toBe(true);

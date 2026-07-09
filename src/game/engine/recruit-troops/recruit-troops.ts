@@ -8,14 +8,14 @@ import { log } from '../common/log';
 import { payCost } from '../common/pay-cost';
 import { spendActionCard } from '../common/spend-action-card';
 
-export interface RecruitPayload {
+export interface RecruitTroopsPayload {
   playerId: number;
   planetId: number;
 }
 
-export async function recruit(
+export async function recruitTroops(
   state: GameState,
-  payload: RecruitPayload,
+  payload: RecruitTroopsPayload,
 ): Promise<GameState> {
   const { playerId, planetId } = payload;
 

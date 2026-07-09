@@ -30,7 +30,7 @@ export const mastermindAgent: PlayerAgent = {
     switch (d.kind) {
       case 'influence': {
         return (
-          (await dispatch('scheme', {
+          (await dispatch('useInfluence', {
             playerId: p.id,
             type: d.type,
             opts: d.opts,
@@ -39,7 +39,7 @@ export const mastermindAgent: PlayerAgent = {
       }
       case 'attack': {
         return (
-          (await dispatch('attack', {
+          (await dispatch('attackPlanet', {
             playerId: p.id,
             sourceId: d.source.id,
             targetId: d.target.id,
@@ -49,7 +49,7 @@ export const mastermindAgent: PlayerAgent = {
       }
       case 'recruit': {
         return (
-          (await dispatch('recruit', {
+          (await dispatch('recruitTroops', {
             playerId: p.id,
             planetId: d.planet.id,
           })) === true
@@ -57,7 +57,7 @@ export const mastermindAgent: PlayerAgent = {
       }
       case 'move': {
         return (
-          (await dispatch('move', {
+          (await dispatch('moveTroops', {
             playerId: p.id,
             fromId: d.from.id,
             toId: d.to.id,
@@ -67,7 +67,7 @@ export const mastermindAgent: PlayerAgent = {
       }
       case 'trade': {
         return (
-          (await dispatch('trade', {
+          (await dispatch('tradeResources', {
             playerId: p.id,
             partnerId: d.partner.id,
             gives: d.gives,
@@ -88,7 +88,7 @@ export const mastermindAgent: PlayerAgent = {
       // First legal card rather than leave the draft parked.
       idx = pickable.indexOf(true);
     }
-    void dispatch('pick', { playerId: p.id, idx });
+    void dispatch('pickCard', { playerId: p.id, idx });
   },
 
   /** Answer the trade offer waiting in getPendingOffer() (addressed to `p`). */

@@ -1,7 +1,10 @@
 import { getGameState } from '@/stores/game-state';
-import { getActiveId } from '@/stores/game/getters/get-active-id';
-import { getOver } from '@/stores/game/getters/get-over';
-import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
+import type {
+  GameState,
+  InfluenceOpts,
+  InfluenceType,
+  Player,
+} from '@/game/types';
 
 import {
   ACTION_TYPES,
@@ -16,7 +19,7 @@ import {
 } from '@/game/constants';
 import { influenceTarget } from '../common/influence-target';
 import { floatText, boom } from '@/game/hooks';
-import type { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { checkWin } from '../common/check-win';
 import { coupTargets } from '../common/coup-targets';
 import { handSize } from '../common/hand-size';
@@ -25,37 +28,49 @@ import { log } from '../common/log';
 import { ownedPlanets } from '../common/owned-planets';
 import { stealCards } from '../common/steal-cards';
 
-/* The `scheme` store action: play a held influence card (skip, steal,
-   coup, peace). The human's InfluenceModal and the AI agent both
-   dispatch this. Returns whether the card was actually played. */
-export function scheme(payload: {
+export interface UseInfluencePayload {
   playerId: number;
   type: InfluenceType;
   opts?: InfluenceOpts;
-}): boolean {
-  const { playerId, type, opts } = payload;
-  if (playerId !== getActiveId() || getOver()) {
-    return false;
-  }
-  return useInfluenceCard(getGameState().players[playerId], type, opts ?? {});
 }
 
-function useInfluenceCard(
-  p: Player,
-  t: InfluenceType,
+export async function useInfluence(
+  state: GameState,
+  payload: UseInfluencePayload,
+): Promise<GameState> {
+  const { playerId, type, opts } = payload;
+
+  if (playerId !== state.activeId || state.over) {
+    return state;
+  }
+
+  f(state, state.players[playerId], type, opts ?? {});
+
+  return state;
+}
+
+function f(
+  state: GameState,
+  player: Player,
+  influenceType: InfluenceType,
   opts: InfluenceOpts = {},
 ): boolean {
-  if ((p.hand[t] || 0) < 1) {
+  if ((player.hand[influenceType] || 0) < 1) {
     return false;
   }
-  const C = INFLUENCE_CARDS[t];
-  if (t.startsWith('SKIP_')) {
-    const target = influenceTarget(p, t);
+
+  const C = INFLUENCE_CARDS[influenceType];
+
+  if (influenceType.startsWith('SKIP_')) {
+    const target = influenceTarget(player, influenceType);
     if (!target) {
       return false;
     }
-    p.hand[t]--;
-    log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
+    player.hand[influenceType]--;
+    log(
+      `⭐ ${player.name} plays ${CARDS[influenceType].icon} ${C.name}`,
+      'sys',
+    );
     target.skipTurns += SKIP_TURNS;
     log(
       `⏭️ ${target.name} is paralysed — they skip their next ${SKIP_TURNS} turn${SKIP_TURNS === 1 ? '' : 's'}!`,
@@ -63,7 +78,7 @@ function useInfluenceCard(
     );
     floatText(homePlanet(target), '⏭️ SKIPPED', '#ffb0d8');
   } else {
-    switch (t) {
+    switch (influenceType) {
       case 'STEAL_ACTION': {
         const { cardType } = opts;
         // Opts carry frozen clones from the selectors; act on the live seat.
@@ -77,11 +92,11 @@ function useInfluenceCard(
         ) {
           return false;
         }
-        p.hand[t]--;
+        player.hand[influenceType]--;
         target.hand[cardType]--;
-        p.hand[cardType]++;
+        player.hand[cardType]++;
         log(
-          `⭐ ${p.name} plays ${CARDS[t].icon} ${C.name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${target.name}!`,
+          `⭐ ${player.name} plays ${CARDS[influenceType].icon} ${C.name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${target.name}!`,
           'war',
         );
         floatText(homePlanet(target), `−1${CARDS[cardType].icon}`, '#ffb0d8');
@@ -91,29 +106,32 @@ function useInfluenceCard(
       case 'COUP': {
         // Opts carry frozen clones from the selectors; act on the live planet.
         const pl = opts.planet && getGameState().planets[opts.planet.id];
-        if (!pl || !coupTargets(p).includes(pl)) {
+        if (!pl || !coupTargets(player).includes(pl)) {
           return false;
         }
         const def = getGameState().players[pl.ownerId];
-        p.hand[t]--;
-        log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
+        player.hand[influenceType]--;
+        log(
+          `⭐ ${player.name} plays ${CARDS[influenceType].icon} ${C.name}`,
+          'sys',
+        );
         def.planets = def.planets.filter((id) => id !== pl.id);
-        p.planets.push(pl.id);
-        pl.ownerId = p.id;
+        player.planets.push(pl.id);
+        pl.ownerId = player.id;
         pl.troops = Math.max(1, Math.floor(pl.troops / 2)); // Half disbands, the rest defect
         pl.protectedUntil = getTurn() + CONQUEST_TRUCE;
         boom(pl);
         floatText(pl, '👑 COUP!', '#ffb0d8');
         log(
-          `👑 ${pl.name} defects to ${p.name} — half of ${def.name}'s garrison disbands, ${pl.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
+          `👑 ${pl.name} defects to ${player.name} — half of ${def.name}'s garrison disbands, ${pl.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
           'war',
         );
         if (def.planets.length === 0) {
           const lootN = Math.min(6, handSize(def));
           if (lootN > 0) {
-            const taken = stealCards(def, p, lootN);
+            const taken = stealCards(def, player, lootN);
             log(
-              `💰 ${p.name} salvages ${fmtCards(taken)} from the toppled regime!`,
+              `💰 ${player.name} salvages ${fmtCards(taken)} from the toppled regime!`,
               'war',
             );
           }
@@ -128,22 +146,25 @@ function useInfluenceCard(
             `☠️ ${def.name} has been wiped from the galaxy — overthrown without a shot!`,
             'war',
           );
-          checkWin();
+          checkWin(state);
         }
 
         break;
       }
       case 'PEACE': {
-        p.hand[t]--;
-        log(`⭐ ${p.name} plays ${CARDS[t].icon} ${C.name}`, 'sys');
-        for (const pl of ownedPlanets(p)) {
+        player.hand[influenceType]--;
+        log(
+          `⭐ ${player.name} plays ${CARDS[influenceType].icon} ${C.name}`,
+          'sys',
+        );
+        for (const pl of ownedPlanets(player)) {
           pl.protectedUntil = Math.max(
             pl.protectedUntil,
             getTurn() + PEACE_TRUCE,
           );
         }
         log(
-          `🕊️ ${p.name}'s planets are under truce for ${PEACE_TRUCE} turn${PEACE_TRUCE === 1 ? '' : 's'} — no attacks allowed!`,
+          `🕊️ ${player.name}'s planets are under truce for ${PEACE_TRUCE} turn${PEACE_TRUCE === 1 ? '' : 's'} — no attacks allowed!`,
           'sys',
         );
 
@@ -154,5 +175,6 @@ function useInfluenceCard(
       }
     }
   }
+
   return true;
 }

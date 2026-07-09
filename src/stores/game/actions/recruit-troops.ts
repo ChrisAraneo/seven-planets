@@ -1,10 +1,11 @@
 import type { ActionContext } from 'vuex';
 import type { GameModuleState } from '../game';
 import type { RootState } from '@/stores';
+import type { RecruitTroopsPayload } from '@/game/engine/recruit-troops/recruit-troops';
 
 export function recruitTroops(
   context: ActionContext<GameModuleState, RootState>,
-  payload,
+  payload: RecruitTroopsPayload,
 ) {
   return context.commit('recruitTroops', payload);
 }

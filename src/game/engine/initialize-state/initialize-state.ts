@@ -1,13 +1,13 @@
 import {
-  AI_COLORS,
-  AI_NAMES,
-  AI_PLANET_NAMES,
   CARD_TYPES,
   INFLUENCE_TYPES,
-  PLANET_STYLES,
   shuffleArr,
-} from '../constants';
-import type { GameState, Hand } from '../types';
+  AI_NAMES,
+  AI_PLANET_NAMES,
+  AI_COLORS,
+  PLANET_STYLES,
+} from '@/game/constants';
+import type { Hand, GameState } from '@/game/types';
 
 function startingHand(): Hand {
   const h: Hand = {};
@@ -20,7 +20,7 @@ function startingHand(): Hand {
   return h;
 }
 
-export function buildState(): GameState {
+export function initializeState(): GameState {
   // All 6 AI seats are always mastermind.
   const aiPersonalities: string[] = Array(6).fill('mastermind');
   // Task 3: name, homeworld, color and planet style are all randomized

@@ -70,21 +70,24 @@ const gameStore = reactive({
   /* ------- human interactions (the shared player actions) ------- */
 
   pickCard(idx: number): void {
-    void store.dispatch('game/pick', { playerId: HUMAN_SEAT, idx });
+    void store.dispatch('game/pickCard', { playerId: HUMAN_SEAT, idx });
   },
 
   end(): void {
-    void store.dispatch('game/end', { playerId: HUMAN_SEAT });
+    void store.dispatch('game/endTurn', { playerId: HUMAN_SEAT });
   },
 
   recruit(planetId: number): void {
     store.commit('ui/closeModal');
-    void store.dispatch('game/recruit', { playerId: HUMAN_SEAT, planetId });
+    void store.dispatch('game/recruitTroops', {
+      playerId: HUMAN_SEAT,
+      planetId,
+    });
   },
 
   async attack(sourceId: number, targetId: number, n: number): Promise<void> {
     store.commit('ui/closeModal');
-    await store.dispatch('game/attack', {
+    await store.dispatch('game/attackPlanet', {
       playerId: HUMAN_SEAT,
       sourceId,
       targetId,
@@ -94,7 +97,7 @@ const gameStore = reactive({
 
   async move(fromId: number, toId: number, n: number): Promise<void> {
     store.commit('ui/closeModal');
-    await store.dispatch('game/move', {
+    await store.dispatch('game/moveTroops', {
       playerId: HUMAN_SEAT,
       fromId,
       toId,
@@ -104,7 +107,7 @@ const gameStore = reactive({
 
   /** Propose a human-initiated trade. Resolves with the partner's answer. */
   proposeTrade(partnerId: number, gives: Cost, gets: Cost): Promise<boolean> {
-    return store.dispatch('game/trade', {
+    return store.dispatch('game/tradeResources', {
       playerId: HUMAN_SEAT,
       partnerId,
       gives,
@@ -114,7 +117,11 @@ const gameStore = reactive({
 
   playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
     store.commit('ui/closeModal');
-    void store.dispatch('game/scheme', { playerId: HUMAN_SEAT, type, opts });
+    void store.dispatch('game/useInfluence', {
+      playerId: HUMAN_SEAT,
+      type,
+      opts,
+    });
   },
 
   resolveOffer(accept: boolean): void {

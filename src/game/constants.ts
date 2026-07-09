@@ -377,7 +377,6 @@ export const PLANET_STYLES: PlanetStyle[] = [
 
 // Full roster of possible AI opponents. Six are drawn at random each game.
 // Independent pools: each game randomizes a commander's name, homeworld and
-// Color separately (see buildState) — none is tied to any fixed character.
 export const AI_NAMES = [
   'Baron Harkan',
   'Feyd Rakeen',
