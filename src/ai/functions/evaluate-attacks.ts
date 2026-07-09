@@ -6,9 +6,9 @@ import {
   CONQUEST_TRUCE,
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
-} from '@/game/constants';
-import { rocketCap } from '@/game/shared/rocket-cap';
-import { siloBonus } from '@/game/shared/silo-bonus';
+} from '@/game/config/constants';
+import { rocketCap } from '@/stores/game/functions/rocket-cap';
+import { siloBonus } from '@/stores/game/functions/silo-bonus';
 import type { Planet, Player } from '@/game/types';
 
 import { alive } from './alive';

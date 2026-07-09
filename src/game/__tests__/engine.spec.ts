@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildingCost, canAfford } from '@/game/constants';
-import { initializeState } from '@/game/engine/initialize-state/initialize-state';
+import { buildingCost, canAfford } from '@/game/config/constants';
+import { initializeState } from '@/stores/game/functions/initialize-state';
 
 describe('Seven Planets engine', () => {
   it('builds a fresh 7-seat galaxy', () => {

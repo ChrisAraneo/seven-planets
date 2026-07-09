@@ -1,4 +1,4 @@
-import { COMBAT } from '@/game/constants';
+import { COMBAT } from '@/game/config/constants';
 import type { Player } from '@/game/types';
 
 import { battleWinProb } from './battle-win-prob';

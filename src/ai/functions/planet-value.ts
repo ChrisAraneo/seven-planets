@@ -1,4 +1,9 @@
-import { BUILD_ORDER, BUILDINGS, CARDS, incomeAmount } from '@/game/constants';
+import {
+  BUILD_ORDER,
+  BUILDINGS,
+  CARDS,
+  incomeAmount,
+} from '@/game/config/constants';
 import type { Planet } from '@/game/types';
 
 export function planetValue(pl: Planet): number {

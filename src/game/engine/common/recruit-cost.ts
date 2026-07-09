@@ -1,6 +1,0 @@
-import { recruitYield } from '@/game/shared/recruit-yield';
-import type { Cost, Planet } from '@/game/types';
-
-export function recruitCost(planet: Planet): Cost {
-  return { ORE: recruitYield(planet) };
-}

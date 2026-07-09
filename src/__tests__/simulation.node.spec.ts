@@ -9,7 +9,7 @@ import '@/stores';
 import { describe, expect, it } from 'vitest';
 
 import { installAi } from '@/ai/agent';
-import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
+import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
 
 // Seat the AI agent before any game runs.
 installAi();

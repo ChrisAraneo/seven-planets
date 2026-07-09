@@ -1,4 +1,4 @@
-import { BUILD_ORDER, BUILDINGS, handValue } from '@/game/constants';
+import { BUILD_ORDER, BUILDINGS, handValue } from '@/game/config/constants';
 import type { Player } from '@/game/types';
 
 import { owned } from './owned';

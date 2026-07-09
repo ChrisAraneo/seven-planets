@@ -4,7 +4,7 @@ import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
-import { fmtCards } from '@/game/constants';
+import { fmtCards } from '@/game/config/constants.ts';
 
 const store = useGameStore();
 const offer = computed(() => getPendingOffer());

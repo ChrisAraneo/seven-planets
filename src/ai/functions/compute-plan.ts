@@ -10,9 +10,9 @@ import {
   INFLUENCE_CARDS,
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
-} from '@/game/constants';
-import { rocketCap } from '@/game/shared/rocket-cap';
-import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+} from '@/game/config/constants';
+import { rocketCap } from '@/stores/game/functions/rocket-cap';
+import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus';
 import type { Player } from '@/game/types';
 
 import { battleWinProb } from './battle-win-prob';

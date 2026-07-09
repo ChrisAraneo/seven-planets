@@ -1,5 +1,5 @@
 import { getTurn } from '@/stores/game/getters/get-turn';
-import { ADVANCED_FROM_TURN, BUILD_ORDER } from '@/game/constants';
+import { ADVANCED_FROM_TURN, BUILD_ORDER } from '@/game/config/constants';
 import type { BuildingType } from '@/game/types';
 
 import { isSingularityLive } from './is-singularity-live';

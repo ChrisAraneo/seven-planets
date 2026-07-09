@@ -1,6 +1,6 @@
 import { computed, reactive } from 'vue';
 
-import type { Difficulty } from '@/game/difficulty';
+import type { Difficulty } from '@/game/config/difficulty';
 import type { Cost, InfluenceOpts, InfluenceType } from '@/game/types';
 import { getActiveId } from '@/stores/game/getters/get-active-id';
 import { getAwaitingAction } from '@/stores/game/getters/get-awaiting-action';

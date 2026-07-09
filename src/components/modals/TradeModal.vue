@@ -3,15 +3,15 @@ import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed, reactive, ref } from 'vue';
 import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
-import { CARDS, RESOURCE_TYPES } from '@/game/constants';
-import { filterAlivePlayers } from '@/game/actions/common/alive-players';
-import { hasActionCard } from '@/game/actions/common/has-action-card';
+import { CARDS, RESOURCE_TYPES } from '@/game/config/constants.ts';
+import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
+import { hasActionCard } from '@/stores/game/functions/has-action-card';
 import type { Cost } from '@/game/types';
 
 const store = useGameStore();
 const human = store.human;
 
-const partners = filterAlivePlayers().filter((p) => !p.isHuman);
+const partners = filterAlivePlayers(store.state).filter((p) => !p.isHuman);
 const partnerId = ref(partners[0].id);
 const partner = computed(() => getPlayers()[partnerId.value]);
 

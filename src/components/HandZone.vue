@@ -6,7 +6,7 @@ import {
   CARDS,
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
-} from '@/game/constants';
+} from '@/game/config/constants';
 import type { InfluenceType } from '@/game/types';
 
 const store = useGameStore();

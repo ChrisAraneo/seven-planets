@@ -1,4 +1,4 @@
-import type { Difficulty } from '@/game/difficulty';
+import type { Difficulty } from '@/game/config/difficulty';
 
 import { store } from './index';
 

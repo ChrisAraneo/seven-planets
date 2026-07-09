@@ -1,4 +1,4 @@
-import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/constants';
+import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/config/constants';
 import type { Cost, Player } from '@/game/types';
 
 import { alive } from './alive';

@@ -3,7 +3,7 @@ import {
   ACTION_CARDS_FROM_TURN,
   CARDS,
   MOVE_CARDS_FROM_TURN,
-} from '@/game/constants';
+} from '@/game/config/constants';
 import type { ActionType } from '@/game/types';
 
 export function expectedActionCopies(t: ActionType): number {

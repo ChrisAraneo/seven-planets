@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { canAfford, INFLUENCE_TYPES } from '@/game/constants';
-import { hasBuilding } from '@/game/actions/common/has-building';
-import { ownedPlanets } from '@/game/actions/common/owned-planets';
-import { recruitCost } from '@/game/actions/common/recruit-cost';
-import { isPacifist } from '@/game/actions/common/is-pacifist';
-import { hasActionCard } from '@/game/actions/common/has-action-card';
-import { totalTroops } from '@/game/actions/common/total-troops';
-import { filterAlivePlayers } from '@/game/actions/common/alive-players';
+import { canAfford, INFLUENCE_TYPES } from '@/game/config/constants';
+import { hasBuilding } from '@/stores/game/functions/has-building';
+import { ownedPlanets } from '@/stores/game/functions/owned-planets';
+import { recruitCost } from '@/stores/game/functions/recruit-cost';
+import { isPacifist } from '@/stores/game/functions/is-pacifist';
+import { hasActionCard } from '@/stores/game/functions/has-action-card';
+import { totalTroops } from '@/stores/game/functions/total-troops';
+import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
 import { useGameStore } from '@/stores/game';
 import { computed } from 'vue';
 
@@ -15,18 +15,26 @@ const store = useGameStore();
 const my = computed(() => store.isHumanTurn);
 const human = computed(() => store.human);
 
-const hasBarracks = computed(() => hasBuilding(human.value, 'BARRACKS'));
-const hasPort = computed(() => hasBuilding(human.value, 'SPACEPORT'));
-const hasEmbassy = computed(() => hasBuilding(human.value, 'EMBASSY'));
+const hasBarracks = computed(() =>
+  hasBuilding(store.state, human.value, 'BARRACKS'),
+);
+const hasPort = computed(() =>
+  hasBuilding(store.state, human.value, 'SPACEPORT'),
+);
+const hasEmbassy = computed(() =>
+  hasBuilding(store.state, human.value, 'EMBASSY'),
+);
 const canRecruitSomewhere = computed(() =>
-  ownedPlanets(human.value).some(
+  ownedPlanets(store.state, human.value).some(
     (pl) =>
       pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl)),
   ),
 );
 const isPeaceful = computed(() => isPacifist(human.value));
 const canLaunchSomewhere = computed(() =>
-  ownedPlanets(human.value).some((pl) => pl.buildings.SILO && pl.troops >= 1),
+  ownedPlanets(store.state, human.value).some(
+    (pl) => pl.buildings.SILO && pl.troops >= 1,
+  ),
 );
 const heldInf = computed(() =>
   INFLUENCE_TYPES.reduce((s, t) => s + (human.value.hand[t] || 0), 0),
@@ -61,7 +69,7 @@ const influenceTitle = computed(() =>
 );
 
 function onRecruit(): void {
-  const pls = ownedPlanets(human.value).filter(
+  const pls = ownedPlanets(store.state, human.value).filter(
     (pl) =>
       pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl)),
   );
@@ -97,7 +105,7 @@ function onRecruit(): void {
         !hasActionCard(human, 'MOVE') ||
         !hasPort ||
         human.planets.length < 2 ||
-        totalTroops(human) < 1
+        totalTroops(store.state, human) < 1
       "
       :title="moveTitle"
       @click="store.openModal('move')">
@@ -109,7 +117,7 @@ function onRecruit(): void {
         !my ||
         !hasActionCard(human, 'TRADE') ||
         !hasEmbassy ||
-        filterAlivePlayers().length < 2
+        filterAlivePlayers(store.state).length < 2
       "
       :title="tradeTitle"
       @click="store.openModal('trade')">

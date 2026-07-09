@@ -12,9 +12,9 @@ import {
   SHIELD_DEFENSE,
   SILO_HIT_BONUS,
   SINGULARITY_DEF_BONUS,
-} from '@/game/constants';
-import { recruitYield } from '@/game/shared/recruit-yield';
-import { rocketCap } from '@/game/shared/rocket-cap';
+} from '@/game/config/constants';
+import { recruitYield } from '@/stores/game/functions/recruit-yield';
+import { rocketCap } from '@/stores/game/functions/rocket-cap';
 import type { BuildingType, Planet, Player } from '@/game/types';
 
 import { avgResourceCardValue } from './avg-resource-card-value';

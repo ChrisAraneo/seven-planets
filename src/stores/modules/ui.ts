@@ -5,10 +5,11 @@ import {
   DEFAULT_DIFFICULTY,
   type Difficulty,
   getDifficulty,
-} from '@/game/difficulty';
-import { assignKamikazes } from '@/game/engine/functions/assign-kamikazes';
-import { AUTO_HUMAN } from '@/game/actions/common/auto-human';
-import { runGame } from '@/game/engine/functions/run-game';
+} from '@/game/config/difficulty';
+import { assignKamikazes } from '@/stores/game/functions/assign-kamikazes';
+import { AUTO_HUMAN } from '@/stores/game/functions/auto-human';
+import { runGame } from '@/stores/game/functions/run-game';
+import { getGameState } from '@/stores/game-state';
 
 import type { RootState } from '../index';
 
@@ -81,9 +82,9 @@ export const ui: Module<UiModuleState, RootState> = {
       // Apply this level's handicap to every mastermind AI before the loop runs,
       // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
       setAiDifficulty(def.ai);
-      assignKamikazes(def.kamikazeCount);
+      assignKamikazes(getGameState(), def.kamikazeCount);
       commit('setStarted');
-      void runGame();
+      void runGame(getGameState());
     },
 
     newGame() {

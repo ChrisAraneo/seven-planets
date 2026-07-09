@@ -1,4 +1,4 @@
-import { COMBAT } from '@/game/constants';
+import { COMBAT } from '@/game/config/constants';
 
 export function battleWinProb(attackBase: number, defenseBase: number): number {
   const aR = COMBAT.attackRoll;

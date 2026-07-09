@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
-import { DIFFICULTIES, type Difficulty } from '@/game/difficulty';
+import { DIFFICULTIES, type Difficulty } from '@/game/config/difficulty.ts';
 import { useUnlocksStore } from '@/stores/unlocks';
 
 const store = useGameStore();

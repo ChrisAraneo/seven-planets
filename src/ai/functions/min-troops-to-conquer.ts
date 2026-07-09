@@ -1,4 +1,4 @@
-import { COMBAT } from '@/game/constants';
+import { COMBAT } from '@/game/config/constants';
 
 export function minTroopsToConquer(defTroops: number): number {
   if (defTroops <= 0) {

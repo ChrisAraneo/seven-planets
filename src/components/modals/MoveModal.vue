@@ -3,20 +3,22 @@ import { getPlanets } from '@/stores/game/getters/get-planets.ts';
 import { computed, ref, watch } from 'vue';
 import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
-import { ownedPlanets } from '@/game/actions/common/owned-planets';
-import { rocketCap } from '@/game/shared/rocket-cap';
+import { ownedPlanets } from '@/stores/game/functions/owned-planets';
+import { rocketCap } from '@/stores/game/functions/rocket-cap.ts';
 
 const store = useGameStore();
 const human = store.human;
 
 const fromId = ref(
-  ownedPlanets(human).reduce((a, b) => (a.troops >= b.troops ? a : b)).id,
+  ownedPlanets(store.state, human).reduce((a, b) =>
+    a.troops >= b.troops ? a : b,
+  ).id,
 );
 const toId = ref(-1);
 const n = ref(1);
 
 const from = computed(() => getPlanets()[fromId.value]);
-const owned = computed(() => ownedPlanets(human));
+const owned = computed(() => ownedPlanets(store.state, human));
 const dests = computed(() =>
   owned.value.filter((pl) => pl.id !== fromId.value),
 );

@@ -5,8 +5,8 @@ import {
   HOME_FIELD,
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
-} from '@/game/constants';
-import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
+} from '@/game/config/constants';
+import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus';
 import type { Planet, Player } from '@/game/types';
 
 import { actionDrawProb } from './action-draw-prob';

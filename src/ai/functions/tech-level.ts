@@ -1,4 +1,4 @@
-import { isFullyBuilt } from '@/game/shared/is-fully-built';
+import { isFullyBuilt } from '@/stores/game/functions/is-fully-built';
 import type { Player } from '@/game/types';
 
 import { owned } from './owned';

@@ -1,4 +1,4 @@
-import { CARDS, RESOURCE_TYPES } from '@/game/constants';
+import { CARDS, RESOURCE_TYPES } from '@/game/config/constants';
 
 export function avgResourceCardValue(): number {
   const types = RESOURCE_TYPES.filter((t) => t !== 'SPICE');

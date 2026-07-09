@@ -1,7 +1,7 @@
 import type { ActionContext } from 'vuex';
 import type { GameModuleState } from '../game';
 import type { RootState } from '@/stores';
-import type { ResolveOfferPayload } from '@/game/engine/resolve-offer/resolve-offer';
+import type { ResolveOfferPayload } from '@/stores/game/mutations/resolve-offer/resolve-offer';
 
 export function resolveOffer(
   context: ActionContext<GameModuleState, RootState>,

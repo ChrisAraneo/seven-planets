@@ -1,4 +1,4 @@
-import { recruitYield } from '@/game/shared/recruit-yield';
+import { recruitYield } from '@/stores/game/functions/recruit-yield';
 import type { Player } from '@/game/types';
 
 import { actionDrawProb } from './action-draw-prob';

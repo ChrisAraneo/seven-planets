@@ -8,10 +8,10 @@ import {
   RESOURCE_TYPES,
   ACTION_TYPES,
   INFLUENCE_TYPES,
-} from '@/game/constants';
-import { buildingCount } from '@/game/engine/functions/building-count';
-import { techLevel } from '@/game/actions/common/tech-level';
-import { totalTroops } from '@/game/actions/common/total-troops';
+} from '@/game/config/constants';
+import { buildingCount } from '@/stores/game/functions/building-count';
+import { techLevel } from '@/stores/game/functions/tech-level';
+import { totalTroops } from '@/stores/game/functions/total-troops';
 import type { Player } from '@/game/types';
 
 const store = useGameStore();
@@ -45,10 +45,10 @@ function actLine(p: Player): string {
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
-        🪰{{ p.planets.length }} 🔬T{{ techLevel(p) }} 🦵{{
-          totalTroops(p)
+        🪰{{ p.planets.length }} 🔬T{{ techLevel(store.state, p) }} 🦵{{
+          totalTroops(store.state, p)
         }}
-        🏛️{{ buildingCount(p) }} ⭐{{ p.influence
+        🏛️{{ buildingCount(store.state, p) }} ⭐{{ p.influence
         }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} · {{ resLine(p) }}
       </div>
       <div class="pstats">{{ actLine(p) }}</div>

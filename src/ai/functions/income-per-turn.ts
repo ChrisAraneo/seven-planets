@@ -1,4 +1,4 @@
-import { BUILD_ORDER, BUILDINGS, incomeAmount } from '@/game/constants';
+import { BUILD_ORDER, BUILDINGS, incomeAmount } from '@/game/config/constants';
 import type { Cost, Player } from '@/game/types';
 
 import { owned } from './owned';

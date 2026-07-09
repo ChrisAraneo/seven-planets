@@ -1,4 +1,4 @@
-import { RESOURCE_TYPES } from '@/game/constants';
+import { RESOURCE_TYPES } from '@/game/config/constants';
 import type { Cost, Player } from '@/game/types';
 
 import { shouldMastermindAcceptTrade } from './should-mastermind-accept-trade';

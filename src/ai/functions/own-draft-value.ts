@@ -1,7 +1,7 @@
 import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
-import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/constants';
-import { buildingCost } from '@/game/constants';
+import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/config/constants';
+import { buildingCost } from '@/game/config/constants';
 import type { InfluenceType, Planet, Player, PoolType } from '@/game/types';
 
 import { buildingWorth } from './building-worth';

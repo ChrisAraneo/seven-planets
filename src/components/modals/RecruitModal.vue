@@ -2,15 +2,15 @@
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
-import { canAfford, costLabel } from '@/game/constants';
-import { ownedPlanets } from '@/game/actions/common/owned-planets';
-import { recruitCost } from '@/game/actions/common/recruit-cost';
-import { recruitYield } from '@/game/shared/recruit-yield';
+import { canAfford, costLabel } from '@/game/config/constants.ts';
+import { ownedPlanets } from '@/stores/game/functions/owned-planets';
+import { recruitCost } from '@/stores/game/functions/recruit-cost';
+import { recruitYield } from '@/stores/game/functions/recruit-yield.ts';
 
 const store = useGameStore();
 
 const barracksPls = computed(() =>
-  ownedPlanets(store.human).filter(
+  ownedPlanets(store.state, store.human).filter(
     (pl) =>
       pl.buildings.BARRACKS && canAfford(store.human.hand, recruitCost(pl)),
   ),

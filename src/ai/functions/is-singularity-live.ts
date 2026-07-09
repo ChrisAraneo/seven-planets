@@ -1,5 +1,9 @@
-import { ADVANCED_FROM_TURN, BUILD_ORDER, maxLevel } from '@/game/constants';
-import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
+import {
+  ADVANCED_FROM_TURN,
+  BUILD_ORDER,
+  maxLevel,
+} from '@/game/config/constants';
+import { isSingularityLabOk } from '@/stores/game/functions/is-singularity-lab-ok';
 
 import { alive } from './alive';
 import { owned } from './owned';

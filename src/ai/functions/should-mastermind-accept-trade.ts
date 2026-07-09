@@ -1,5 +1,5 @@
 import { getAiState } from '@/ai/state';
-import { canAfford, CARDS } from '@/game/constants';
+import { canAfford, CARDS } from '@/game/config/constants';
 import type { Cost, Player } from '@/game/types';
 
 import { activateWeightsFor } from './activate-weights-for';

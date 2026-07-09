@@ -4,8 +4,8 @@ import { getTurn } from '@/stores/game/getters/get-turn.ts';
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
-import { buildingCount } from '@/game/engine/functions/building-count';
-import { totalTroops } from '@/game/actions/common/total-troops';
+import { buildingCount } from '@/stores/game/functions/building-count.ts';
+import { totalTroops } from '@/stores/game/functions/total-troops';
 
 const store = useGameStore();
 const over = computed(() => getOver());
@@ -39,8 +39,8 @@ const sub = computed(() => {
     <div class="gostats">
       {{ sub }}<br /><br />
       Turns played: {{ getTurn() }} · Planets held: {{ human.planets.length }} ·
-      Buildings: {{ buildingCount(human) }} · Troops:
-      {{ totalTroops(human) }}
+      Buildings: {{ buildingCount(store.state, human) }} · Troops:
+      {{ totalTroops(store.state, human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
       <button class="btn" @click="store.newGame()">🔄 Play Again</button>

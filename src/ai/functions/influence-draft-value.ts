@@ -1,5 +1,5 @@
 import { getAiState } from '@/ai/state';
-import { INFLUENCE_CARDS } from '@/game/constants';
+import { INFLUENCE_CARDS } from '@/game/config/constants';
 import type { InfluenceType, Player } from '@/game/types';
 
 import { alive } from './alive';

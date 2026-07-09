@@ -17,7 +17,7 @@ import {
   INFLUENCE_TYPES,
   maxLevel,
   MOVE_CARDS_FROM_TURN,
-} from '@/game/constants';
+} from '@/game/config/constants.ts';
 
 const store = useGameStore();
 </script>

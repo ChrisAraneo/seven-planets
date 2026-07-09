@@ -11,11 +11,11 @@ import {
   CONQUEST_TRUCE,
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
-} from '@/game/constants';
-import { filterAlivePlayers } from '@/game/actions/common/alive-players';
-import { coupTargets } from '@/game/actions/common/coup-targets';
-import { influenceTarget } from '@/game/actions/common/influence-target';
-import { isPacifist } from '@/game/actions/common/is-pacifist';
+} from '@/game/config/constants.ts';
+import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
+import { coupTargets } from '@/stores/game/functions/coup-targets';
+import { influenceTarget } from '@/stores/game/functions/influence-target';
+import { isPacifist } from '@/stores/game/functions/is-pacifist';
 import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types';
 
 const store = useGameStore();
@@ -27,14 +27,16 @@ const view = ref<View>('main');
 const held = computed(() =>
   INFLUENCE_TYPES.filter((t) => (human.hand[t] || 0) > 0),
 );
-const coupList = computed(() => coupTargets(human));
+const coupList = computed(() => coupTargets(store.state, human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
-const rivals = computed(() => filterAlivePlayers().filter((x) => !x.isHuman));
+const rivals = computed(() =>
+  filterAlivePlayers(store.state).filter((x) => !x.isHuman),
+);
 
 function skipTarget(t: InfluenceType): Player | null {
-  return t.startsWith('SKIP_') ? influenceTarget(human, t) : null;
+  return t.startsWith('SKIP_') ? influenceTarget(store.state, human, t) : null;
 }
 
 function chooseCard(t: InfluenceType): void {

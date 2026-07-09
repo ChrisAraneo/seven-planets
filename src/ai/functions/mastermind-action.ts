@@ -1,8 +1,8 @@
 import { getGameState } from '@/stores/game-state';
 import { getAiState } from '@/ai/state';
-import { canAfford } from '@/game/constants';
-import { recruitYield } from '@/game/shared/recruit-yield';
-import { rocketCap } from '@/game/shared/rocket-cap';
+import { canAfford } from '@/game/config/constants';
+import { recruitYield } from '@/stores/game/functions/recruit-yield';
+import { rocketCap } from '@/stores/game/functions/rocket-cap';
 import type {
   Cost,
   InfluenceOpts,

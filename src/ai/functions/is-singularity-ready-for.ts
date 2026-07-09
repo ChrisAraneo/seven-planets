@@ -1,5 +1,5 @@
-import { maxLevel } from '@/game/constants';
-import { isSingularityLabOk } from '@/game/shared/is-singularity-lab-ok';
+import { maxLevel } from '@/game/config/constants';
+import { isSingularityLabOk } from '@/stores/game/functions/is-singularity-lab-ok';
 import type { Player } from '@/game/types';
 
 import { owned } from './owned';

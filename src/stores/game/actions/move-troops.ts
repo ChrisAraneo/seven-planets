@@ -1,7 +1,7 @@
 import type { ActionContext } from 'vuex';
 import type { GameModuleState } from '../game';
 import type { RootState } from '@/stores';
-import type { MoveTroopsPayload } from '@/game/engine/move-troops/move-troops';
+import type { MoveTroopsPayload } from '@/stores/game/mutations/move-troops/move-troops';
 
 export function moveTroops(
   context: ActionContext<GameModuleState, RootState>,

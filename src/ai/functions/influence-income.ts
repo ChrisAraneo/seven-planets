@@ -1,4 +1,4 @@
-import { PACIFIST_INFLUENCE } from '@/game/constants';
+import { PACIFIST_INFLUENCE } from '@/game/config/constants';
 import type { Player } from '@/game/types';
 
 import { hasB } from './has-b';

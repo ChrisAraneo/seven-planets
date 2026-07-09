@@ -1,6 +1,9 @@
 import { getPendingOffer } from '@/stores/game/getters/get-pending-offer';
-import { type PlayerAgent, setPlayerAgent } from '@/game/engine/agent';
-import { canPickCard } from '@/game/actions/common/can-pick-card';
+import {
+  type PlayerAgent,
+  setPlayerAgent,
+} from '@/stores/game/functions/agent';
+import { canPickCard } from '@/stores/game/functions/can-pick-card';
 import type { Planet, Player } from '@/game/types';
 import { getGameState, getStore } from '@/stores/game-state';
 
@@ -81,7 +84,8 @@ export const mastermindAgent: PlayerAgent = {
 
   /** Draft pick: choose a pool card and take it via the `pick` action. */
   pickCard(p: Player, planet: Planet): void {
-    const pickable = getGameState().pool.map((t) => canPickCard(p, t, planet));
+    const state = getGameState();
+    const pickable = state.pool.map((t) => canPickCard(state, p, t, planet));
     let idx = mastermindDraftPick(p, planet, pickable);
     if (idx < 0 || !pickable[idx]) {
       // The engine only asks when something is pickable — fall back to the

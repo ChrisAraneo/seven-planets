@@ -1,4 +1,4 @@
-import { COMBAT } from '@/game/constants';
+import { COMBAT } from '@/game/config/constants';
 import type { Planet, Player } from '@/game/types';
 
 import { aggression } from './aggression';

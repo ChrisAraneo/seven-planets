@@ -1,6 +1,6 @@
 import { markRaw } from 'vue';
-import { ENGINE } from '@/game/engine/engine';
-import { resetResolvers } from '@/game/engine/common/resolver-state';
+import { initializeState } from '@/stores/game/functions/initialize-state';
+import { resetResolvers } from '@/stores/game/functions/resolver-state';
 import type { GameModuleState } from '../game';
 
 export function reset(
@@ -8,7 +8,7 @@ export function reset(
   opts: { raw?: boolean } = {},
 ) {
   gameModuleState.state = opts.raw
-    ? markRaw(ENGINE.initializeState())
-    : ENGINE.initializeState();
+    ? markRaw(initializeState())
+    : initializeState();
   resetResolvers();
 }

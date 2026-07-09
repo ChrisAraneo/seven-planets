@@ -1,5 +1,9 @@
 import { getAiState } from '@/ai/state';
-import { CARDS, INFLUENCE_CARDS, RESOURCE_TYPES } from '@/game/constants';
+import {
+  CARDS,
+  INFLUENCE_CARDS,
+  RESOURCE_TYPES,
+} from '@/game/config/constants';
 import type {
   BuildingType,
   InfluenceType,

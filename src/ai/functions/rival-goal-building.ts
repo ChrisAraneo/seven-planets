@@ -1,4 +1,4 @@
-import { buildingCost, maxLevel, PRIORITIES } from '@/game/constants';
+import { buildingCost, maxLevel, PRIORITIES } from '@/game/config/constants';
 import type { BuildingType, Cost, Player } from '@/game/types';
 
 import { owned } from './owned';

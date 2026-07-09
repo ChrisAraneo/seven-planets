@@ -1,7 +1,7 @@
 import type { ActionContext } from 'vuex';
 import type { GameModuleState } from '../game';
 import type { RootState } from '@/stores';
-import type { UseInfluencePayload } from '@/game/engine/use-influence/use-influence';
+import type { UseInfluencePayload } from '@/stores/game/mutations/use-influence/use-influence';
 
 export function useInfluence(
   context: ActionContext<GameModuleState, RootState>,

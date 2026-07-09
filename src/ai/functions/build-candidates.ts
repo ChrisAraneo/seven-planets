@@ -1,5 +1,5 @@
 import { getAiState } from '@/ai/state';
-import { BUILD_ORDER, buildingCost } from '@/game/constants';
+import { BUILD_ORDER, buildingCost } from '@/game/config/constants';
 import type { BuildingType, Cost, Planet, Player } from '@/game/types';
 
 import { affordEta } from './afford-eta';

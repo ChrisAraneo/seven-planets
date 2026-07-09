@@ -15,9 +15,9 @@ import {
   costLabel,
   INFLUENCE_CARDS,
   maxLevel,
-} from '@/game/constants';
-import { canPickCard } from '@/game/actions/common/can-pick-card';
-import { homePlanet } from '@/game/actions/common/home-planet';
+} from '@/game/config/constants';
+import { canPickCard } from '@/stores/game/functions/can-pick-card';
+import { homePlanet } from '@/stores/game/functions/home-planet';
 import type { BuildingType, InfluenceType, PoolType } from '@/game/types';
 
 const store = useGameStore();
@@ -50,10 +50,11 @@ const poolCards = computed<PoolCardVM[]>(() => {
   if (getPhase() !== 'draft' || getOver()) return [];
   const picking = store.isPicking;
   const human = getPlayers()[0];
-  const draftPl = getPlanets()[getDraftPlanetId()] || homePlanet(human);
+  const draftPl =
+    getPlanets()[getDraftPlanetId()] || homePlanet(store.state, human);
   return getPool().map((t: PoolType, i: number) => {
     const c = CARDS[t];
-    const valid = picking && canPickCard(human, t, draftPl);
+    const valid = picking && canPickCard(store.state, human, t, draftPl);
     const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${c.action ? 'action' : ''}`;
     if (c.building) {
       const bt = t as BuildingType;

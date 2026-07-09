@@ -21,7 +21,7 @@ import { resolve } from 'node:path';
 import { installAi } from '@/ai/agent';
 import { setAiDifficulty } from '@/ai/functions/set-ai-difficulty';
 import { DIFFICULTIES } from '@/game/difficulty';
-import { simulateGameWithPersonalities } from '@/game/engine/functions/simulate-game-with-personalities';
+import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
 // The game state lives in the Vuex store — importing it creates the store
 // and installs the accessor every engine/AI function reads it through.
 import '@/stores';

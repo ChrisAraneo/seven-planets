@@ -1,5 +1,5 @@
-import { COMBAT } from '@/game/constants';
-import { siloBonus } from '@/game/shared/silo-bonus';
+import { COMBAT } from '@/game/config/constants';
+import { siloBonus } from '@/stores/game/functions/silo-bonus';
 import type { Planet } from '@/game/types';
 
 export function attackBaseOf(n: number, source: Planet): number {

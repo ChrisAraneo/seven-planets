@@ -1,6 +1,6 @@
 import type { Module } from 'vuex';
 
-import { DIFFICULTIES, type Difficulty } from '@/game/difficulty';
+import { DIFFICULTIES, type Difficulty } from '@/game/config/difficulty';
 
 import type { RootState } from '../index';
 

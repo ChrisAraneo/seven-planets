@@ -10,24 +10,24 @@ import {
   CONQUEST_TRUCE,
   HOME_FIELD,
   SHIELD_DEFENSE,
-} from '@/game/constants';
+} from '@/game/config/constants.ts';
 import type { Planet } from '@/game/types';
 import { battleWinProb } from '@/ai/functions/battle-win-prob';
-import { handSize } from '@/game/actions/common/hand-size';
-import { isPacifist } from '@/game/actions/common/is-pacifist';
-import { ownedPlanets } from '@/game/actions/common/owned-planets';
-import { pacifistDefBonus } from '@/game/actions/common/pacifist-def-bonus';
-import { rocketCap } from '@/game/shared/rocket-cap';
-import { siloBonus } from '@/game/shared/silo-bonus';
-import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
-import { isUnderTruce } from '@/game/actions/common/is-under-truce';
+import { handSize } from '@/stores/game/functions/hand-size';
+import { isPacifist } from '@/stores/game/functions/is-pacifist';
+import { ownedPlanets } from '@/stores/game/functions/owned-planets';
+import { pacifistDefBonus } from '@/stores/game/functions/pacifist-def-bonus';
+import { rocketCap } from '@/stores/game/functions/rocket-cap.ts';
+import { siloBonus } from '@/stores/game/functions/silo-bonus.ts';
+import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus.ts';
+import { isUnderTruce } from '@/stores/game/functions/is-under-truce';
 
 const store = useGameStore();
 const human = store.human;
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPls = ownedPlanets(human).filter(
+const siloPls = ownedPlanets(store.state, human).filter(
   (pl) => pl.buildings.SILO && pl.troops >= 1,
 );
 const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id);
@@ -36,7 +36,7 @@ const n = ref(1);
 
 const source = computed(() => getPlanets()[srcId.value]);
 const sources = computed(() =>
-  ownedPlanets(human).filter((pl) => pl.buildings.SILO),
+  ownedPlanets(store.state, human).filter((pl) => pl.buildings.SILO),
 );
 const targets = computed(() =>
   getPlanets().filter((pl: Planet) => pl.ownerId !== 0),
@@ -70,7 +70,7 @@ const preview = computed(() => {
   const dp =
     2 * target.value.troops +
     (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    pacifistDefBonus(target.value) +
+    pacifistDefBonus(store.state, target.value) +
     singularityDefBonus(target.value) +
     HOME_FIELD;
   const pWin = battleWinProb(ap, dp); // exact P(win), same math the dice roll
