@@ -1,6 +1,6 @@
 import { getGameState } from '@/stores/game-state';
 
-import { aiActionTurn } from './ai-action-turn';
+import { agentActionTurn } from './agent-action-turn';
 import { AUTO_HUMAN } from './auto-human';
 import { humanActionTurn } from './human-action-turn';
 import { setStatus } from './set-status';
@@ -22,7 +22,7 @@ export async function runActionPhase(): Promise<void> {
       await humanActionTurn();
     } else {
       setStatus(`${p.name} is taking actions…`);
-      await aiActionTurn(p);
+      await agentActionTurn(p);
     }
     if (state.over) {
       return;

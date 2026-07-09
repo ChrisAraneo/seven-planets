@@ -1,9 +1,9 @@
 import { CARDS, INFLUENCE_CARDS } from '@/game/constants';
-import { sleep } from '@/game/effects';
+import { getPlayerAgent } from '@/game/engine/agent';
+import { sleep } from '@/game/hooks';
 import type { BuildingType, InfluenceType } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 
-import { aiDraftPick } from './ai-draft-pick';
 import { AUTO_HUMAN } from './auto-human';
 import { buildBuilding } from './build-building';
 import { canPickCard } from './can-pick-card';
@@ -11,7 +11,7 @@ import { draftOrder } from './draft-order';
 import { log } from './log';
 import { mainPicks } from './main-picks';
 import { setStatus } from './set-status';
-import { waitHumanPoolPick } from './wait-human-pool-pick';
+import { waitPoolPick } from './wait-pool-pick';
 
 export async function runDraft(): Promise<void> {
   const state = getGameState();
@@ -33,6 +33,8 @@ export async function runDraft(): Promise<void> {
       state.activeId = p.id;
       state.draftPlanetId = planet.id;
       for (let k = 0; k < picks && state.pool.length > 0; k++) {
+        // Every seat picks through the same parked `pick` store action; only
+        // The prompt (status line vs agent notification) differs.
         let idx: number;
         if (p.isHuman && !AUTO_HUMAN) {
           if (!state.pool.some((t) => canPickCard(p, t, planet))) {
@@ -47,18 +49,21 @@ export async function runDraft(): Promise<void> {
           setStatus(
             `YOUR PICK — ${planet.name} drafts card ${k + 1} of ${picks}${s > 0 ? ' (extra planet turn)' : ''}`,
           );
-          idx = await waitHumanPoolPick();
+          idx = await waitPoolPick();
         } else {
           setStatus(`${p.name} is drafting for ${planet.name}…`);
           await sleep(300);
-          idx = aiDraftPick(p, planet);
-          if (idx < 0) {
+          if (!state.pool.some((t) => canPickCard(p, t, planet))) {
             log(
               `🃏 ${p.name} passes (nothing pickable for ${planet.name})`,
               'draft',
             );
             continue;
           }
+          // Park FIRST so the agent's dispatched pick finds the resolver.
+          const pending = waitPoolPick();
+          getPlayerAgent().pickCard(p, planet);
+          idx = await pending;
         }
         if (state.over) {
           return;

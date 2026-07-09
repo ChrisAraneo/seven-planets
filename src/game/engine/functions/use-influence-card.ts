@@ -9,7 +9,7 @@ import {
   PEACE_TRUCE,
   SKIP_TURNS,
 } from '@/game/constants';
-import { boom, floatText } from '@/game/effects';
+import { boom, floatText } from '@/game/hooks';
 import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 

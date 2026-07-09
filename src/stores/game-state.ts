@@ -1,56 +1,46 @@
-import { defineStore } from 'pinia';
-import { markRaw, ref, shallowRef } from 'vue';
+import type { Store } from 'vuex';
 
-import { buildState } from '@/game/engine/state';
 import type { GameState } from '@/game/types';
 
-/* =====================================================================
-   The single source of truth for the live game state. Engine and AI
-   functions read it via getGameState() instead of receiving the state
-   as an argument, so every mutation flows through Pinia.
+import type { RootState } from './index';
 
-   The UI-facing orchestration store (./game.ts) composes this store;
-   keeping the raw state here (with no engine imports beyond the state
-   factory) breaks the import cycle stores → engine → stores.
+/* =====================================================================
+   Access to the live Vuex store for code running outside components
+   (engine rules, shared actions, the AI agent). The store installs
+   itself here on creation (see ./index.ts), so this module has no
+   runtime import of the store — engine/AI files can depend on it
+   without creating an import cycle.
+
+   Engine/AI hot loops resolve the state millions of times per simulated
+   game, so this is a direct property read — no lookups, no injection.
    ===================================================================== */
 
-export const useGameStateStore = defineStore('game-state', () => {
-  // The live game state. reset() swaps in a fresh one — headless simulation
-  // Runs many games back to back; the app reloads the page for a new game.
-  const state = ref<GameState>(buildState());
+let store: Store<RootState> | null = null;
 
-  // Pending human-input resolvers: the engine's async loop parks on these
-  // Promises until the UI answers (draft pick / action turn / trade offer).
-  const poolResolve = shallowRef<((idx: number) => void) | null>(null);
-  const humanResolve = shallowRef<(() => void) | null>(null);
-  const offerResolve = shallowRef<((accept: boolean) => void) | null>(null);
+/** Called once by ./index.ts when the store is created. */
+export function installStore(s: Store<RootState>): void {
+  store = s;
+}
 
-  function reset(opts: { raw?: boolean } = {}): void {
-    // Headless simulations run thousands of games and never render, so they
-    // Opt out of Vue's deep reactive proxying of the state (markRaw) — the
-    // Proxy traps would dominate the engine's hot loops otherwise.
-    state.value = opts.raw ? markRaw(buildState()) : buildState();
-    poolResolve.value = null;
-    humanResolve.value = null;
-    offerResolve.value = null;
+/** The live Vuex store (for dispatching actions outside components). */
+export function getStore(): Store<RootState> {
+  if (!store) {
+    throw new Error(
+      'Vuex store not created yet — import "@/stores" before any engine/AI call.',
+    );
   }
-
-  return { state, poolResolve, humanResolve, offerResolve, reset };
-});
-
-type GameStateStore = ReturnType<typeof useGameStateStore>;
-
-// Engine/AI hot loops resolve the store millions of times per simulated game;
-// Pinia's useStore() (and even getActivePinia()) is far too slow for that, so
-// Cache the instance once. This assumes one Pinia per process / test module —
-// True for the app, the headless scripts, and vitest's per-file module graphs.
-let cachedStore: GameStateStore | undefined;
-
-export function getGameStateStore(): GameStateStore {
-  return (cachedStore ??= useGameStateStore());
+  return store;
 }
 
 /** The current game state, for engine/AI functions running outside components. */
 export function getGameState(): GameState {
-  return getGameStateStore().state;
+  return getStore().state.game.state;
+}
+
+/** Swap in a fresh game state (headless simulations run many games back to
+    back; the app reloads the page for a new game). `raw` skips Vue's deep
+    reactive proxying — nothing renders in headless runs and the proxy traps
+    would dominate the engine's hot loops. */
+export function resetGameState(opts: { raw?: boolean } = {}): void {
+  getStore().commit('game/reset', opts);
 }

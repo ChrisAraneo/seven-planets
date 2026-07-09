@@ -4,7 +4,7 @@ import {
   fmtCards,
   INFLUENCE_TYPES,
 } from '@/game/constants';
-import { floatText } from '@/game/effects';
+import { floatText } from '@/game/hooks';
 import type { Planet, Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 

@@ -8,7 +8,7 @@ import {
   SHIELD_DEFENSE,
   TAUNTS,
 } from '@/game/constants';
-import { animateRocket, boom, floatText } from '@/game/effects';
+import { animateRocket, boom, floatText } from '@/game/hooks';
 import { siloBonus } from '@/game/shared/silo-bonus';
 import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import type { Planet, Player } from '@/game/types';

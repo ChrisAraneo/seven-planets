@@ -40,7 +40,7 @@ function step(side: 'give' | 'get', t: string, delta: number): void {
   else get[t] = Math.max(0, Math.min(partner.value.hand[t], get[t] + delta));
 }
 
-function propose(): void {
+async function propose(): Promise<void> {
   const gives: Cost = {};
   const gets: Cost = {};
   for (const t of RESOURCE_TYPES) {
@@ -55,7 +55,7 @@ function propose(): void {
     note.value = { msg: 'You have no 🔁 Trade cards left.', cls: 'warn' };
     return;
   }
-  const accept = store.proposeTrade(partnerId.value, gives, gets);
+  const accept = await store.proposeTrade(partnerId.value, gives, gets);
   if (accept) {
     for (const t of RESOURCE_TYPES) {
       give[t] = 0;

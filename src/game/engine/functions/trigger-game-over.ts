@@ -1,10 +1,15 @@
+import {
+  getHumanResolve,
+  getOfferResolve,
+  getPoolResolve,
+  setHumanResolve,
+  setOfferResolve,
+  setPoolResolve,
+} from '@/game/engine/functions/resolver-state';
 import type { Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 
-import { endHumanTurn } from './end-human-turn';
 import { log } from './log';
-import { resolveOffer } from './resolve-offer';
-import { getPoolResolve, setPoolResolve } from './resolver-state';
 import { setStatus } from './set-status';
 
 export function triggerGameOver(
@@ -30,14 +35,23 @@ export function triggerGameOver(
       ? `GAME OVER — ${winner.name} wins by ${reason}.`
       : 'GAME OVER — your homeworld has fallen.',
   );
-  endHumanTurn();
-  const r = getPoolResolve();
-  if (r) {
+  // Unblock whatever input the loop is parked on — nobody answers now.
+  const endTurn = getHumanResolve();
+  if (endTurn) {
+    setHumanResolve(null);
+    state.awaitingAction = false;
+    endTurn();
+  }
+  const pick = getPoolResolve();
+  if (pick) {
     setPoolResolve(null);
     state.awaitingPick = false;
-    r(0);
+    pick(0);
   }
-  if (state.pendingOffer) {
-    resolveOffer(false);
+  const offer = getOfferResolve();
+  if (offer) {
+    setOfferResolve(null);
+    state.pendingOffer = null;
+    offer(false);
   }
 }

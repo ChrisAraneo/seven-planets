@@ -1,26 +1,37 @@
-import { getGameStateStore } from '@/stores/game-state';
+/* Pending input resolvers: the engine's async loop parks on these until
+   the seat in play answers by dispatching a store action (pool pick,
+   end of the human's action turn, trade-offer response). They are plain
+   control-flow plumbing — not observable game state — so they live here
+   as module state rather than in the store. */
 
-/* Accessors for the pending human-input resolvers, which live in the
-   game-state Pinia store. The engine's async loop parks on these until
-   the UI answers (draft pick / action turn / trade offer). */
+let poolResolve: ((idx: number) => void) | null = null;
+let humanResolve: (() => void) | null = null;
+let offerResolve: ((accept: boolean) => void) | null = null;
 
 export function getPoolResolve(): ((idx: number) => void) | null {
-  return getGameStateStore().poolResolve;
+  return poolResolve;
 }
 export function setPoolResolve(v: ((idx: number) => void) | null): void {
-  getGameStateStore().poolResolve = v;
+  poolResolve = v;
 }
 
 export function getHumanResolve(): (() => void) | null {
-  return getGameStateStore().humanResolve;
+  return humanResolve;
 }
 export function setHumanResolve(v: (() => void) | null): void {
-  getGameStateStore().humanResolve = v;
+  humanResolve = v;
 }
 
 export function getOfferResolve(): ((accept: boolean) => void) | null {
-  return getGameStateStore().offerResolve;
+  return offerResolve;
 }
 export function setOfferResolve(v: ((accept: boolean) => void) | null): void {
-  getGameStateStore().offerResolve = v;
+  offerResolve = v;
+}
+
+/** Drop any parked resolvers (used when a fresh game state is installed). */
+export function resetResolvers(): void {
+  poolResolve = null;
+  humanResolve = null;
+  offerResolve = null;
 }

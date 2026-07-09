@@ -50,6 +50,8 @@ onMounted(() => store.start());
     <MoveModal v-else-if="store.modal === 'move'" />
     <TradeModal v-else-if="store.modal === 'trade'" />
     <InfluenceModal v-else-if="store.modal === 'influence'" />
-    <TradeOfferModal v-if="store.state.pendingOffer" />
+    <!-- Offers between AI seats also pass through pendingOffer now — only
+         show the modal for offers addressed to the human seat. -->
+    <TradeOfferModal v-if="store.state.pendingOffer?.toId === store.human.id" />
   </template>
 </template>

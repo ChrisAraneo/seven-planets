@@ -1,4 +1,4 @@
-import { animateRocket, floatText } from '@/game/effects';
+import { animateRocket, floatText } from '@/game/hooks';
 import type { Planet, Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 

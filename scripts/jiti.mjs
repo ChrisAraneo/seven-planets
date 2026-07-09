@@ -6,9 +6,8 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 
 import { createJiti } from 'jiti';
 
-// Run with production builds of vue/pinia: their dev builds log a Node-only
-// "Pinia instance not found in context" warning on EVERY store access, which
-// slows headless simulations by an order of magnitude.
+// Run with production builds of vue/vuex: their dev builds carry extra
+// checks and warnings that slow headless simulations noticeably.
 process.env.NODE_ENV ||= 'production';
 
 const entry = process.argv[2];
@@ -20,6 +19,9 @@ if (!entry) {
 process.argv.splice(2, 1);
 
 const jiti = createJiti(import.meta.url, {
-  alias: { '@': fileURLToPath(new URL('../src', import.meta.url)) },
+  // Forward slashes, matching jiti's internal (pathe) resolution: with native
+  // Windows separators here, "@/x" and a relative import of the same file get
+  // DIFFERENT module-cache keys and singleton modules load twice.
+  alias: { '@': fileURLToPath(new URL('../src', import.meta.url)).replace(/\\/g, '/') },
 });
 await jiti.import(pathToFileURL(resolve(process.cwd(), entry)).href);

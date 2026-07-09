@@ -150,17 +150,18 @@ export interface GameState {
   log: LogEntry[];
   /** UI status line shown in the pool zone (reactive). */
   status: string;
-  /** True while the human must click a pool card (reactive). */
+  /** True while the seat in play must pick a pool card (reactive). */
   awaitingPick: boolean;
   /** True while it is the human's action turn (reactive). */
   awaitingAction: boolean;
-  /** A trade offer awaiting the human's accept/decline (reactive). */
+  /** A trade offer awaiting the target seat's accept/decline (reactive). */
   pendingOffer: PendingOffer | null;
 }
 
-/** An incoming AI trade offer the human must respond to. */
+/** An incoming trade offer the target seat (`toId`) must respond to. */
 export interface PendingOffer {
   fromId: number;
+  toId: number;
   gives: Cost;
   gets: Cost;
 }

@@ -1,5 +1,5 @@
 import { canAfford } from '@/game/constants';
-import { floatText } from '@/game/effects';
+import { floatText } from '@/game/hooks';
 import { recruitYield } from '@/game/shared/recruit-yield';
 import type { Planet, Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';

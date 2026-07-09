@@ -3,7 +3,7 @@ import {
   PACIFIST_INFLUENCE,
   PACIFIST_TURNS,
 } from '@/game/constants';
-import { floatText } from '@/game/effects';
+import { floatText } from '@/game/hooks';
 import { getGameState } from '@/stores/game-state';
 
 import { log } from './log';

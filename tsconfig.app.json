@@ -3,7 +3,7 @@
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
   // simulation.ts and tune.ts are Node-only analysis scripts (run via jiti);
   // they use node globals (process/fs) absent from the browser app's types.
-  "exclude": ["src/**/__tests__/*", "src/game/simulation.ts", "src/game/tune.ts"],
+  "exclude": ["src/**/__tests__/*", "src/simulation.ts", "src/tune.ts"],
   "compilerOptions": {
     // The ported game engine (src/game/*) is built on dynamic dictionary access
     // keyed by runtime card/building strings (hands, cost tables, lookup maps).
@@ -11,9 +11,12 @@
     // tuned logic, so it is left off for this codebase.
     "noUncheckedIndexedAccess": false,
 
-    // Path mapping for cleaner imports.
+    // Path mapping for cleaner imports. The vuex entry works around vuex
+    // 4.1.0 shipping no "types" in its package.json exports, which makes
+    // its declarations invisible under moduleResolution "bundler".
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
     },
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

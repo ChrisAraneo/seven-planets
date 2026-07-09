@@ -1,216 +1,128 @@
-import { defineStore, storeToRefs } from 'pinia';
-import { computed, ref, watch } from 'vue';
+import { computed, reactive } from 'vue';
 
-import { setAiDifficulty } from '@/game/ai/functions/set-ai-difficulty';
-import {
-  DEFAULT_DIFFICULTY,
-  type Difficulty,
-  getDifficulty,
-} from '@/game/difficulty';
-import { aiEvaluateTrade } from '@/game/engine/functions/ai-evaluate-trade';
-import { assignKamikazes } from '@/game/engine/functions/assign-kamikazes';
-import { AUTO_HUMAN } from '@/game/engine/functions/auto-human';
-import { doAttack } from '@/game/engine/functions/do-attack';
-import { endHumanTurn } from '@/game/engine/functions/end-human-turn';
-import { execTrade } from '@/game/engine/functions/exec-trade';
-import { humanPoolClick } from '@/game/engine/functions/human-pool-click';
-import { moveTroops } from '@/game/engine/functions/move-troops';
-import { recruit as engineRecruit } from '@/game/engine/functions/recruit';
-import { resolveOffer as engineResolveOffer } from '@/game/engine/functions/resolve-offer';
-import { runGame } from '@/game/engine/functions/run-game';
-import { setBusy } from '@/game/engine/functions/set-busy';
-import { useInfluenceCard } from '@/game/engine/functions/use-influence-card';
+import type { Difficulty } from '@/game/difficulty';
 import type { Cost, InfluenceOpts, InfluenceType } from '@/game/types';
 
-import { useEffectsStore } from './effects';
-import { useGameStateStore } from './game-state';
-import { useUnlocksStore } from './unlocks';
+import { store } from './index';
+import type { ModalName } from './modules/ui';
 
-export type ModalName =
-  | 'help'
-  | 'attack'
-  | 'recruit'
-  | 'move'
-  | 'trade'
-  | 'influence'
-  | null;
+export type { ModalName } from './modules/ui';
 
-/* UI-facing orchestration store: composes the game-state, effects and
-   unlocks stores and exposes the human's interactions to components.
-   The engine/AI functions it calls read the game state from the
-   game-state store themselves. */
-export const useGameStore = defineStore('game', () => {
-  const gameState = useGameStateStore();
-  const effects = useEffectsStore();
-  const unlocks = useUnlocksStore();
+/* =====================================================================
+   UI-facing composable over the Vuex store. Components read reactive
+   state through it and act by dispatching the game module's PLAYER
+   ACTIONS — the exact same actions the AI agent dispatches. Every
+   dispatch carries the human's seat id, which the actions validate
+   against the seat in play.
+   ===================================================================== */
 
-  // The single reactive game state, owned by the game-state store. New Game /
-  // Play Again reload the page (matching the original), so it is never
-  // Rebuilt during the app's lifetime.
-  const { state } = storeToRefs(gameState);
+// The human always sits at seat 0 (see engine/state.ts).
+const HUMAN_SEAT = 0;
 
-  const modal = ref<ModalName>(null);
-  const started = ref(false);
-  const fastMode = computed(() => effects.fastMode);
-  // The human's chosen difficulty. Null until picked — the game loop waits for
-  // The choice (see start / chooseDifficulty). All levels currently behave
-  // Identically; the selection is threaded through for future tuning.
-  const difficulty = ref<Difficulty | null>(null);
+const gameStore = reactive({
+  /* ---------------- reactive state ---------------- */
 
-  const human = computed(() => state.value.players[0]);
-  const isHumanTurn = computed(
-    () => state.value.awaitingAction && !state.value.busy && !state.value.over,
-  );
-  const isPicking = computed(
-    () => state.value.awaitingPick && !state.value.over,
-  );
+  state: computed(() => store.state.game.state),
+  modal: computed((): ModalName => store.state.ui.modal),
+  fastMode: computed(() => store.state.effects.fastMode),
+  difficulty: computed(() => store.state.ui.difficulty),
 
-  // When the human wins, unlock the next difficulty rung and persist it. Fires
-  // Once per game (state.over is set exactly once).
-  watch(
-    () => state.value.over,
-    (over) => {
-      if (over?.winner?.isHuman && difficulty.value) {
-        unlocks.recordWin(difficulty.value);
-      }
-    },
-  );
+  /* ---------------- derived ---------------- */
 
-  /** Called from the root component on mount. In demo mode ("?auto"/headless)
-      the game starts immediately; otherwise it waits for the human to pick a
-      difficulty via the opening DifficultyModal (see chooseDifficulty). */
-  function start(): void {
-    if (started.value) {
-      return;
-    }
-    // Demo mode ("?auto") runs at full tilt with no difficulty prompt.
-    if (AUTO_HUMAN) {
-      setFast(true);
-      chooseDifficulty(DEFAULT_DIFFICULTY);
-    }
-  }
+  human: computed(() => store.state.game.state.players[HUMAN_SEAT]),
+  isHumanTurn: computed(() => {
+    const s = store.state.game.state;
+    return s.awaitingAction && !s.busy && !s.over;
+  }),
+  // AwaitingPick is now raised for EVERY drafting seat, so scope the human's
+  // Pool highlighting (and clicks) to the human's own draft turns.
+  isPicking: computed(() => {
+    const s = store.state.game.state;
+    return s.awaitingPick && s.activeId === HUMAN_SEAT && !s.over;
+  }),
 
-  /** The human picked a difficulty on the opening screen — boot the game loop.
-      (Every level is currently identical; the choice is stored for later use.) */
-  function chooseDifficulty(level: Difficulty): void {
-    if (started.value) {
-      return;
-    }
-    difficulty.value = level;
-    const def = getDifficulty(level);
-    // Apply this level's handicap to every mastermind AI before the loop runs,
-    // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
-    setAiDifficulty(def.ai);
-    assignKamikazes(def.kamikazeCount);
-    started.value = true;
-    void runGame();
-  }
+  /* ---------------- lifecycle ---------------- */
 
-  function newGame(): void {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  }
+  start(): void {
+    void store.dispatch('ui/start');
+  },
+  chooseDifficulty(level: Difficulty): void {
+    void store.dispatch('ui/chooseDifficulty', level);
+  },
+  newGame(): void {
+    void store.dispatch('ui/newGame');
+  },
+  setFast(v: boolean): void {
+    store.commit('effects/setFastMode', v);
+  },
 
-  function setFast(v: boolean): void {
-    effects.fastMode = v;
-  }
+  /* ---------------- modal control ---------------- */
 
-  function openModal(name: ModalName): void {
-    modal.value = name;
-  }
-  function closeModal(): void {
-    modal.value = null;
-  }
+  openModal(name: ModalName): void {
+    store.commit('ui/openModal', name);
+  },
+  closeModal(): void {
+    store.commit('ui/closeModal');
+  },
 
-  /* ---------------- human interactions ---------------- */
+  /* ------- human interactions (the shared player actions) ------- */
 
-  function pickCard(idx: number): void {
-    humanPoolClick(idx);
-  }
+  pickCard(idx: number): void {
+    void store.dispatch('game/pick', { playerId: HUMAN_SEAT, idx });
+  },
 
-  function endTurn(): void {
-    endHumanTurn();
-  }
+  endTurn(): void {
+    void store.dispatch('game/endTurn', { playerId: HUMAN_SEAT });
+  },
 
-  function recruit(planetId: number): void {
-    closeModal();
-    engineRecruit(human.value, state.value.planets[planetId]);
-  }
+  recruit(planetId: number): void {
+    store.commit('ui/closeModal');
+    void store.dispatch('game/recruit', { playerId: HUMAN_SEAT, planetId });
+  },
 
-  async function attack(
-    sourceId: number,
-    targetId: number,
-    n: number,
-  ): Promise<void> {
-    closeModal();
-    setBusy(true);
-    await doAttack(
-      human.value,
-      state.value.planets[sourceId],
-      state.value.planets[targetId],
+  async attack(sourceId: number, targetId: number, n: number): Promise<void> {
+    store.commit('ui/closeModal');
+    await store.dispatch('game/attack', {
+      playerId: HUMAN_SEAT,
+      sourceId,
+      targetId,
       n,
-    );
-    setBusy(false);
-  }
+    });
+  },
 
-  async function move(fromId: number, toId: number, n: number): Promise<void> {
-    closeModal();
-    setBusy(true);
-    await moveTroops(
-      human.value,
-      state.value.planets[fromId],
-      state.value.planets[toId],
+  async move(fromId: number, toId: number, n: number): Promise<void> {
+    store.commit('ui/closeModal');
+    await store.dispatch('game/move', {
+      playerId: HUMAN_SEAT,
+      fromId,
+      toId,
       n,
-    );
-    setBusy(false);
-  }
+    });
+  },
 
-  /** Evaluate + (if accepted) execute a human-initiated trade. Returns acceptance. */
-  function proposeTrade(partnerId: number, gives: Cost, gets: Cost): boolean {
-    const partner = state.value.players[partnerId];
-    const accept = aiEvaluateTrade(partner, gets, gives, human.value);
-    if (accept) {
-      execTrade(human.value, partner, gives, gets);
-    }
-    return accept;
-  }
+  /** Propose a human-initiated trade. Resolves with the partner's answer. */
+  proposeTrade(partnerId: number, gives: Cost, gets: Cost): Promise<boolean> {
+    return store.dispatch('game/trade', {
+      playerId: HUMAN_SEAT,
+      partnerId,
+      gives,
+      gets,
+    });
+  },
 
-  function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
-    closeModal();
-    useInfluenceCard(human.value, type, opts);
-  }
+  playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
+    store.commit('ui/closeModal');
+    void store.dispatch('game/scheme', { playerId: HUMAN_SEAT, type, opts });
+  },
 
-  function resolveOffer(accept: boolean): void {
-    engineResolveOffer(accept);
-  }
-
-  return {
-    // Reactive state
-    state,
-    modal,
-    fastMode,
-    difficulty,
-    // Derived
-    human,
-    isHumanTurn,
-    isPicking,
-    // Lifecycle
-    start,
-    chooseDifficulty,
-    newGame,
-    setFast,
-    // Modal control
-    openModal,
-    closeModal,
-    // Interactions
-    pickCard,
-    endTurn,
-    recruit,
-    attack,
-    move,
-    proposeTrade,
-    playInfluence,
-    resolveOffer,
-  };
+  resolveOffer(accept: boolean): void {
+    void store.dispatch('game/resolveOffer', {
+      playerId: HUMAN_SEAT,
+      accept,
+    });
+  },
 });
+
+export function useGameStore(): typeof gameStore {
+  return gameStore;
+}

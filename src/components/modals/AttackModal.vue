@@ -9,7 +9,7 @@ import {
   SHIELD_DEFENSE,
 } from '@/game/constants';
 import type { Planet } from '@/game/types';
-import { battleWinProb } from '@/game/ai/functions/battle-win-prob';
+import { battleWinProb } from '@/ai/functions/battle-win-prob';
 import { handSize } from '@/game/engine/functions/hand-size';
 import { isPacifist } from '@/game/engine/functions/is-pacifist';
 import { ownedPlanets } from '@/game/engine/functions/owned-planets';
