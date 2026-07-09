@@ -1,6 +1,5 @@
-import { getGameState } from '@/stores/game-state';
+import { getTurn } from '@/stores/game/getters/get-turn';
 
 export function garrisonFloor(): number {
-  const s = getGameState();
-  return 2 + Math.min(8, Math.floor(s.turn / 4));
+  return 2 + Math.min(8, Math.floor(getTurn() / 4));
 }

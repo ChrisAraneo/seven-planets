@@ -6,7 +6,6 @@ import type {
   Player,
   PoolType,
 } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { aggression } from './aggression';
 import { alive } from './alive';
@@ -14,11 +13,10 @@ import { avgStrength } from './avg-strength';
 import { hasB } from './has-b';
 import { playerStrength } from './player-strength';
 import { rivalGoalBuilding } from './rival-goal-building';
-import { singularityReadyFor } from './singularity-ready-for';
+import { isSingularityReadyFor } from './is-singularity-ready-for';
 
 export function denialValue(p: Player, t: PoolType): number {
   const aiState = getAiState();
-  const s = getGameState();
   const avg = avgStrength();
   let worst = 0;
   const def = CARDS[t];
@@ -29,7 +27,7 @@ export function denialValue(p: Player, t: PoolType): number {
     const w = Math.min(2, Math.max(0.3, playerStrength(r) / Math.max(1, avg)));
     let gain = 0;
     if (def.building) {
-      if (t === 'SINGULARITY' && singularityReadyFor(r)) {
+      if (t === 'SINGULARITY' && isSingularityReadyFor(r)) {
         gain = 5;
       } else if (rivalGoalBuilding(r)?.id === (t as BuildingType)) {
         gain = 2.5;

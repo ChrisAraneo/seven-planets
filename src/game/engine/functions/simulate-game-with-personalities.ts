@@ -1,4 +1,6 @@
-import { getGameState, resetGameState } from '@/stores/game-state';
+import { getOver } from '@/stores/game/getters/get-over';
+import { getTurn } from '@/stores/game/getters/get-turn';
+import { resetGameState } from '@/stores/game-state';
 
 import { assignKamikazes } from './assign-kamikazes';
 import { playTurn } from './play-turn';
@@ -14,23 +16,22 @@ export async function simulateGameWithPersonalities(
   // Reactivity — nothing renders here and the proxy overhead would
   // Throttle the simulation.
   resetGameState({ raw: true });
-  const state = getGameState();
   assignKamikazes(opts.kamikazeCount ?? 0);
 
-  while (!state.over && state.turn < maxTurns) {
+  while (!getOver() && getTurn() < maxTurns) {
     await playTurn();
   }
 
+  const over = getOver();
   return {
-    turns: state.turn,
-    winner:
-      state.over && state.over?.winner
-        ? {
-            id: state.over?.winner?.id,
-            name: state.over?.winner?.name,
-            personality: state.over?.winner?.personality,
-          }
-        : null,
-    reason: state.over ? state?.over?.reason || 'timeout' : 'timeout',
+    turns: getTurn(),
+    winner: over?.winner
+      ? {
+          id: over.winner.id,
+          name: over.winner.name,
+          personality: over.winner.personality,
+        }
+      : null,
+    reason: over ? over.reason || 'timeout' : 'timeout',
   };
 }

@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import { getOver } from '@/stores/game/getters/get-over.ts';
+import { getTurn } from '@/stores/game/getters/get-turn.ts';
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
 import { buildingCount } from '@/game/engine/functions/building-count';
-import { totalTroops } from '@/game/engine/functions/total-troops';
+import { totalTroops } from '@/game/actions/common/total-troops';
 
 const store = useGameStore();
-const state = store.state;
-const over = computed(() => store.state.over);
+const over = computed(() => getOver());
 const human = store.human;
 const humanWon = computed(
   () => !!over.value?.winner && over.value.winner.isHuman,
@@ -37,9 +38,8 @@ const sub = computed(() => {
     </div>
     <div class="gostats">
       {{ sub }}<br /><br />
-      Turns played: {{ store.state.turn }} · Planets held:
-      {{ human.planets.length }} · Buildings: {{ buildingCount(human) }} ·
-      Troops:
+      Turns played: {{ getTurn() }} · Planets held: {{ human.planets.length }} ·
+      Buildings: {{ buildingCount(human) }} · Troops:
       {{ totalTroops(human) }}
     </div>
     <div class="mbtns" style="justify-content: center">

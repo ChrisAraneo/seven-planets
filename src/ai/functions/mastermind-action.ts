@@ -1,3 +1,4 @@
+import { getGameState } from '@/stores/game-state';
 import { getAiState } from '@/ai/state';
 import { canAfford } from '@/game/constants';
 import { recruitYield } from '@/game/shared/recruit-yield';
@@ -9,7 +10,6 @@ import type {
   Planet,
   Player,
 } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { activateWeightsFor } from './activate-weights-for';
 import { bestAttackNow } from './best-attack-now';
@@ -30,7 +30,6 @@ export type MastermindDecision =
   | { kind: 'trade'; partner: Player; gives: Cost; gets: Cost };
 
 export function mastermindAction(p: Player): MastermindDecision | null {
-  const s = getGameState();
   activateWeightsFor(p);
   const plan = planFor(p);
   const pls = owned(p);
@@ -69,7 +68,8 @@ export function mastermindAction(p: Player): MastermindDecision | null {
       plan.kind === 'MILITARIZE' ||
       plan.kind === 'STRIKE' ||
       ((p.hand.ATTACK || 0) > 0 && plan.stagingId != null);
-    const staging = plan.stagingId == null ? null : s.planets[plan.stagingId];
+    const staging =
+      plan.stagingId == null ? null : getGameState().planets[plan.stagingId];
     if (
       stacking &&
       staging &&
@@ -121,7 +121,8 @@ export function mastermindAction(p: Player): MastermindDecision | null {
         }
       }
     }
-    const staging = plan.stagingId == null ? null : s.planets[plan.stagingId];
+    const staging =
+      plan.stagingId == null ? null : getGameState().planets[plan.stagingId];
     if (
       staging &&
       staging.ownerId === p.id &&

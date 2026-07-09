@@ -1,14 +1,14 @@
-import type { Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
+import { getStartIdx } from '@/stores/game/getters/get-start-idx';
+import type { Player } from '@/game/types';
 
-import { alivePlayers } from './alive-players';
+import { filterAlivePlayers } from '@/game/actions/common/alive-players';
 
 export function turnOrder(): Player[] {
-  const state = getGameState();
-  const n = state.players.length;
+  const n = getGameState().players.length;
   const order: Player[] = [];
   for (let i = 0; i < n; i++) {
-    order.push(state.players[(state.startIdx + i) % n]);
+    order.push(getGameState().players[(getStartIdx() + i) % n]);
   }
   return order.filter((p) => p.alive);
 }

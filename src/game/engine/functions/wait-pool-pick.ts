@@ -1,7 +1,7 @@
 import {
   getPoolResolve,
   setPoolResolve,
-} from '@/game/engine/functions/resolver-state';
+} from '@/game/actions/common/resolver-state';
 import { getGameState } from '@/stores/game-state';
 
 /** Park until the seat in play answers with the `pick` store action —

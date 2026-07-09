@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
 import { canAfford, costLabel } from '@/game/constants';
-import { ownedPlanets } from '@/game/engine/functions/owned-planets';
-import { recruitCost } from '@/game/engine/functions/recruit-cost';
+import { ownedPlanets } from '@/game/actions/common/owned-planets';
+import { recruitCost } from '@/game/actions/common/recruit-cost';
 import { recruitYield } from '@/game/shared/recruit-yield';
 
 const store = useGameStore();

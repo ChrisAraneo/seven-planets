@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import { canAfford, INFLUENCE_TYPES } from '@/game/constants';
-import { hasBuilding } from '@/game/engine/functions/has-building';
-import { ownedPlanets } from '@/game/engine/functions/owned-planets';
-import { recruitCost } from '@/game/engine/functions/recruit-cost';
-import { isPacifist } from '@/game/engine/functions/is-pacifist';
-import { hasActionCard } from '@/game/engine/functions/has-action-card';
-import { totalTroops } from '@/game/engine/functions/total-troops';
-import { alivePlayers } from '@/game/engine/functions/alive-players';
+import { hasBuilding } from '@/game/actions/common/has-building';
+import { ownedPlanets } from '@/game/actions/common/owned-planets';
+import { recruitCost } from '@/game/actions/common/recruit-cost';
+import { isPacifist } from '@/game/actions/common/is-pacifist';
+import { hasActionCard } from '@/game/actions/common/has-action-card';
+import { totalTroops } from '@/game/actions/common/total-troops';
+import { filterAlivePlayers } from '@/game/actions/common/alive-players';
 import { useGameStore } from '@/stores/game';
 import { computed } from 'vue';
 
 const store = useGameStore();
-const state = store.state;
 
 const my = computed(() => store.isHumanTurn);
 const human = computed(() => store.human);
@@ -110,7 +109,7 @@ function onRecruit(): void {
         !my ||
         !hasActionCard(human, 'TRADE') ||
         !hasEmbassy ||
-        alivePlayers().length < 2
+        filterAlivePlayers().length < 2
       "
       :title="tradeTitle"
       @click="store.openModal('trade')">
@@ -127,7 +126,7 @@ function onRecruit(): void {
       class="btn action end"
       id="btn-end"
       :disabled="!my"
-      @click="store.endTurn()">
+      @click="store.end()">
       ⏭️ End Turn
     </button>
   </div>

@@ -1,9 +1,9 @@
 // NOTE: This function is not used anywhere in the current codebase.
 // The store implements the same logic as a Vue computed property instead.
-import { getHumanResolve } from '@/game/engine/functions/resolver-state';
-import { getGameState } from '@/stores/game-state';
+import { getBusy } from '@/stores/game/getters/get-busy';
+import { getOver } from '@/stores/game/getters/get-over';
+import { getHumanResolve } from '@/game/actions/common/resolver-state';
 
 export function isHumanTurn(): boolean {
-  const state = getGameState();
-  return getHumanResolve() !== null && !state.busy && !state.over;
+  return getHumanResolve() !== null && !getBusy() && !getOver();
 }

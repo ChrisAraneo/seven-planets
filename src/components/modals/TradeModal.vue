@@ -1,19 +1,19 @@
 <script setup lang="ts">
+import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed, reactive, ref } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
 import { CARDS, RESOURCE_TYPES } from '@/game/constants';
-import { alivePlayers } from '@/game/engine/functions/alive-players';
-import { hasActionCard } from '@/game/engine/functions/has-action-card';
+import { filterAlivePlayers } from '@/game/actions/common/alive-players';
+import { hasActionCard } from '@/game/actions/common/has-action-card';
 import type { Cost } from '@/game/types';
 
 const store = useGameStore();
-const state = store.state;
 const human = store.human;
 
-const partners = alivePlayers().filter((p) => !p.isHuman);
+const partners = filterAlivePlayers().filter((p) => !p.isHuman);
 const partnerId = ref(partners[0].id);
-const partner = computed(() => state.players[partnerId.value]);
+const partner = computed(() => getPlayers()[partnerId.value]);
 
 const give = reactive<Record<string, number>>({});
 const get = reactive<Record<string, number>>({});

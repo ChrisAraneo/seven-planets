@@ -1,8 +1,8 @@
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/constants';
 import { buildingCost } from '@/game/constants';
 import type { InfluenceType, Planet, Player, PoolType } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { buildingWorth } from './building-worth';
 import { handAfterCost } from './hand-after-cost';
@@ -14,8 +14,7 @@ import type { Plan } from './plan-types';
 import { totalTroops } from './total-troops';
 
 function garrisonFloor(): number {
-  const s = getGameState();
-  return 2 + Math.min(8, Math.floor(s.turn / 4));
+  return 2 + Math.min(8, Math.floor(getTurn() / 4));
 }
 
 export function ownDraftValue(
@@ -24,7 +23,6 @@ export function ownDraftValue(
   t: PoolType,
   plan: Plan,
 ): number {
-  const s = getGameState();
   const def = CARDS[t];
   if (def.building) {
     const id = t as Parameters<typeof nextLevelAllowed>[2];

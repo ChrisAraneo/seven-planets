@@ -1,7 +1,6 @@
 import { getAiState } from '@/ai/state';
 import { BUILD_ORDER, buildingCost } from '@/game/constants';
 import type { BuildingType, Cost, Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { affordEta } from './afford-eta';
 import { buildingWorth } from './building-worth';
@@ -20,7 +19,6 @@ export interface BuildCandidate {
 
 export function buildCandidates(p: Player): BuildCandidate[] {
   const aiState = getAiState();
-  const s = getGameState();
   const all: BuildCandidate[] = [];
   for (const planet of owned(p)) {
     for (const id of BUILD_ORDER) {

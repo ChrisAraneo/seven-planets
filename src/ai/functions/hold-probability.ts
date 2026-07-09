@@ -1,3 +1,4 @@
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   COMBAT,
@@ -7,7 +8,6 @@ import {
 } from '@/game/constants';
 import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import type { Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { actionDrawProb } from './action-draw-prob';
 import { aggression } from './aggression';
@@ -25,7 +25,6 @@ export function holdProbability(
   protectedUntil: number = planet.protectedUntil,
   horizon: number = getAiState().W.holdHorizon,
 ): number {
-  const s = getGameState();
   let pHold = 1;
   const reinforce =
     recruitRate(owner) * (planet.buildings.BARRACKS ? 0.7 : 0.25);
@@ -42,7 +41,7 @@ export function holdProbability(
     }
     let peak = 0;
     for (let t = 1; t <= horizon; t++) {
-      if (s.turn + t <= protectedUntil) {
+      if (getTurn() + t <= protectedUntil) {
         continue;
       }
       const g = Math.round(garrison + reinforce * t);
@@ -57,7 +56,10 @@ export function holdProbability(
     if (peak <= 0) {
       continue;
     }
-    const window = Math.max(1, horizon - Math.max(0, protectedUntil - s.turn));
+    const window = Math.max(
+      1,
+      horizon - Math.max(0, protectedUntil - getTurn()),
+    );
     const pCard =
       (r.hand.ATTACK || 0) > 0
         ? 0.95

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed, ref } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_TYPES,
@@ -11,15 +12,14 @@ import {
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
 } from '@/game/constants';
-import { alivePlayers } from '@/game/engine/functions/alive-players';
-import { coupTargets } from '@/game/engine/functions/coup-targets';
-import { influenceTarget } from '@/game/engine/functions/influence-target';
-import { isPacifist } from '@/game/engine/functions/is-pacifist';
+import { filterAlivePlayers } from '@/game/actions/common/alive-players';
+import { coupTargets } from '@/game/actions/common/coup-targets';
+import { influenceTarget } from '@/game/actions/common/influence-target';
+import { isPacifist } from '@/game/actions/common/is-pacifist';
 import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types';
 
 const store = useGameStore();
 const human = store.human;
-const state = store.state;
 
 type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
@@ -31,7 +31,7 @@ const coupList = computed(() => coupTargets(human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
-const rivals = computed(() => alivePlayers().filter((x) => !x.isHuman));
+const rivals = computed(() => filterAlivePlayers().filter((x) => !x.isHuman));
 
 function skipTarget(t: InfluenceType): Player | null {
   return t.startsWith('SKIP_') ? influenceTarget(human, t) : null;
@@ -124,10 +124,10 @@ function doSteal(
           class="trow"
           @click="doCoup(pl)">
           <div class="tinfo">
-            <b :style="{ color: store.state.players[pl.ownerId].color }">{{
+            <b :style="{ color: getPlayers()[pl.ownerId].color }">{{
               pl.name
             }}</b>
-            — {{ store.state.players[pl.ownerId].name }}
+            — {{ getPlayers()[pl.ownerId].name }}
           </div>
           <div>🪖{{ pl.troops }} {{ coupIcons(pl) }}</div>
         </div>

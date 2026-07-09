@@ -1,6 +1,5 @@
 import { COMBAT } from '@/game/constants';
 import type { Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { aggression } from './aggression';
 import { alive } from './alive';
@@ -11,11 +10,10 @@ import { mayTarget } from './may-target';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { projectedStrike } from './projected-strike';
-import { underTruce } from './under-truce';
+import { isUnderTruce } from './is-under-truce';
 
 export function immediateFallProb(ownerP: Player, planet: Planet): number {
-  const s = getGameState();
-  if (underTruce(planet)) {
+  if (isUnderTruce(planet)) {
     return 0;
   }
   let pSafe = 1;

@@ -1,7 +1,7 @@
 import {
   getHumanResolve,
   setHumanResolve,
-} from '@/game/engine/functions/resolver-state';
+} from '@/game/actions/common/resolver-state';
 import { getGameState } from '@/stores/game-state';
 
 export function humanActionTurn(): Promise<void> {

@@ -5,9 +5,10 @@ import { createStore } from 'vuex';
 // Scripts would otherwise instantiate './game-state' separately from
 // '@/stores/game-state' and the installed store would not be seen).
 import { installStore } from '@/stores/game-state';
+import { getOver } from '@/stores/game/getters/get-over';
 
 import { effects, type EffectsModuleState } from './modules/effects';
-import { game, type GameModuleState } from './modules/game';
+import { game, type GameModuleState } from './game/game';
 import { ui, type UiModuleState } from './modules/ui';
 import { unlocks, type UnlocksModuleState } from './modules/unlocks';
 
@@ -46,7 +47,7 @@ installStore(store);
 // Fires once per game (state.over is set exactly once; headless runs use
 // A non-reactive state, so the watcher stays silent there).
 store.watch(
-  (s) => s.game.state.over,
+  () => getOver(),
   (over) => {
     const level = store.state.ui.difficulty;
     if (over?.winner?.isHuman && level) {

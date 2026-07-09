@@ -7,7 +7,7 @@ import {
   getDifficulty,
 } from '@/game/difficulty';
 import { assignKamikazes } from '@/game/engine/functions/assign-kamikazes';
-import { AUTO_HUMAN } from '@/game/engine/functions/auto-human';
+import { AUTO_HUMAN } from '@/game/actions/common/auto-human';
 import { runGame } from '@/game/engine/functions/run-game';
 
 import type { RootState } from '../index';

@@ -1,6 +1,8 @@
+import { getOver } from '@/stores/game/getters/get-over';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getGameState } from '@/stores/game-state';
 
-import { log } from './log';
+import { log } from '@/game/actions/common/log';
 import { playTurn } from './play-turn';
 
 export async function runGame(): Promise<void> {
@@ -10,7 +12,7 @@ export async function runGame(): Promise<void> {
     'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
     'sys',
   );
-  while (!state.over && state.turn < 400) {
+  while (!getOver() && getTurn() < 400) {
     await playTurn();
   }
   state.activeId = -1;

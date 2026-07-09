@@ -1,16 +1,17 @@
+import { getOver } from '@/stores/game/getters/get-over';
 import { CARDS, INFLUENCE_CARDS } from '@/game/constants';
 import { getPlayerAgent } from '@/game/engine/agent';
 import { sleep } from '@/game/hooks';
 import type { BuildingType, InfluenceType } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 
-import { AUTO_HUMAN } from './auto-human';
+import { AUTO_HUMAN } from '@/game/actions/common/auto-human';
 import { buildBuilding } from './build-building';
-import { canPickCard } from './can-pick-card';
+import { canPickCard } from '@/game/actions/common/can-pick-card';
 import { draftOrder } from './draft-order';
-import { log } from './log';
+import { log } from '@/game/actions/common/log';
 import { mainPicks } from './main-picks';
-import { setStatus } from './set-status';
+import { setStatus } from '@/game/actions/common/set-status';
 import { waitPoolPick } from './wait-pool-pick';
 
 export async function runDraft(): Promise<void> {
@@ -22,7 +23,7 @@ export async function runDraft(): Promise<void> {
       continue;
     } // Paralysed by an influence card
     for (let s = 0; s < p.planets.length; s++) {
-      if (state.over) {
+      if (getOver()) {
         return;
       }
       if (!p.alive || state.pool.length === 0) {
@@ -65,13 +66,13 @@ export async function runDraft(): Promise<void> {
           getPlayerAgent().pickCard(p, planet);
           idx = await pending;
         }
-        if (state.over) {
+        if (getOver()) {
           return;
         }
         const type = state.pool.splice(idx, 1)[0];
         if (CARDS[type].building) {
           buildBuilding(p, planet, type as BuildingType); // Pays cost from hand, may win the game
-          if (state.over) {
+          if (getOver()) {
             return;
           }
         } else if (CARDS[type].influenceCard) {

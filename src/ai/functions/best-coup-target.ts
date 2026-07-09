@@ -1,22 +1,21 @@
-import type { Planet, Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
+import type { Planet, Player } from '@/game/types';
 
 import { mayTarget } from './may-target';
 import { planetValue } from './planet-value';
-import { underTruce } from './under-truce';
+import { isUnderTruce } from './is-under-truce';
 
 export function bestCoupTarget(
   p: Player,
 ): { planet: Planet; value: number } | null {
-  const s = getGameState();
   if (p.kamikaze) {
     return null;
   }
   const mayTakeLast = p.pacifistStatus;
   let best: { planet: Planet; value: number } | null = null;
-  for (const pl of s.planets) {
-    const owner = s.players[pl.ownerId];
-    if (pl.ownerId === p.id || !owner.alive || underTruce(pl)) {
+  for (const pl of getGameState().planets) {
+    const owner = getGameState().players[pl.ownerId];
+    if (pl.ownerId === p.id || !owner.alive || isUnderTruce(pl)) {
       continue;
     }
     if (!mayTarget(p, owner)) {

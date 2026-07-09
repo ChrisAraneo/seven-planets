@@ -1,3 +1,5 @@
+import { getGameState } from '@/stores/game-state';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   ACTION_CARDS_FROM_TURN,
@@ -12,7 +14,6 @@ import {
 import { rocketCap } from '@/game/shared/rocket-cap';
 import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
 import type { Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { battleWinProb } from './battle-win-prob';
 import { bestAttackNow } from './best-attack-now';
@@ -33,11 +34,10 @@ import { survivorsAfterWin } from './survivors-after-win';
 
 export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
   const aiState = getAiState();
-  const s = getGameState();
   let queue = buildCandidates(p);
 
-  const tempo = Math.min(1.8, 0.8 + s.turn / 50);
-  const ecoTempo = Math.max(0.45, 1.15 - s.turn / 90);
+  const tempo = Math.min(1.8, 0.8 + getTurn() / 50);
+  const ecoTempo = Math.max(0.45, 1.15 - getTurn() / 90);
 
   const develop =
     queue.slice(0, 3).reduce((x, c) => x + c.worth * c.pComplete, 0) *
@@ -64,11 +64,11 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
   if (!p.pacifistStatus) {
     const rr = Math.max(0.4, recruitRate(p));
     const bonus = staging ? (staging.buildings.SILO || 0) * 2 : 0;
-    for (const target of s.planets) {
+    for (const target of getGameState().planets) {
       if (target.ownerId === p.id) {
         continue;
       }
-      const defOwner = s.players[target.ownerId];
+      const defOwner = getGameState().players[target.ownerId];
       if (!defOwner.alive) {
         continue;
       }
@@ -108,7 +108,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
         p,
         target,
         survivorsAfterWin(need),
-        s.turn + CONQUEST_TRUCE,
+        getTurn() + CONQUEST_TRUCE,
       );
       const value =
         planetValue(target) + (defOwner.planets.length === 1 ? 10 : 0);
@@ -135,7 +135,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
   const coupCost = INFLUENCE_CARDS.COUP.cost;
   const coupTgt = bestCoupTarget(p);
   let coupBank = 0;
-  if (coupTgt && s.turn >= ACTION_CARDS_FROM_TURN) {
+  if (coupTgt && getTurn() >= ACTION_CARDS_FROM_TURN) {
     const starIncome = influenceIncome(p);
     const turnsTo =
       p.influence >= coupCost
@@ -186,7 +186,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
 
   return {
     kind,
-    computedTurn: s.turn,
+    computedTurn: getTurn(),
     buildQueue: queue,
     strike,
     targetId,

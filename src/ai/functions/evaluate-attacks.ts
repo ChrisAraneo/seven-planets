@@ -1,3 +1,5 @@
+import { getGameState } from '@/stores/game-state';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   COMBAT,
@@ -8,7 +10,6 @@ import {
 import { rocketCap } from '@/game/shared/rocket-cap';
 import { siloBonus } from '@/game/shared/silo-bonus';
 import type { Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { alive } from './alive';
 import { attackBaseOf } from './attack-base-of';
@@ -24,7 +25,7 @@ import { owned } from './owned';
 import { planetValue } from './planet-value';
 import { playerStrength } from './player-strength';
 import { survivorsAfterWin } from './survivors-after-win';
-import { underTruce } from './under-truce';
+import { isUnderTruce } from './is-under-truce';
 
 export interface AttackPlan {
   source: Planet;
@@ -40,19 +41,18 @@ export interface AttackPlan {
 
 export function evaluateAttacks(p: Player): AttackPlan[] {
   const aiState = getAiState();
-  const s = getGameState();
   if (p.pacifistStatus) {
     return [];
   }
   const avgStr = avgStrength();
   const minWin = effMinConquerProb(p);
   const plans: AttackPlan[] = [];
-  for (const target of s.planets) {
+  for (const target of getGameState().planets) {
     if (target.ownerId === p.id) {
       continue;
     }
-    const defOwner = s.players[target.ownerId];
-    if (!defOwner.alive || underTruce(target)) {
+    const defOwner = getGameState().players[target.ownerId];
+    if (!defOwner.alive || isUnderTruce(target)) {
       continue;
     }
     if (!mayTarget(p, defOwner)) {
@@ -91,7 +91,7 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
             p,
             target,
             surv,
-            s.turn + CONQUEST_TRUCE,
+            getTurn() + CONQUEST_TRUCE,
           );
           const eLoss = pWin * (n - surv) + (1 - pWin) * lossesOnDefeat(n);
           const plan: AttackPlan = {

@@ -1,20 +1,22 @@
 <script setup lang="ts">
+import { getOver } from '@/stores/game/getters/get-over';
+import { getPhase } from '@/stores/game/getters/get-phase';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { computed } from 'vue';
 import { useGameStore } from '@/stores/game';
 
 const store = useGameStore();
 
 const turnLabel = computed(() => {
-  const s = store.state;
-  if (s.turn === 0) return '—';
-  if (s.over) return `Turn ${s.turn} · GAME OVER`;
+  if (getTurn() === 0) return '—';
+  if (getOver()) return `Turn ${getTurn()} · GAME OVER`;
   const phase =
-    s.phase === 'draft'
+    getPhase() === 'draft'
       ? 'DRAFT PHASE'
-      : s.phase === 'action'
+      : getPhase() === 'action'
         ? 'ACTION PHASE'
         : '…';
-  return `Turn ${s.turn} · ${phase}`;
+  return `Turn ${getTurn()} · ${phase}`;
 });
 
 function newGame(): void {

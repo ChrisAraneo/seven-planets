@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { getPlanets } from '@/stores/game/getters/get-planets.ts';
+import { getPlayers } from '@/stores/game/getters/get-players.ts';
+import { getTurn } from '@/stores/game/getters/get-turn.ts';
 import { computed, ref, watch } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
 import {
   COMBAT,
@@ -10,17 +13,16 @@ import {
 } from '@/game/constants';
 import type { Planet } from '@/game/types';
 import { battleWinProb } from '@/ai/functions/battle-win-prob';
-import { handSize } from '@/game/engine/functions/hand-size';
-import { isPacifist } from '@/game/engine/functions/is-pacifist';
-import { ownedPlanets } from '@/game/engine/functions/owned-planets';
-import { pacifistDefBonus } from '@/game/engine/functions/pacifist-def-bonus';
+import { handSize } from '@/game/actions/common/hand-size';
+import { isPacifist } from '@/game/actions/common/is-pacifist';
+import { ownedPlanets } from '@/game/actions/common/owned-planets';
+import { pacifistDefBonus } from '@/game/actions/common/pacifist-def-bonus';
 import { rocketCap } from '@/game/shared/rocket-cap';
 import { siloBonus } from '@/game/shared/silo-bonus';
 import { singularityDefBonus } from '@/game/shared/singularity-def-bonus';
-import { underTruce } from '@/game/engine/functions/under-truce';
+import { isUnderTruce } from '@/game/actions/common/is-under-truce';
 
 const store = useGameStore();
-const state = store.state;
 const human = store.human;
 
 const breaksVow = computed(() => isPacifist(human));
@@ -32,15 +34,15 @@ const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id);
 const sel = ref(-1);
 const n = ref(1);
 
-const source = computed(() => state.planets[srcId.value]);
+const source = computed(() => getPlanets()[srcId.value]);
 const sources = computed(() =>
   ownedPlanets(human).filter((pl) => pl.buildings.SILO),
 );
 const targets = computed(() =>
-  state.planets.filter((pl: Planet) => pl.ownerId !== 0),
+  getPlanets().filter((pl: Planet) => pl.ownerId !== 0),
 );
 const openTargets = computed(() =>
-  targets.value.filter((pl: Planet) => !underTruce(pl)),
+  targets.value.filter((pl: Planet) => !isUnderTruce(pl)),
 );
 const cap = computed(() =>
   Math.min(rocketCap(source.value), source.value.troops),
@@ -58,7 +60,7 @@ watch(
 );
 
 const target = computed(() =>
-  sel.value >= 0 ? state.planets[sel.value] : null,
+  sel.value >= 0 ? getPlanets()[sel.value] : null,
 );
 const canLaunch = computed(() => sel.value >= 0 && source.value.troops >= 1);
 
@@ -127,25 +129,25 @@ function launch(): void {
       v-for="pl in targets"
       :key="pl.id"
       class="trow"
-      :class="{ sel: pl.id === sel, truce: underTruce(pl) }"
-      @click="selectTarget({ id: pl.id, truce: underTruce(pl) })">
+      :class="{ sel: pl.id === sel, truce: isUnderTruce(pl) }"
+      @click="selectTarget({ id: pl.id, truce: isUnderTruce(pl) })">
       <div class="tinfo">
-        <b :style="{ color: state.players[pl.ownerId].color }">{{ pl.name }}</b>
-        — {{ state.players[pl.ownerId].name }}
-        <span v-if="underTruce(pl)" class="dimtx">
-          🕊️ truce ({{ pl.protectedUntil - state.turn + 1 }} turn{{
-            pl.protectedUntil - state.turn ? 's' : ''
+        <b :style="{ color: getPlayers()[pl.ownerId].color }">{{ pl.name }}</b>
+        — {{ getPlayers()[pl.ownerId].name }}
+        <span v-if="isUnderTruce(pl)" class="dimtx">
+          🕊️ truce ({{ pl.protectedUntil - getTurn() + 1 }} turn{{
+            pl.protectedUntil - getTurn() ? 's' : ''
           }})
         </span>
       </div>
       <div>
         🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }}
         <span
-          v-if="state.players[pl.ownerId].pacifistStatus"
+          v-if="getPlayers()[pl.ownerId].pacifistStatus"
           title="Pacifist — +6 defense"
           >☮️</span
         >
-        🃏{{ handSize(state.players[pl.ownerId]) }}
+        🃏{{ handSize(getPlayers()[pl.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">

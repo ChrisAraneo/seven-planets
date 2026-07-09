@@ -1,12 +1,10 @@
 import { PACIFIST_INFLUENCE } from '@/game/constants';
 import type { Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { hasB } from './has-b';
 import { owned } from './owned';
 
 export function influenceIncome(p: Player): number {
-  const s = getGameState();
   let inc = 0;
   for (const pl of owned(p)) {
     if ((pl.buildings.EMBASSY || 0) >= 2) {

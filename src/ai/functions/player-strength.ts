@@ -1,12 +1,10 @@
 import { BUILD_ORDER, BUILDINGS, handValue } from '@/game/constants';
 import type { Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { owned } from './owned';
 import { totalTroops } from './total-troops';
 
 export function playerStrength(p: Player): number {
-  const s = getGameState();
   const resources = handValue(p.hand);
   const military = totalTroops(p) * 1.5;
   const territory = p.planets.length * 8;

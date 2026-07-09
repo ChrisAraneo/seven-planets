@@ -1,11 +1,10 @@
 import { buildingCost, BUILDINGS } from '@/game/constants';
 import { floatText } from '@/game/hooks';
 import type { BuildingType, Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
-import { log } from './log';
-import { payCost } from './pay-cost';
-import { techLevel } from './tech-level';
+import { log } from '@/game/actions/common/log';
+import { payCost } from '@/game/actions/common/pay-cost';
+import { techLevel } from '@/game/actions/common/tech-level';
 
 // Called from the draft when a building card is picked: pay the cost, then
 // Build or upgrade it (validated in canPickCard).
@@ -14,7 +13,6 @@ export function buildBuilding(
   planet: Planet,
   id: BuildingType,
 ): void {
-  const state = getGameState();
   const techBefore = techLevel(p);
   const lvl = (planet.buildings[id] || 0) + 1;
   payCost(p, buildingCost(id, lvl));

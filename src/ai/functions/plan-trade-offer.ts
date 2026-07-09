@@ -1,6 +1,5 @@
 import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/constants';
 import type { Cost, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { alive } from './alive';
 import { avgStrength } from './avg-strength';
@@ -13,7 +12,6 @@ export function planTradeOffer(
   p: Player,
   plan: ReturnType<typeof planFor>,
 ): { partner: Player; gives: Cost; gets: Cost } | null {
-  const s = getGameState();
   const head = plan.buildQueue[0];
   let want: string | null = null;
   if (head) {

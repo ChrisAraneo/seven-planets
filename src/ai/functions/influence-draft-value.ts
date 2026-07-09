@@ -1,7 +1,6 @@
 import { getAiState } from '@/ai/state';
 import { INFLUENCE_CARDS } from '@/game/constants';
 import type { InfluenceType, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { alive } from './alive';
 import { bestCoupTarget } from './best-coup-target';
@@ -15,7 +14,6 @@ export function influenceDraftValue(
   plan: Plan,
 ): number {
   const aiState = getAiState();
-  const s = getGameState();
   const { cost } = INFLUENCE_CARDS[t];
   const starCost =
     cost * (plan.kind === 'COUP_BANK' && t !== 'COUP' ? 1.2 : 0.35);

@@ -1,6 +1,6 @@
+import { getGameState } from '@/stores/game-state';
 import { getAiState } from '@/ai/state';
 import type { Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { activateWeightsFor } from './activate-weights-for';
 import { denialValue } from './denial-value';
@@ -13,14 +13,13 @@ export function mastermindDraftPick(
   pickable: boolean[],
 ): number {
   const aiState = getAiState();
-  const s = getGameState();
   activateWeightsFor(p);
   if (
     aiState.randomPickChance > 0 &&
     Math.random() < aiState.randomPickChance
   ) {
     const options: number[] = [];
-    for (let i = 0; i < s.pool.length; i++) {
+    for (let i = 0; i < getGameState().pool.length; i++) {
       if (pickable[i]) {
         options.push(i);
       }
@@ -32,12 +31,12 @@ export function mastermindDraftPick(
   const plan = planFor(p);
   let bestIdx = -1;
   let bestScore = -Infinity;
-  for (let i = 0; i < s.pool.length; i++) {
+  for (let i = 0; i < getGameState().pool.length; i++) {
     if (!pickable[i]) {
       continue;
     }
-    const t = s.pool[i];
-    const copies = s.pool.filter((x) => x === t).length;
+    const t = getGameState().pool[i];
+    const copies = getGameState().pool.filter((x) => x === t).length;
     const score =
       ownDraftValue(p, draftPlanet, t, plan) +
       (denialValue(p, t) / copies) * aiState.W.denialWeight +

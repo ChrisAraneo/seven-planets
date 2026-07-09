@@ -1,3 +1,5 @@
+import { getGameState } from '@/stores/game-state';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   BASE_ROCKET_CAP,
@@ -14,7 +16,6 @@ import {
 import { recruitYield } from '@/game/shared/recruit-yield';
 import { rocketCap } from '@/game/shared/rocket-cap';
 import type { BuildingType, Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { avgResourceCardValue } from './avg-resource-card-value';
 import { hasB } from './has-b';
@@ -23,7 +24,7 @@ import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
 import { totalTroops } from './total-troops';
-import { underTruce } from './under-truce';
+import { isUnderTruce } from './is-under-truce';
 
 export function buildingWorth(
   p: Player,
@@ -32,7 +33,6 @@ export function buildingWorth(
   level: number,
 ): number {
   const aiState = getAiState();
-  const s = getGameState();
   const H = aiState.W.buildRoiHorizon;
   const costVal = handValue(buildingCost(id, level));
   let gross = 0;
@@ -68,17 +68,17 @@ export function buildingWorth(
       }
       gross += hasB(p, 'SILO')
         ? 2 + SILO_HIT_BONUS * 0.8 + level
-        : H * 0.7 + s.turn / 10;
+        : H * 0.7 + getTurn() / 10;
       if (planet.buildings.BARRACKS) {
         gross += 3;
       }
       if (hasB(p, 'SILO')) {
         let minNeed = Infinity;
-        for (const tp of s.planets) {
+        for (const tp of getGameState().planets) {
           if (
             tp.ownerId === p.id ||
-            !s.players[tp.ownerId].alive ||
-            underTruce(tp)
+            !getGameState().players[tp.ownerId].alive ||
+            isUnderTruce(tp)
           ) {
             continue;
           }

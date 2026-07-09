@@ -2,6 +2,12 @@ import { computed, reactive } from 'vue';
 
 import type { Difficulty } from '@/game/difficulty';
 import type { Cost, InfluenceOpts, InfluenceType } from '@/game/types';
+import { getActiveId } from '@/stores/game/getters/get-active-id';
+import { getAwaitingAction } from '@/stores/game/getters/get-awaiting-action';
+import { getAwaitingPick } from '@/stores/game/getters/get-awaiting-pick';
+import { getBusy } from '@/stores/game/getters/get-busy';
+import { getOver } from '@/stores/game/getters/get-over';
+import { getPlayers } from '@/stores/game/getters/get-players';
 
 import { store } from './index';
 import type { ModalName } from './modules/ui';
@@ -29,17 +35,13 @@ const gameStore = reactive({
 
   /* ---------------- derived ---------------- */
 
-  human: computed(() => store.state.game.state.players[HUMAN_SEAT]),
-  isHumanTurn: computed(() => {
-    const s = store.state.game.state;
-    return s.awaitingAction && !s.busy && !s.over;
-  }),
+  human: computed(() => getPlayers()[HUMAN_SEAT]),
+  isHumanTurn: computed(() => getAwaitingAction() && !getBusy() && !getOver()),
   // AwaitingPick is now raised for EVERY drafting seat, so scope the human's
   // Pool highlighting (and clicks) to the human's own draft turns.
-  isPicking: computed(() => {
-    const s = store.state.game.state;
-    return s.awaitingPick && s.activeId === HUMAN_SEAT && !s.over;
-  }),
+  isPicking: computed(
+    () => getAwaitingPick() && getActiveId() === HUMAN_SEAT && !getOver(),
+  ),
 
   /* ---------------- lifecycle ---------------- */
 
@@ -71,8 +73,8 @@ const gameStore = reactive({
     void store.dispatch('game/pick', { playerId: HUMAN_SEAT, idx });
   },
 
-  endTurn(): void {
-    void store.dispatch('game/endTurn', { playerId: HUMAN_SEAT });
+  end(): void {
+    void store.dispatch('game/end', { playerId: HUMAN_SEAT });
   },
 
   recruit(planetId: number): void {

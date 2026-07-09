@@ -1,12 +1,10 @@
 import type { InfluenceType, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { alive } from './alive';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
 
 export function skipTarget(p: Player, t: InfluenceType): Player | null {
-  const s = getGameState();
   const rivals = alive().filter((x) => x.id !== p.id);
   if (rivals.length === 0) {
     return null;

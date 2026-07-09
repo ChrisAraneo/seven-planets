@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import { getPendingOffer } from '@/stores/game/getters/get-pending-offer.ts';
+import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { useGameStore } from '@/stores/game.ts';
 import ModalShell from './ModalShell.vue';
 import { fmtCards } from '@/game/constants';
 
 const store = useGameStore();
-const offer = computed(() => store.state.pendingOffer);
+const offer = computed(() => getPendingOffer());
 const from = computed(() =>
-  offer.value ? store.state.players[offer.value.fromId] : null,
+  offer.value ? getPlayers()[offer.value.fromId] : null,
 );
 </script>
 

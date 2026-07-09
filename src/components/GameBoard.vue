@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { getActiveId } from '@/stores/game/getters/get-active-id';
+import { getOver } from '@/stores/game/getters/get-over';
+import { getPlanets } from '@/stores/game/getters/get-planets';
+import { getPlayers } from '@/stores/game/getters/get-players';
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@/game/constants';
-import { underTruce } from '@/game/engine/functions/under-truce';
+import { isUnderTruce } from '@/game/actions/common/is-under-truce';
 import type { Planet } from '@/game/types';
 import { useEffectsStore } from '@/stores/effects';
 import { useGameStore } from '@/stores/game';
@@ -10,7 +14,6 @@ const store = useGameStore();
 // The engine pushes animations into the effects store; this render loop
 // drains them. The array reference is stable, so destructuring is safe.
 const { anims } = useEffectsStore();
-const state = store.state;
 
 // DEBUG: set localStorage['seven-planets:debug-black-holes'] = 'true' to render
 // EVERY planet as a black hole (visual testing only). Read once at load.
@@ -54,9 +57,9 @@ function layoutBoard(): void {
   const r = Math.max(20, Math.min(38, Math.min(canvasW, canvasH) * 0.055));
   for (let i = 0; i < 7; i++) {
     const a = Math.PI / 2 + i * ((Math.PI * 2) / 7);
-    state.planets[i].x = cx + rx * Math.cos(a);
-    state.planets[i].y = cy + ry * Math.sin(a);
-    state.planets[i].r = r;
+    getPlanets()[i].x = cx + rx * Math.cos(a);
+    getPlanets()[i].y = cy + ry * Math.sin(a);
+    getPlanets()[i].r = r;
   }
   stars = [];
   const n = Math.floor((canvasW * canvasH) / 8000);
@@ -108,7 +111,7 @@ function drawFrame(now: number): void {
   }
   ctx.globalAlpha = 1;
 
-  for (const pl of state.planets) drawPlanet(pl, now);
+  for (const pl of getPlanets()) drawPlanet(pl, now);
   drawAnims(now);
 }
 
@@ -174,13 +177,13 @@ function drawPlanet(pl: Planet, now: number): void {
   const st =
     PLANET_STYLES[pl.styleIdx !== undefined ? pl.styleIdx : pl.id] ||
     PLANET_STYLES[0];
-  const owner = state.players[pl.ownerId];
+  const owner = getPlayers()[pl.ownerId];
   const { x, y, r } = pl;
   // A maxed Singularity (level 3) collapses the planet into a black hole; the
   // debug flag forces the look on every planet.
   const blackHole = FORCE_BLACK_HOLES || (pl.buildings.SINGULARITY || 0) >= 3;
 
-  if (owner.id === state.activeId && !state.over) {
+  if (owner.id === getActiveId() && !getOver()) {
     const k = 0.5 + 0.5 * Math.sin(now / 300);
     ctx.strokeStyle = owner.color;
     ctx.globalAlpha = 0.25 + 0.35 * k;
@@ -441,7 +444,7 @@ function drawPlanet(pl: Planet, now: number): void {
   ctx.font = '12px sans-serif';
   ctx.fillStyle = '#fff';
   ctx.fillText(
-    `🪖${pl.troops}${underTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
+    `🪖${pl.troops}${isUnderTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
     x,
     y + r + 18,
   );

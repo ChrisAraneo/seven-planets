@@ -5,18 +5,16 @@ import {
   RESOURCE_TYPES,
 } from '@/game/constants';
 import type { BuildingType, Cost, Planet, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
-import { ownedPlanets } from './owned-planets';
+import { ownedPlanets } from '@/game/actions/common/owned-planets';
 import { persOf } from './pers-of';
 import { singularityReadyPlanet } from './singularity-ready-planet';
-import { techLevel } from './tech-level';
+import { techLevel } from '@/game/actions/common/tech-level';
 
 // The next thing this player is saving for (used for drafting, trading, refusals).
 export function currentGoal(
   p: Player,
 ): { id: BuildingType; planet: Planet; cost: Cost } | null {
-  const state = getGameState();
   const readyPl = singularityReadyPlanet(p);
   if (readyPl) {
     return {

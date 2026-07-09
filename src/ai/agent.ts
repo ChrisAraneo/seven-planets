@@ -1,9 +1,10 @@
+import { getPendingOffer } from '@/stores/game/getters/get-pending-offer';
 import { type PlayerAgent, setPlayerAgent } from '@/game/engine/agent';
-import { canPickCard } from '@/game/engine/functions/can-pick-card';
+import { canPickCard } from '@/game/actions/common/can-pick-card';
 import type { Planet, Player } from '@/game/types';
 import { getGameState, getStore } from '@/stores/game-state';
 
-import { evaluateTrade } from './functions/evaluate-trade';
+import { shouldAcceptTrade } from './functions/should-accept-trade';
 import { mastermindAction } from './functions/mastermind-action';
 import { mastermindDraftPick } from './functions/mastermind-draft-pick';
 
@@ -80,8 +81,7 @@ export const mastermindAgent: PlayerAgent = {
 
   /** Draft pick: choose a pool card and take it via the `pick` action. */
   pickCard(p: Player, planet: Planet): void {
-    const state = getGameState();
-    const pickable = state.pool.map((t) => canPickCard(p, t, planet));
+    const pickable = getGameState().pool.map((t) => canPickCard(p, t, planet));
     let idx = mastermindDraftPick(p, planet, pickable);
     if (idx < 0 || !pickable[idx]) {
       // The engine only asks when something is pickable — fall back to the
@@ -91,16 +91,15 @@ export const mastermindAgent: PlayerAgent = {
     void dispatch('pick', { playerId: p.id, idx });
   },
 
-  /** Answer the trade offer waiting in state.pendingOffer (addressed to `p`). */
+  /** Answer the trade offer waiting in getPendingOffer() (addressed to `p`). */
   considerOffer(p: Player): void {
-    const state = getGameState();
-    const offer = state.pendingOffer;
+    const offer = getPendingOffer();
     if (!offer || offer.toId !== p.id) {
       return;
     }
-    const proposer = state.players[offer.fromId];
+    const proposer = getGameState().players[offer.fromId];
     // PendingOffer is from the proposer's perspective; flip it to `p`'s.
-    const accept = evaluateTrade(p, offer.gets, offer.gives, proposer);
+    const accept = shouldAcceptTrade(p, offer.gets, offer.gives, proposer);
     void dispatch('resolveOffer', { playerId: p.id, accept });
   },
 };

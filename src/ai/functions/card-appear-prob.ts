@@ -1,16 +1,15 @@
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { ADVANCED_FROM_TURN, BUILD_ORDER } from '@/game/constants';
 import type { BuildingType } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
-import { singularityLive } from './singularity-live';
+import { isSingularityLive } from './is-singularity-live';
 
 export function cardAppearProb(id: BuildingType, withinTurns: number): number {
-  const s = getGameState();
   const eligible = BUILD_ORDER.filter((b) =>
     b === 'LAB'
-      ? s.turn >= ADVANCED_FROM_TURN
+      ? getTurn() >= ADVANCED_FROM_TURN
       : b === 'SINGULARITY'
-        ? singularityLive()
+        ? isSingularityLive()
         : true,
   );
   if (!eligible.includes(id)) {

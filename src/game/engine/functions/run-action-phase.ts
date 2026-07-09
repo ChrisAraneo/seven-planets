@@ -1,16 +1,17 @@
+import { getOver } from '@/stores/game/getters/get-over';
 import { getGameState } from '@/stores/game-state';
 
 import { agentActionTurn } from './agent-action-turn';
-import { AUTO_HUMAN } from './auto-human';
+import { AUTO_HUMAN } from '@/game/actions/common/auto-human';
 import { humanActionTurn } from './human-action-turn';
-import { setStatus } from './set-status';
+import { setStatus } from '@/game/actions/common/set-status';
 import { turnOrder } from './turn-order';
 
 export async function runActionPhase(): Promise<void> {
   const state = getGameState();
   state.phase = 'action';
   for (const p of turnOrder()) {
-    if (state.over) {
+    if (getOver()) {
       return;
     }
     if (!p.alive || p.skippedNow) {
@@ -24,7 +25,7 @@ export async function runActionPhase(): Promise<void> {
       setStatus(`${p.name} is taking actions…`);
       await agentActionTurn(p);
     }
-    if (state.over) {
+    if (getOver()) {
       return;
     }
   }

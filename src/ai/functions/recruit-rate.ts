@@ -1,13 +1,11 @@
 import { recruitYield } from '@/game/shared/recruit-yield';
 import type { Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { actionDrawProb } from './action-draw-prob';
 import { incomePerTurn } from './income-per-turn';
 import { owned } from './owned';
 
 export function recruitRate(p: Player): number {
-  const s = getGameState();
   let bestYield = 0;
   for (const pl of owned(p)) {
     bestYield = Math.max(bestYield, recruitYield(pl));

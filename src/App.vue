@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getOver } from '@/stores/game/getters/get-over';
+import { getPendingOffer } from '@/stores/game/getters/get-pending-offer';
 import { onMounted } from 'vue';
 import { useGameStore } from '@/stores/game';
 import GameHeader from '@/components/GameHeader.vue';
@@ -42,7 +44,7 @@ onMounted(() => store.start());
   <!-- The difficulty picker opens the game and blocks all other UI. -->
   <DifficultyModal v-if="!store.difficulty" />
   <!-- Game over takes precedence over everything else. -->
-  <GameOverModal v-else-if="store.state.over" />
+  <GameOverModal v-else-if="getOver()" />
   <template v-else>
     <HelpModal v-if="store.modal === 'help'" />
     <AttackModal v-else-if="store.modal === 'attack'" />
@@ -52,6 +54,6 @@ onMounted(() => store.start());
     <InfluenceModal v-else-if="store.modal === 'influence'" />
     <!-- Offers between AI seats also pass through pendingOffer now — only
          show the modal for offers addressed to the human seat. -->
-    <TradeOfferModal v-if="store.state.pendingOffer?.toId === store.human.id" />
+    <TradeOfferModal v-if="getPendingOffer()?.toId === store.human.id" />
   </template>
 </template>

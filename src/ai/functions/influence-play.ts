@@ -1,24 +1,22 @@
 import { getAiState } from '@/ai/state';
 import type { InfluenceOpts, InfluenceType, Player } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 import { alive } from './alive';
 import { avgStrength } from './avg-strength';
 import { bestCoupTarget } from './best-coup-target';
 import { hasB } from './has-b';
 import { immediateFallProb } from './immediate-fall-prob';
-import { imminentAttacker } from './imminent-attacker';
+import { isImminentAttacker } from './is-imminent-attacker';
 import { owned } from './owned';
 import { planFor } from './plan-for';
 import { playerStrength } from './player-strength';
 import { skipTarget } from './skip-target';
-import { underTruce } from './under-truce';
+import { isUnderTruce } from './is-under-truce';
 
 export function influencePlay(
   p: Player,
 ): { type: InfluenceType; opts: InfluenceOpts; ev: number } | null {
   const aiState = getAiState();
-  const s = getGameState();
   const plan = planFor(p);
   if ((p.hand.COUP || 0) > 0) {
     const tgt = bestCoupTarget(p);
@@ -51,7 +49,7 @@ export function influencePlay(
     }
     const scary =
       playerStrength(target) >= avg * 1.15 ||
-      imminentAttacker(p, target) ||
+      isImminentAttacker(p, target) ||
       alive().length === 2;
     if (scary) {
       return { type: t, opts: {}, ev: 3 };
@@ -62,7 +60,7 @@ export function influencePlay(
     const byStrength = (a: Player, b: Player) =>
       playerStrength(b) - playerStrength(a);
     const danger = rivals
-      .filter((r) => imminentAttacker(p, r))
+      .filter((r) => isImminentAttacker(p, r))
       .sort(byStrength);
     if (danger.length > 0) {
       return {

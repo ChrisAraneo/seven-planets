@@ -1,3 +1,5 @@
+import { getGameState } from '@/stores/game-state';
+import { getTurn } from '@/stores/game/getters/get-turn';
 import {
   BUILD_ORDER,
   BUILDINGS,
@@ -5,19 +7,17 @@ import {
   incomeAmount,
   PACIFIST_INFLUENCE,
 } from '@/game/constants';
-import { getGameState } from '@/stores/game-state';
 
-import { log } from './log';
-import { ownedPlanets } from './owned-planets';
+import { log } from '@/game/actions/common/log';
+import { ownedPlanets } from '@/game/actions/common/owned-planets';
 
 export function doIncome(): void {
-  const state = getGameState();
   const gains: Record<number, Record<string, number>> = {};
   const moveGains: Record<number, number> = {}; // L2 Spaceport: free Move card every 3 turns
   const infGains: Record<number, number> = {}; // L2 Embassy: +1 ⭐ Influence every turn
   const pacGains: Record<number, number> = {}; // Pacifist: +PACIFIST_INFLUENCE ⭐ per planet
-  for (const pl of state.planets) {
-    const owner = state.players[pl.ownerId];
+  for (const pl of getGameState().planets) {
+    const owner = getGameState().players[pl.ownerId];
     if (!owner.alive) {
       continue;
     }
@@ -33,7 +33,7 @@ export function doIncome(): void {
       }
     }
     // L2 Spaceport perk: grant 1 free Move card every 3rd turn
-    if ((pl.buildings.SPACEPORT || 0) >= 2 && state.turn % 3 === 0) {
+    if ((pl.buildings.SPACEPORT || 0) >= 2 && getTurn() % 3 === 0) {
       owner.hand.MOVE++;
       moveGains[owner.id] = (moveGains[owner.id] || 0) + 1;
     }
@@ -50,25 +50,25 @@ export function doIncome(): void {
   }
   for (const id in gains) {
     log(
-      `⚙️ ${state.players[id].name} produces ${fmtCards(gains[id])}`,
+      `⚙️ ${getGameState().players[id].name} produces ${fmtCards(gains[id])}`,
       'draft',
     );
   }
   for (const id in moveGains) {
     log(
-      `🛰️ ${state.players[id].name} receives +${moveGains[id]}🛸 Move (L2 Spaceport)`,
+      `🛰️ ${getGameState().players[id].name} receives +${moveGains[id]}🛸 Move (L2 Spaceport)`,
       'draft',
     );
   }
   for (const id in infGains) {
     log(
-      `⭐ ${state.players[id].name} gains +${infGains[id]} Influence (L2 Embassy)`,
+      `⭐ ${getGameState().players[id].name} gains +${infGains[id]} Influence (L2 Embassy)`,
       'draft',
     );
   }
   for (const id in pacGains) {
     log(
-      `☮️ ${state.players[id].name} gains +${pacGains[id]} Influence (Pacifist)`,
+      `☮️ ${getGameState().players[id].name} gains +${pacGains[id]} Influence (Pacifist)`,
       'draft',
     );
   }

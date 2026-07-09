@@ -1,9 +1,7 @@
 import { BUILD_ORDER, BUILDINGS, CARDS, incomeAmount } from '@/game/constants';
 import type { Planet } from '@/game/types';
-import { getGameState } from '@/stores/game-state';
 
 export function planetValue(pl: Planet): number {
-  const s = getGameState();
   let v = 6;
   for (const b of BUILD_ORDER) {
     const lvl = pl.buildings[b] || 0;

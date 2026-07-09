@@ -1,3 +1,4 @@
+import { getTurn } from '@/stores/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import type { Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
@@ -14,7 +15,7 @@ export function planFor(p: Player): Plan {
     aiState.planCache.set(s, per);
   }
   const prev = per.get(p.id);
-  if (prev && prev.computedTurn === s.turn) {
+  if (prev && prev.computedTurn === getTurn()) {
     return prev;
   }
   const plan = computePlan(p, prev?.kind ?? null);
