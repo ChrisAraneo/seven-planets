@@ -6,11 +6,11 @@ import { isUnderTruce } from './is-under-truce';
 
 // Can this planet be seized by a 👑 Coup played by `p`? A truce protects it, and a
 // Rival's LAST planet is coup-proof — unless the couper has earned Pacifist status.
-export function coupTargets(p: Player): Planet[] {
-  const mayTakeLast = isPacifist(p);
+export function coupTargets(player: Player): Planet[] {
+  const mayTakeLast = isPacifist(player);
   return getGameState().planets.filter(
     (pl) =>
-      pl.ownerId !== p.id &&
+      pl.ownerId !== player.id &&
       getGameState().players[pl.ownerId].alive &&
       !isUnderTruce(pl) &&
       (mayTakeLast || getGameState().players[pl.ownerId].planets.length > 1),

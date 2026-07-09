@@ -8,22 +8,22 @@ import { getPlayerAgent } from '../agent';
 import { AUTO_HUMAN } from '../common/auto-human';
 import { log } from '../common/log';
 import { setStatus } from '../common/set-status';
-import { getOfferResolve, setOfferResolve } from '../common/resolver-state';
+import { setOfferResolve } from '../common/resolver-state';
 
-// TODO: Rename to proposeTrade (and the helper function rename too)
+export interface MakeOfferPayload {
+  playerId: number;
+  partnerId: number;
+  gives: Cost;
+  gets: Cost;
+}
 
 /* The `trade` store action: propose a resource trade to another player.
    The human's TradeModal and the AI agent both dispatch this; the engine
    then asks the partner seat (human modal or AI agent) to answer via
    `resolveOffer`. Resolves with the partner's acceptance. */
-export async function trade(
+export async function makeOffer(
   state: GameState,
-  payload: {
-    playerId: number;
-    partnerId: number;
-    gives: Cost;
-    gets: Cost;
-  },
+  payload: MakeOfferPayload,
 ): Promise<boolean> {
   const { playerId, partnerId, gives, gets } = payload;
 
@@ -31,25 +31,25 @@ export async function trade(
     return false;
   }
 
-  const p = state.players[playerId];
+  const player = state.players[playerId];
   const partner = state.players[partnerId];
 
-  if (!partner || partner.id === p.id || !partner.alive) {
+  if (!partner || partner.id === player.id || !partner.alive) {
     return false;
   }
 
-  if (!hasActionCard(p, 'TRADE')) {
+  if (!hasActionCard(player, 'TRADE')) {
     return false;
   }
 
   // Note the attempt; the AI plans at most one trade per turn off this flag
   // (nothing restricts the human's seat, matching the original behavior).
-  p.tradedThisTurn = true;
+  player.tradedThisTurn = true;
 
-  return proposeTrade(state, p, { partner, gives, gets });
+  return f(state, player, { partner, gives, gets });
 }
 
-async function proposeTrade(
+async function f(
   state: GameState,
   p: Player,
   offer: TradeOffer,

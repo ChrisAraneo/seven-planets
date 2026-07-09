@@ -4,8 +4,9 @@ import { initializeState } from './initialize-state/initialize-state';
 import { moveTroops } from './move-troops/move-troops';
 import { pick } from './pick-card/pick-card';
 import { recruitTroops } from './recruit-troops/recruit-troops';
-import { resolveOffer, trade } from './trade-resources/trade-resources';
+import { makeOffer } from './make-offer/make-offer';
 import { useInfluence } from './use-influence/use-influence';
+import { resolveOffer } from './resolve-offer/resolve-offer';
 
 export const ENGINE = {
   attackPlanet,
@@ -15,6 +16,6 @@ export const ENGINE = {
   pick,
   recruitTroops,
   resolveOffer,
-  trade,
+  makeOffer,
   useInfluence,
 };

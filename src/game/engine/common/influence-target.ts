@@ -1,6 +1,6 @@
 import type { InfluenceType, Player } from '@/game/types';
 
-import { filterAlivePlayers } from './alive-players';
+import { filterAlivePlayers } from './filter-alive-players';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
 

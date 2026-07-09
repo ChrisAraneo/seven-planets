@@ -1,5 +1,5 @@
 import type { ActionType, Player } from '@/game/types';
 
-export function spendActionCard(p: Player, t: ActionType): void {
-  p.hand[t] = Math.max(0, (p.hand[t] || 0) - 1);
+export function spendActionCard(player: Player, actionType: ActionType): void {
+  player.hand[actionType] = Math.max(0, (player.hand[actionType] || 0) - 1);
 }

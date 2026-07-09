@@ -1,4 +1,4 @@
-import { filterAlivePlayers } from './alive-players';
+import { filterAlivePlayers } from './filter-alive-players';
 import { AUTO_HUMAN } from './auto-human';
 import { triggerGameOver } from './trigger-game-over';
 import type { GameState } from '@/game/types';

@@ -1,12 +1,4 @@
 import { getOver } from '@/stores/game/getters/get-over';
-import {
-  getHumanResolve,
-  getOfferResolve,
-  getPoolResolve,
-  setHumanResolve,
-  setOfferResolve,
-  setPoolResolve,
-} from '@/game/actions/common/resolver-state';
 import type { Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 
