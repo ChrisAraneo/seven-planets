@@ -1,0 +1,8 @@
+{
+  "name": "effects",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/effects/src",
+  "projectType": "library",
+  "tags": ["scope:effects", "type:lib"],
+  "targets": {}
+}

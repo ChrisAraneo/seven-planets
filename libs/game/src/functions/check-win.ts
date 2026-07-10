@@ -1,0 +1,22 @@
+import { filterAlivePlayers } from './filter-alive-players';
+import { AUTO_HUMAN } from './auto-human';
+import { triggerGameOver } from './trigger-game-over';
+import type { GameState } from '../interfaces/game-state';
+
+export function checkWin(state: GameState): void {
+  if (state.over) {
+    return;
+  }
+
+  const alivePlayers = filterAlivePlayers(state);
+
+  if (alivePlayers.length === 1) {
+    triggerGameOver(state, alivePlayers[0], 'conquest');
+
+    return;
+  }
+
+  if (!AUTO_HUMAN && !state.players[0].alive) {
+    triggerGameOver(state, null, 'eliminated');
+  }
+}

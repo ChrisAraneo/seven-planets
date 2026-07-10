@@ -18,9 +18,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { setAiDifficulty } from '@/ai/functions/set-ai-difficulty';
-import { DIFFICULTIES } from '@/game/difficulty';
-import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
+import { setAiDifficulty } from '@seven-planets/ai';
+import { DIFFICULTIES } from '@seven-planets/game';
+import { simulateGameWithPersonalities } from '@seven-planets/game';
 // The game state lives in the Vuex store — importing it creates the store,
 // installs the state accessor, and seats the AI (the ai module's plugin).
 // No presentation layer, so the engine's pacing/animation hooks are no-ops

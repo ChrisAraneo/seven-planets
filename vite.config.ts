@@ -14,7 +14,16 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@': fileURLToPath(new URL('./apps/browser/src', import.meta.url)),
+      '@seven-planets/game': fileURLToPath(
+        new URL('./libs/game/src/index.ts', import.meta.url),
+      ),
+      '@seven-planets/ai': fileURLToPath(
+        new URL('./libs/ai/src/index.ts', import.meta.url),
+      ),
+      '@seven-planets/effects': fileURLToPath(
+        new URL('./libs/effects/src/index.ts', import.meta.url),
+      ),
     },
   },
 })

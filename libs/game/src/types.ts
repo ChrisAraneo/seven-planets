@@ -1,0 +1,25 @@
+// TODO: Remove file, use interfaces directly
+
+export type { ResourceType } from './interfaces/resource-type';
+export type { ActionType } from './interfaces/action-type';
+export type { CardType } from './interfaces/card-type';
+export type { BuildingType } from './interfaces/building-type';
+export type { InfluenceType } from './interfaces/influence-type';
+export type { PoolType } from './interfaces/pool-type';
+export type { Hand } from './interfaces/hand';
+export type { BuildingLevels } from './interfaces/building-levels';
+export type { Cost } from './interfaces/cost';
+export type { CardDef } from './interfaces/card-def';
+export type { BuildingDef } from './interfaces/building-def';
+export type { InfluenceCardDef } from './interfaces/influence-card-def';
+export type { PlanetStyle } from './interfaces/planet-style';
+export type { PlayerDef } from './interfaces/player-def';
+export type { Player } from './interfaces/player';
+export type { Planet } from './interfaces/planet';
+export type { GameOver } from './interfaces/game-over';
+export type { LogEntry } from './interfaces/log-entry';
+export type { Phase } from './interfaces/phase';
+export type { GameState } from './interfaces/game-state';
+export type { PendingOffer } from './interfaces/pending-offer';
+export type { TradeOffer } from './interfaces/trade-offer';
+export type { InfluenceOpts } from './interfaces/influence-opts';

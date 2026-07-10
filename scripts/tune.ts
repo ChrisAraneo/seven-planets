@@ -19,11 +19,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { getAiWeights } from '@/ai/functions/get-ai-weights';
-import { setAiWeights } from '@/ai/functions/set-ai-weights';
-import type { Weights as AiWeights } from '@/ai/weights';
-import { PRIORITIES } from '@/game/config/constants';
-import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
+import { getAiWeights } from '@seven-planets/ai';
+import { setAiWeights } from '@seven-planets/ai';
+import type { Weights as AiWeights } from '@seven-planets/ai';
+import { PRIORITIES } from '@seven-planets/game';
+import { simulateGameWithPersonalities } from '@seven-planets/game';
 // The game state lives in the Vuex store — importing it creates the store,
 // installs the state accessor, and seats the AI (the ai module's plugin).
 import '@/stores';

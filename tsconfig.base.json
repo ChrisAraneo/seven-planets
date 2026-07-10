@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    // The ported game engine is built on dynamic dictionary access keyed by
+    // runtime card/building strings; noUncheckedIndexedAccess would force
+    // pervasive `?? 0` / `!` noise across the tuned logic, so it is left off.
+    "noUncheckedIndexedAccess": false,
+    // Workspace path mappings. Cross-lib/app imports go through the lib
+    // barrels; the app's own code uses the `@/` alias.
+    "paths": {
+      "@/*": ["./apps/browser/src/*"],
+      "@seven-planets/game": ["./libs/game/src/index.ts"],
+      "@seven-planets/ai": ["./libs/ai/src/index.ts"],
+      "@seven-planets/effects": ["./libs/effects/src/index.ts"],
+      // vuex 4.1.0 ships no "types" in its package.json exports, invisible
+      // under moduleResolution "bundler".
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
+    }
+  }
+}

@@ -18,10 +18,16 @@ if (!entry) {
 // Drop the entry from argv so the target script sees its own args at argv[2].
 process.argv.splice(2, 1);
 
+// Forward slashes, matching jiti's internal (pathe) resolution: with native
+// Windows separators here, "@/x" and a relative import of the same file get
+// DIFFERENT module-cache keys and singleton modules load twice.
+const p = (rel) => fileURLToPath(new URL(rel, import.meta.url)).replace(/\\/g, '/');
 const jiti = createJiti(import.meta.url, {
-  // Forward slashes, matching jiti's internal (pathe) resolution: with native
-  // Windows separators here, "@/x" and a relative import of the same file get
-  // DIFFERENT module-cache keys and singleton modules load twice.
-  alias: { '@': fileURLToPath(new URL('../src', import.meta.url)).replace(/\\/g, '/') },
+  alias: {
+    '@': p('../apps/browser/src'),
+    '@seven-planets/game': p('../libs/game/src/index.ts'),
+    '@seven-planets/ai': p('../libs/ai/src/index.ts'),
+    '@seven-planets/effects': p('../libs/effects/src/index.ts'),
+  },
 });
 await jiti.import(pathToFileURL(resolve(process.cwd(), entry)).href);
