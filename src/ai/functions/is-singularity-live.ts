@@ -3,7 +3,7 @@ import {
   BUILD_ORDER,
   maxLevel,
 } from '@/game/config/constants';
-import { isSingularityLabOk } from '@/stores/game/functions/is-singularity-lab-ok';
+import { isSingularityLabOk } from '@/game/functions/is-singularity-lab-ok';
 
 import { alive } from './alive';
 import { owned } from './owned';

@@ -18,7 +18,7 @@ import { planFor } from '@/ai/functions/plan-for';
 import { resetAiWeights } from '@/ai/functions/reset-ai-weights';
 import { survivorsAfterWin } from '@/ai/functions/survivors-after-win';
 import { COMBAT } from '@/game/config/constants';
-import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
+import { simulateGameWithPersonalities } from '@/game/functions/simulate-game-with-personalities';
 import type { GameState } from '@/game/types';
 import { getGameState, resetGameState } from '@/stores/game-state';
 

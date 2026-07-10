@@ -1,5 +1,5 @@
 import { maxLevel } from '@/game/config/constants';
-import { isSingularityLabOk } from '@/stores/game/functions/is-singularity-lab-ok';
+import { isSingularityLabOk } from '@/game/functions/is-singularity-lab-ok';
 import type { BuildingType, Planet, Player } from '@/game/types';
 
 import { techLevel } from './tech-level';

@@ -6,9 +6,9 @@ import {
   type Difficulty,
   getDifficulty,
 } from '@/game/config/difficulty';
-import { assignKamikazes } from '@/stores/game/functions/assign-kamikazes';
-import { AUTO_HUMAN } from '@/stores/game/functions/auto-human';
-import { runGame } from '@/stores/game/functions/run-game';
+import { assignKamikazes } from '@/game/functions/assign-kamikazes';
+import { AUTO_HUMAN } from '@/game/functions/auto-human';
+import { runGame } from '@/game/functions/run-game';
 import { getGameState } from '@/stores/game-state';
 
 import type { RootState } from '@/stores';

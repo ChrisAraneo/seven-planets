@@ -1,4 +1,4 @@
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   COMBAT,
@@ -6,7 +6,7 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/config/constants';
-import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus';
+import { singularityDefBonus } from '@/game/functions/singularity-def-bonus';
 import type { Planet, Player } from '@/game/types';
 
 import { actionDrawProb } from './action-draw-prob';

@@ -1,4 +1,4 @@
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import type { Planet, Player } from '@/game/types';
 
 import { holdProbability } from './hold-probability';

@@ -5,11 +5,11 @@ import { createStore } from 'vuex';
 // Scripts would otherwise instantiate './game-state' separately from
 // '@/stores/game-state' and the installed store would not be seen).
 import { installStore } from '@/stores/game-state';
-import { getOver } from '@/stores/game/getters/get-over';
+import { getOver } from '@/game/getters/get-over';
 
 import { ai, aiPlugin, type AiModuleState } from '@/ai/ai-module';
 import { effects, type EffectsModuleState } from '@/effects/effects-module';
-import { game, type GameModuleState } from './game/game';
+import { game, type GameModuleState } from '@/game/game';
 import { ui, type UiModuleState } from '@/ui/ui-module';
 import { unlocks, type UnlocksModuleState } from '@/ui/unlocks-module';
 

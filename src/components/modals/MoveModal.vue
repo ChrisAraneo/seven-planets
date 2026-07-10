@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { getPlanets } from '@/stores/game/getters/get-planets.ts';
+import { getPlanets } from '@/game/getters/get-planets.ts';
 import { computed, ref, watch } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
-import { ownedPlanets } from '@/stores/game/functions/owned-planets';
-import { rocketCap } from '@/stores/game/functions/rocket-cap.ts';
+import { ownedPlanets } from '@/game/functions/owned-planets';
+import { rocketCap } from '@/game/functions/rocket-cap.ts';
 
 const human = store.state.game.state.players[0];
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { getPendingOffer } from '@/stores/game/getters/get-pending-offer.ts';
-import { getPlayers } from '@/stores/game/getters/get-players.ts';
+import { getPendingOffer } from '@/game/getters/get-pending-offer.ts';
+import { getPlayers } from '@/game/getters/get-players.ts';
 import { computed } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';

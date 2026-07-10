@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { getOver } from '@/stores/game/getters/get-over.ts';
-import { getTurn } from '@/stores/game/getters/get-turn.ts';
+import { getOver } from '@/game/getters/get-over.ts';
+import { getTurn } from '@/game/getters/get-turn.ts';
 import { computed } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
-import { buildingCount } from '@/stores/game/functions/building-count.ts';
-import { totalTroops } from '@/stores/game/functions/total-troops';
+import { buildingCount } from '@/game/functions/building-count.ts';
+import { totalTroops } from '@/game/functions/total-troops';
 
 const over = computed(() => getOver());
 const human = store.state.game.state.players[0];

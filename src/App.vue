@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { getOver } from '@/stores/game/getters/get-over';
-import { getPendingOffer } from '@/stores/game/getters/get-pending-offer';
+import { getOver } from '@/game/getters/get-over';
+import { getPendingOffer } from '@/game/getters/get-pending-offer';
 import { computed, onMounted } from 'vue';
 import { store } from '@/stores';
 import GameHeader from '@/components/GameHeader.vue';

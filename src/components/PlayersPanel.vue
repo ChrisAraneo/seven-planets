@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { getActiveId } from '@/stores/game/getters/get-active-id';
-import { getOver } from '@/stores/game/getters/get-over';
-import { getPlayers } from '@/stores/game/getters/get-players';
+import { getActiveId } from '@/game/getters/get-active-id';
+import { getOver } from '@/game/getters/get-over';
+import { getPlayers } from '@/game/getters/get-players';
 import { store } from '@/stores';
 import {
   CARDS,
@@ -9,9 +9,9 @@ import {
   ACTION_TYPES,
   INFLUENCE_TYPES,
 } from '@/game/config/constants';
-import { buildingCount } from '@/stores/game/functions/building-count';
-import { techLevel } from '@/stores/game/functions/tech-level';
-import { totalTroops } from '@/stores/game/functions/total-troops';
+import { buildingCount } from '@/game/functions/building-count';
+import { techLevel } from '@/game/functions/tech-level';
+import { totalTroops } from '@/game/functions/total-troops';
 import type { Player } from '@/game/types';
 
 function resLine(p: Player): string {

@@ -1,4 +1,4 @@
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { ADVANCED_FROM_TURN, BUILD_ORDER } from '@/game/config/constants';
 import type { BuildingType } from '@/game/types';
 

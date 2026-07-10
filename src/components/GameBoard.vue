@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { getActiveId } from '@/stores/game/getters/get-active-id';
-import { getOver } from '@/stores/game/getters/get-over';
-import { getPlanets } from '@/stores/game/getters/get-planets';
-import { getPlayers } from '@/stores/game/getters/get-players';
+import { getActiveId } from '@/game/getters/get-active-id';
+import { getOver } from '@/game/getters/get-over';
+import { getPlanets } from '@/game/getters/get-planets';
+import { getPlayers } from '@/game/getters/get-players';
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@/game/config/constants';
-import { isUnderTruce } from '@/stores/game/functions/is-under-truce';
+import { isUnderTruce } from '@/game/functions/is-under-truce';
 import type { Planet } from '@/game/types';
 import { useEffectsStore } from '@/effects/effects-store';
 import { onBeforeUnmount, onMounted, ref } from 'vue';

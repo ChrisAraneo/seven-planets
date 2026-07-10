@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getLog } from '@/stores/game/getters/get-log';
+import { getLog } from '@/game/getters/get-log';
 import { nextTick, ref, watch } from 'vue';
 
 const el = ref<HTMLDivElement | null>(null);

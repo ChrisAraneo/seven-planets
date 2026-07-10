@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { getPlayers } from '@/stores/game/getters/get-players.ts';
+import { getPlayers } from '@/game/getters/get-players.ts';
 import { computed, reactive, ref } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { CARDS, RESOURCE_TYPES } from '@/game/config/constants.ts';
-import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
-import { hasActionCard } from '@/stores/game/functions/has-action-card';
+import { filterAlivePlayers } from '@/game/functions/filter-alive-players';
+import { hasActionCard } from '@/game/functions/has-action-card';
 import type { Cost } from '@/game/types';
 
 const human = store.state.game.state.players[0];

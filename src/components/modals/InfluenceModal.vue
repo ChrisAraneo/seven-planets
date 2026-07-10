@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getPlayers } from '@/stores/game/getters/get-players.ts';
+import { getPlayers } from '@/game/getters/get-players.ts';
 import { computed, ref } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
@@ -12,10 +12,10 @@ import {
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
 } from '@/game/config/constants.ts';
-import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
-import { coupTargets } from '@/stores/game/functions/coup-targets';
-import { influenceTarget } from '@/stores/game/functions/influence-target';
-import { isPacifist } from '@/stores/game/functions/is-pacifist';
+import { filterAlivePlayers } from '@/game/functions/filter-alive-players';
+import { coupTargets } from '@/game/functions/coup-targets';
+import { influenceTarget } from '@/game/functions/influence-target';
+import { isPacifist } from '@/game/functions/is-pacifist';
 import type {
   BuildingType,
   InfluenceOpts,

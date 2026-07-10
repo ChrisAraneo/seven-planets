@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { canAfford, INFLUENCE_TYPES } from '@/game/config/constants';
-import { hasBuilding } from '@/stores/game/functions/has-building';
-import { ownedPlanets } from '@/stores/game/functions/owned-planets';
-import { recruitCost } from '@/stores/game/functions/recruit-cost';
-import { isPacifist } from '@/stores/game/functions/is-pacifist';
-import { hasActionCard } from '@/stores/game/functions/has-action-card';
-import { totalTroops } from '@/stores/game/functions/total-troops';
-import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
-import { getAwaitingAction } from '@/stores/game/getters/get-awaiting-action';
-import { getBusy } from '@/stores/game/getters/get-busy';
-import { getOver } from '@/stores/game/getters/get-over';
+import { hasBuilding } from '@/game/functions/has-building';
+import { ownedPlanets } from '@/game/functions/owned-planets';
+import { recruitCost } from '@/game/functions/recruit-cost';
+import { isPacifist } from '@/game/functions/is-pacifist';
+import { hasActionCard } from '@/game/functions/has-action-card';
+import { totalTroops } from '@/game/functions/total-troops';
+import { filterAlivePlayers } from '@/game/functions/filter-alive-players';
+import { getAwaitingAction } from '@/game/getters/get-awaiting-action';
+import { getBusy } from '@/game/getters/get-busy';
+import { getOver } from '@/game/getters/get-over';
 import { store } from '@/stores';
 import { computed } from 'vue';
 

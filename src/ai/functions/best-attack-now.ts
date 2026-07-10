@@ -1,4 +1,4 @@
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import type { Player } from '@/game/types';
 

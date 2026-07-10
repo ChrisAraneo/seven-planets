@@ -1,5 +1,5 @@
 import { getGameState } from '@/stores/game-state';
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   COMBAT,
@@ -7,8 +7,8 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/config/constants';
-import { rocketCap } from '@/stores/game/functions/rocket-cap';
-import { siloBonus } from '@/stores/game/functions/silo-bonus';
+import { rocketCap } from '@/game/functions/rocket-cap';
+import { siloBonus } from '@/game/functions/silo-bonus';
 import type { Planet, Player } from '@/game/types';
 
 import { alive } from './alive';

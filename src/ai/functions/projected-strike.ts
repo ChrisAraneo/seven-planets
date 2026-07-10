@@ -1,5 +1,5 @@
-import { rocketCap } from '@/stores/game/functions/rocket-cap';
-import { siloBonus } from '@/stores/game/functions/silo-bonus';
+import { rocketCap } from '@/game/functions/rocket-cap';
+import { siloBonus } from '@/game/functions/silo-bonus';
 import type { Player } from '@/game/types';
 
 import { owned } from './owned';

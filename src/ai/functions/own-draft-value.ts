@@ -1,4 +1,4 @@
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import { canAfford, CARDS, RESOURCE_TYPES } from '@/game/config/constants';
 import { buildingCost } from '@/game/config/constants';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { getPlanets } from '@/stores/game/getters/get-planets.ts';
-import { getPlayers } from '@/stores/game/getters/get-players.ts';
-import { getTurn } from '@/stores/game/getters/get-turn.ts';
+import { getPlanets } from '@/game/getters/get-planets.ts';
+import { getPlayers } from '@/game/getters/get-players.ts';
+import { getTurn } from '@/game/getters/get-turn.ts';
 import { computed, ref, watch } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
@@ -13,14 +13,14 @@ import {
 } from '@/game/config/constants.ts';
 import type { Planet } from '@/game/types';
 import { battleWinProb } from '@/ai/functions/battle-win-prob';
-import { handSize } from '@/stores/game/functions/hand-size';
-import { isPacifist } from '@/stores/game/functions/is-pacifist';
-import { ownedPlanets } from '@/stores/game/functions/owned-planets';
-import { pacifistDefBonus } from '@/stores/game/functions/pacifist-def-bonus';
-import { rocketCap } from '@/stores/game/functions/rocket-cap.ts';
-import { siloBonus } from '@/stores/game/functions/silo-bonus.ts';
-import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus.ts';
-import { isUnderTruce } from '@/stores/game/functions/is-under-truce';
+import { handSize } from '@/game/functions/hand-size';
+import { isPacifist } from '@/game/functions/is-pacifist';
+import { ownedPlanets } from '@/game/functions/owned-planets';
+import { pacifistDefBonus } from '@/game/functions/pacifist-def-bonus';
+import { rocketCap } from '@/game/functions/rocket-cap.ts';
+import { siloBonus } from '@/game/functions/silo-bonus.ts';
+import { singularityDefBonus } from '@/game/functions/singularity-def-bonus.ts';
+import { isUnderTruce } from '@/game/functions/is-under-truce';
 
 const human = store.state.game.state.players[0];
 

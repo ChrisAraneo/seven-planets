@@ -2,9 +2,9 @@ import type { Module, Store } from 'vuex';
 
 import { sleep } from '@/game/hooks';
 import type { InfluenceOpts, InfluenceType, Cost } from '@/game/types';
-import { AUTO_HUMAN } from '@/stores/game/functions/auto-human';
-import { canPickCard } from '@/stores/game/functions/can-pick-card';
-import { homePlanet } from '@/stores/game/functions/home-planet';
+import { AUTO_HUMAN } from '@/game/functions/auto-human';
+import { canPickCard } from '@/game/functions/can-pick-card';
+import { homePlanet } from '@/game/functions/home-planet';
 import { getGameState } from '@/stores/game-state';
 
 import { mastermindAction } from '@/ai/functions/mastermind-action';

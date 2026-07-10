@@ -1,5 +1,5 @@
 import { getGameState } from '@/stores/game-state';
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   BASE_ROCKET_CAP,
@@ -13,8 +13,8 @@ import {
   SILO_HIT_BONUS,
   SINGULARITY_DEF_BONUS,
 } from '@/game/config/constants';
-import { recruitYield } from '@/stores/game/functions/recruit-yield';
-import { rocketCap } from '@/stores/game/functions/rocket-cap';
+import { recruitYield } from '@/game/functions/recruit-yield';
+import { rocketCap } from '@/game/functions/rocket-cap';
 import type { BuildingType, Planet, Player } from '@/game/types';
 
 import { avgResourceCardValue } from './avg-resource-card-value';

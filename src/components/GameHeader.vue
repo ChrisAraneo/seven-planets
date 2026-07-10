@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { getOver } from '@/stores/game/getters/get-over';
-import { getPhase } from '@/stores/game/getters/get-phase';
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getOver } from '@/game/getters/get-over';
+import { getPhase } from '@/game/getters/get-phase';
+import { getTurn } from '@/game/getters/get-turn';
 import { computed } from 'vue';
 import { store } from '@/stores';
 

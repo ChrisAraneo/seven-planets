@@ -1,5 +1,5 @@
 import { getGameState } from '@/stores/game-state';
-import { getTurn } from '@/stores/game/getters/get-turn';
+import { getTurn } from '@/game/getters/get-turn';
 import { getAiState } from '@/ai/state';
 import {
   ACTION_CARDS_FROM_TURN,
@@ -11,8 +11,8 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/config/constants';
-import { rocketCap } from '@/stores/game/functions/rocket-cap';
-import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus';
+import { rocketCap } from '@/game/functions/rocket-cap';
+import { singularityDefBonus } from '@/game/functions/singularity-def-bonus';
 import type { Player } from '@/game/types';
 
 import { battleWinProb } from './battle-win-prob';

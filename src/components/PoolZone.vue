@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { getActiveId } from '@/stores/game/getters/get-active-id';
-import { getAwaitingPick } from '@/stores/game/getters/get-awaiting-pick';
-import { getDraftPlanetId } from '@/stores/game/getters/get-draft-planet-id';
-import { getOver } from '@/stores/game/getters/get-over';
-import { getPhase } from '@/stores/game/getters/get-phase';
-import { getPlanets } from '@/stores/game/getters/get-planets';
-import { getPlayers } from '@/stores/game/getters/get-players';
-import { getPool } from '@/stores/game/getters/get-pool';
-import { getStatus } from '@/stores/game/getters/get-status';
+import { getActiveId } from '@/game/getters/get-active-id';
+import { getAwaitingPick } from '@/game/getters/get-awaiting-pick';
+import { getDraftPlanetId } from '@/game/getters/get-draft-planet-id';
+import { getOver } from '@/game/getters/get-over';
+import { getPhase } from '@/game/getters/get-phase';
+import { getPlanets } from '@/game/getters/get-planets';
+import { getPlayers } from '@/game/getters/get-players';
+import { getPool } from '@/game/getters/get-pool';
+import { getStatus } from '@/game/getters/get-status';
 import { computed } from 'vue';
 import { store } from '@/stores';
 import {
@@ -18,8 +18,8 @@ import {
   INFLUENCE_CARDS,
   maxLevel,
 } from '@/game/config/constants';
-import { canPickCard } from '@/stores/game/functions/can-pick-card';
-import { homePlanet } from '@/stores/game/functions/home-planet';
+import { canPickCard } from '@/game/functions/can-pick-card';
+import { homePlanet } from '@/game/functions/home-planet';
 import type { BuildingType, InfluenceType, PoolType } from '@/game/types';
 
 // AwaitingPick is raised for every drafting seat, so scope the human's pool

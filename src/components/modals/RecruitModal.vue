@@ -3,9 +3,9 @@ import { computed } from 'vue';
 import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { canAfford, costLabel } from '@/game/config/constants.ts';
-import { ownedPlanets } from '@/stores/game/functions/owned-planets';
-import { recruitCost } from '@/stores/game/functions/recruit-cost';
-import { recruitYield } from '@/stores/game/functions/recruit-yield.ts';
+import { ownedPlanets } from '@/game/functions/owned-planets';
+import { recruitCost } from '@/game/functions/recruit-cost';
+import { recruitYield } from '@/game/functions/recruit-yield.ts';
 
 const barracksPls = computed(() => {
   const state = store.state.game.state;

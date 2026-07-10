@@ -8,7 +8,7 @@ import '@/stores';
 
 import { describe, expect, it } from 'vitest';
 
-import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
+import { simulateGameWithPersonalities } from '@/game/functions/simulate-game-with-personalities';
 
 describe('headless game simulation', () => {
   it('plays full AI-vs-AI games to a resolution without throwing', async () => {

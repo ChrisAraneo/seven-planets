@@ -5,7 +5,7 @@ import {
   PACIFIST_DEF_BONUS,
   SHIELD_DEFENSE,
 } from '@/game/config/constants';
-import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus';
+import { singularityDefBonus } from '@/game/functions/singularity-def-bonus';
 import type { Planet } from '@/game/types';
 
 export function defenseBaseOf(pl: Planet, troops = pl.troops): number {
