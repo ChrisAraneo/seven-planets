@@ -2,7 +2,7 @@ import type { Module } from 'vuex';
 
 import type { Anim } from '@/effects/effects';
 
-import type { RootState } from '../index';
+import type { RootState } from '@/stores';
 
 /* =====================================================================
    Presentation-effects state. The effects layer (src/effects) enqueues

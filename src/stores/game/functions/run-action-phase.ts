@@ -1,32 +1,34 @@
 import { getOver } from '@/stores/game/getters/get-over';
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
-import { agentActionTurn } from './agent-action-turn';
 import { AUTO_HUMAN } from '@/stores/game/functions/auto-human';
 import { humanActionTurn } from './human-action-turn';
 import { setStatus } from './set-status';
 import { turnOrder } from './turn-order';
 
-export async function runActionPhase(state: GameState): Promise<void> {
-  state.phase = 'action';
-  for (const p of turnOrder(state)) {
+/* Every seat's action turn is handled identically: raise `awaitingAction`
+   and park. The human answers by ending their turn from the UI; an AI seat
+   is answered by the `ai` store module, which watches the same flag, plays
+   its actions and dispatches `endTurn` to unpark us. */
+export async function runActionPhase(): Promise<void> {
+  getGameState().phase = 'action';
+  const order = turnOrder(getGameState()).map((p) => p.id);
+  for (const seatId of order) {
     if (getOver()) {
       return;
     }
+    const p = getGameState().players[seatId];
     if (!p.alive || p.skippedNow) {
       continue;
     }
-    state.activeId = p.id;
-    if (p.isHuman && !AUTO_HUMAN) {
-      setStatus(
-        state,
-        'YOUR TURN — recruit, attack or trade. End turn when done.',
-      );
-      await humanActionTurn(state);
-    } else {
-      setStatus(state, `${p.name} is taking actions…`);
-      await agentActionTurn(p);
-    }
+    getGameState().activeId = seatId;
+    setStatus(
+      getGameState(),
+      p.isHuman && !AUTO_HUMAN
+        ? 'YOUR TURN — recruit, attack or trade. End turn when done.'
+        : `${p.name} is taking actions…`,
+    );
+    await humanActionTurn(getGameState());
     if (getOver()) {
       return;
     }

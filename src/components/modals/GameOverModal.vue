@@ -2,14 +2,13 @@
 import { getOver } from '@/stores/game/getters/get-over.ts';
 import { getTurn } from '@/stores/game/getters/get-turn.ts';
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { buildingCount } from '@/stores/game/functions/building-count.ts';
 import { totalTroops } from '@/stores/game/functions/total-troops';
 
-const store = useGameStore();
 const over = computed(() => getOver());
-const human = store.human;
+const human = store.state.game.state.players[0];
 const humanWon = computed(
   () => !!over.value?.winner && over.value.winner.isHuman,
 );
@@ -39,11 +38,13 @@ const sub = computed(() => {
     <div class="gostats">
       {{ sub }}<br /><br />
       Turns played: {{ getTurn() }} · Planets held: {{ human.planets.length }} ·
-      Buildings: {{ buildingCount(store.state, human) }} · Troops:
-      {{ totalTroops(store.state, human) }}
+      Buildings: {{ buildingCount(store.state.game.state, human) }} · Troops:
+      {{ totalTroops(store.state.game.state, human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
-      <button class="btn" @click="store.newGame()">🔄 Play Again</button>
+      <button class="btn" @click="store.dispatch('ui/newGame')">
+        🔄 Play Again
+      </button>
     </div>
   </ModalShell>
 </template>

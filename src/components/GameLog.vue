@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { getLog } from '@/stores/game/getters/get-log';
 import { nextTick, ref, watch } from 'vue';
-import { useGameStore } from '@/stores/game';
 
-const store = useGameStore();
 const el = ref<HTMLDivElement | null>(null);
 
 // Auto-scroll to the newest entry as the log grows.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_CARDS_FROM_TURN,
@@ -18,12 +18,10 @@ import {
   maxLevel,
   MOVE_CARDS_FROM_TURN,
 } from '@/game/config/constants.ts';
-
-const store = useGameStore();
 </script>
 
 <template>
-  <ModalShell @close="store.closeModal()">
+  <ModalShell @close="store.commit('ui/closeModal')">
     <h2>❓ HOW TO PLAY</h2>
     <ul class="rules">
       <li>
@@ -186,7 +184,7 @@ const store = useGameStore();
       </li>
     </ul>
     <div class="mbtns">
-      <button class="btn" @click="store.closeModal()">Close</button>
+      <button class="btn" @click="store.commit('ui/closeModal')">Close</button>
     </div>
   </ModalShell>
 </template>

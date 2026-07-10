@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed, ref } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_TYPES,
@@ -16,10 +16,20 @@ import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players
 import { coupTargets } from '@/stores/game/functions/coup-targets';
 import { influenceTarget } from '@/stores/game/functions/influence-target';
 import { isPacifist } from '@/stores/game/functions/is-pacifist';
-import type { BuildingType, InfluenceType, Planet, Player } from '@/game/types';
+import type {
+  BuildingType,
+  InfluenceOpts,
+  InfluenceType,
+  Planet,
+  Player,
+} from '@/game/types';
 
-const store = useGameStore();
-const human = store.human;
+const human = store.state.game.state.players[0];
+
+function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
+  store.commit('ui/closeModal');
+  void store.dispatch('game/useInfluence', { playerId: 0, type, opts });
+}
 
 type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
@@ -27,16 +37,18 @@ const view = ref<View>('main');
 const held = computed(() =>
   INFLUENCE_TYPES.filter((t) => (human.hand[t] || 0) > 0),
 );
-const coupList = computed(() => coupTargets(store.state, human));
+const coupList = computed(() => coupTargets(store.state.game.state, human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
 const rivals = computed(() =>
-  filterAlivePlayers(store.state).filter((x) => !x.isHuman),
+  filterAlivePlayers(store.state.game.state).filter((x) => !x.isHuman),
 );
 
 function skipTarget(t: InfluenceType): Player | null {
-  return t.startsWith('SKIP_') ? influenceTarget(store.state, human, t) : null;
+  return t.startsWith('SKIP_')
+    ? influenceTarget(store.state.game.state, human, t)
+    : null;
 }
 
 function chooseCard(t: InfluenceType): void {
@@ -48,7 +60,7 @@ function chooseCard(t: InfluenceType): void {
     view.value = 'coup';
     return;
   }
-  store.playInfluence(t);
+  playInfluence(t);
 }
 
 function coupIcons(pl: Planet): string {
@@ -61,18 +73,18 @@ function coupIcons(pl: Planet): string {
 }
 
 function doCoup(pl: Planet): void {
-  store.playInfluence('COUP', { planet: pl });
+  playInfluence('COUP', { planet: pl });
 }
 function doSteal(
   target: Player,
   cardType: 'RECRUIT' | 'ATTACK' | 'MOVE' | 'TRADE',
 ): void {
-  store.playInfluence('STEAL_ACTION', { target, cardType });
+  playInfluence('STEAL_ACTION', { target, cardType });
 }
 </script>
 
 <template>
-  <ModalShell @close="store.closeModal()">
+  <ModalShell @close="store.commit('ui/closeModal')">
     <!-- main view -->
     <template v-if="view === 'main'">
       <h2>⭐ PLAY INFLUENCE CARD</h2>
@@ -99,7 +111,9 @@ function doSteal(
         </div>
       </div>
       <div class="mbtns">
-        <button class="btn" @click="store.closeModal()">Cancel</button>
+        <button class="btn" @click="store.commit('ui/closeModal')">
+          Cancel
+        </button>
       </div>
     </template>
 
@@ -143,7 +157,9 @@ function doSteal(
       </p>
       <div class="mbtns">
         <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="store.closeModal()">Cancel</button>
+        <button class="btn" @click="store.commit('ui/closeModal')">
+          Cancel
+        </button>
       </div>
     </template>
 
@@ -169,7 +185,9 @@ function doSteal(
       </div>
       <div class="mbtns">
         <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="store.closeModal()">Cancel</button>
+        <button class="btn" @click="store.commit('ui/closeModal')">
+          Cancel
+        </button>
       </div>
     </template>
   </ModalShell>

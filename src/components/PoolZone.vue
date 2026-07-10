@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getActiveId } from '@/stores/game/getters/get-active-id';
+import { getAwaitingPick } from '@/stores/game/getters/get-awaiting-pick';
 import { getDraftPlanetId } from '@/stores/game/getters/get-draft-planet-id';
 import { getOver } from '@/stores/game/getters/get-over';
 import { getPhase } from '@/stores/game/getters/get-phase';
@@ -7,7 +9,7 @@ import { getPlayers } from '@/stores/game/getters/get-players';
 import { getPool } from '@/stores/game/getters/get-pool';
 import { getStatus } from '@/stores/game/getters/get-status';
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { store } from '@/stores';
 import {
   BUILDINGS,
   buildingCost,
@@ -20,7 +22,11 @@ import { canPickCard } from '@/stores/game/functions/can-pick-card';
 import { homePlanet } from '@/stores/game/functions/home-planet';
 import type { BuildingType, InfluenceType, PoolType } from '@/game/types';
 
-const store = useGameStore();
+// AwaitingPick is raised for every drafting seat, so scope the human's pool
+// clicks to the human's own draft turn (seat 0).
+const isPicking = computed(
+  () => getAwaitingPick() && getActiveId() === 0 && !getOver(),
+);
 
 interface PoolCardVM {
   i: number;
@@ -48,13 +54,13 @@ const hints: Partial<Record<PoolType, string>> = {
 
 const poolCards = computed<PoolCardVM[]>(() => {
   if (getPhase() !== 'draft' || getOver()) return [];
-  const picking = store.isPicking;
+  const state = store.state.game.state;
+  const picking = isPicking.value;
   const human = getPlayers()[0];
-  const draftPl =
-    getPlanets()[getDraftPlanetId()] || homePlanet(store.state, human);
+  const draftPl = getPlanets()[getDraftPlanetId()] || homePlanet(state, human);
   return getPool().map((t: PoolType, i: number) => {
     const c = CARDS[t];
-    const valid = picking && canPickCard(store.state, human, t, draftPl);
+    const valid = picking && canPickCard(state, human, t, draftPl);
     const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${c.action ? 'action' : ''}`;
     if (c.building) {
       const bt = t as BuildingType;
@@ -109,7 +115,8 @@ const poolCards = computed<PoolCardVM[]>(() => {
 });
 
 function pick(vm: PoolCardVM): void {
-  if (store.isPicking && vm.valid) store.pickCard(vm.i);
+  if (isPicking.value && vm.valid)
+    void store.dispatch('game/pickCard', { playerId: 0, idx: vm.i });
 }
 </script>
 

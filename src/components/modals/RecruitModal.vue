@@ -1,24 +1,28 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { canAfford, costLabel } from '@/game/config/constants.ts';
 import { ownedPlanets } from '@/stores/game/functions/owned-planets';
 import { recruitCost } from '@/stores/game/functions/recruit-cost';
 import { recruitYield } from '@/stores/game/functions/recruit-yield.ts';
 
-const store = useGameStore();
+const barracksPls = computed(() => {
+  const state = store.state.game.state;
+  const human = state.players[0];
+  return ownedPlanets(state, human).filter(
+    (pl) => pl.buildings.BARRACKS && canAfford(human.hand, recruitCost(pl)),
+  );
+});
 
-const barracksPls = computed(() =>
-  ownedPlanets(store.state, store.human).filter(
-    (pl) =>
-      pl.buildings.BARRACKS && canAfford(store.human.hand, recruitCost(pl)),
-  ),
-);
+function recruit(planetId: number): void {
+  store.commit('ui/closeModal');
+  void store.dispatch('game/recruitTroops', { playerId: 0, planetId });
+}
 </script>
 
 <template>
-  <ModalShell @close="store.closeModal()">
+  <ModalShell @close="store.commit('ui/closeModal')">
     <h2>🪖 RECRUIT</h2>
     <p class="dimtx">
       Recruiting needs a 🎖️ Barracks — each recruitment yields troops equal to
@@ -28,7 +32,7 @@ const barracksPls = computed(() =>
       v-for="pl in barracksPls"
       :key="pl.id"
       class="trow"
-      @click="store.recruit(pl.id)">
+      @click="recruit(pl.id)">
       <div class="tinfo">
         <b>{{ pl.name }}</b>
         <span class="dimtx"
@@ -41,7 +45,7 @@ const barracksPls = computed(() =>
       <div>🪖{{ pl.troops }}</div>
     </div>
     <div class="mbtns">
-      <button class="btn" @click="store.closeModal()">Cancel</button>
+      <button class="btn" @click="store.commit('ui/closeModal')">Cancel</button>
     </div>
   </ModalShell>
 </template>

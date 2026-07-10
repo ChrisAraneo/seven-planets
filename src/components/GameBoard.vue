@@ -6,11 +6,9 @@ import { getPlayers } from '@/stores/game/getters/get-players';
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@/game/config/constants';
 import { isUnderTruce } from '@/stores/game/functions/is-under-truce';
 import type { Planet } from '@/game/types';
-import { useEffectsStore } from '@/stores/effects';
-import { useGameStore } from '@/stores/game';
+import { useEffectsStore } from '@/effects/effects-store';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
-const store = useGameStore();
 // The engine pushes animations into the effects store; this render loop
 // drains them. The array reference is stable, so destructuring is safe.
 const { anims } = useEffectsStore();

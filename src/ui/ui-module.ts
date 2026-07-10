@@ -11,7 +11,7 @@ import { AUTO_HUMAN } from '@/stores/game/functions/auto-human';
 import { runGame } from '@/stores/game/functions/run-game';
 import { getGameState } from '@/stores/game-state';
 
-import type { RootState } from '../index';
+import type { RootState } from '@/stores';
 
 /* =====================================================================
    UI orchestration state: which modal is open, the chosen difficulty
@@ -84,7 +84,7 @@ export const ui: Module<UiModuleState, RootState> = {
       setAiDifficulty(def.ai);
       assignKamikazes(getGameState(), def.kamikazeCount);
       commit('setStarted');
-      void runGame(getGameState());
+      void runGame();
     },
 
     newGame() {

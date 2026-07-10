@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game';
+import { store } from '@/stores';
 import {
   CARD_TYPES,
   CARDS,
@@ -9,11 +9,11 @@ import {
 } from '@/game/config/constants';
 import type { InfluenceType } from '@/game/types';
 
-const store = useGameStore();
+const human = computed(() => store.state.game.state.players[0]);
 
 const regular = computed(() =>
   CARD_TYPES.map((t) => {
-    const n = store.human.hand[t];
+    const n = human.value.hand[t];
     const hint =
       t === 'RELIC'
         ? ' (wildcard — substitutes any resource)'
@@ -33,10 +33,10 @@ const regular = computed(() =>
 );
 
 const influence = computed(() =>
-  INFLUENCE_TYPES.filter((t) => store.human.hand[t] > 0).map(
+  INFLUENCE_TYPES.filter((t) => human.value.hand[t] > 0).map(
     (t: InfluenceType) => ({
       t,
-      n: store.human.hand[t],
+      n: human.value.hand[t],
       icon: CARDS[t].icon,
       name: CARDS[t].name,
       color: CARDS[t].color,

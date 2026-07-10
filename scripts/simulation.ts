@@ -18,17 +18,14 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { installAi } from '@/ai/agent';
 import { setAiDifficulty } from '@/ai/functions/set-ai-difficulty';
 import { DIFFICULTIES } from '@/game/difficulty';
 import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
-// The game state lives in the Vuex store — importing it creates the store
-// and installs the accessor every engine/AI function reads it through.
+// The game state lives in the Vuex store — importing it creates the store,
+// installs the state accessor, and seats the AI (the ai module's plugin).
+// No presentation layer, so the engine's pacing/animation hooks are no-ops
+// and games run at pure logic speed.
 import '@/stores';
-
-// Seat the AI agent; no presentation layer is installed, so the engine's
-// pacing/animation hooks are no-ops and games run at pure logic speed.
-installAi();
 
 const SEATS = 7; // seat 0 = the human proxy (standard mastermind) + 6 AI opponents
 const HUMAN_SEAT = 0;

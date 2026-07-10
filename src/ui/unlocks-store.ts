@@ -1,6 +1,6 @@
 import type { Difficulty } from '@/game/config/difficulty';
 
-import { store } from './index';
+import { store } from '@/stores';
 
 /* Component-facing view of the unlocks module (see modules/unlocks.ts). */
 export function useUnlocksStore() {

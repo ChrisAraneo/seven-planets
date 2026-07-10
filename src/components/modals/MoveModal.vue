@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { getPlanets } from '@/stores/game/getters/get-planets.ts';
 import { computed, ref, watch } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { ownedPlanets } from '@/stores/game/functions/owned-planets';
 import { rocketCap } from '@/stores/game/functions/rocket-cap.ts';
 
-const store = useGameStore();
-const human = store.human;
+const human = store.state.game.state.players[0];
 
 const fromId = ref(
-  ownedPlanets(store.state, human).reduce((a, b) =>
+  ownedPlanets(store.state.game.state, human).reduce((a, b) =>
     a.troops >= b.troops ? a : b,
   ).id,
 );
@@ -18,7 +17,7 @@ const toId = ref(-1);
 const n = ref(1);
 
 const from = computed(() => getPlanets()[fromId.value]);
-const owned = computed(() => ownedPlanets(store.state, human));
+const owned = computed(() => ownedPlanets(store.state.game.state, human));
 const dests = computed(() =>
   owned.value.filter((pl) => pl.id !== fromId.value),
 );
@@ -48,12 +47,18 @@ function inc(): void {
 }
 function doMove(): void {
   if (cap.value < 1 || toId.value < 0) return;
-  void store.move(fromId.value, toId.value, n.value);
+  store.commit('ui/closeModal');
+  void store.dispatch('game/moveTroops', {
+    playerId: 0,
+    fromId: fromId.value,
+    toId: toId.value,
+    n: n.value,
+  });
 }
 </script>
 
 <template>
-  <ModalShell @close="store.closeModal()">
+  <ModalShell @close="store.commit('ui/closeModal')">
     <h2>🛸 REDEPLOY TROOPS</h2>
     <p class="dimtx">
       Move an army between your planets. Uses the origin's rockets (capacity
@@ -91,7 +96,7 @@ function doMove(): void {
     </p>
     <div class="mbtns">
       <button class="btn" :disabled="cap < 1" @click="doMove">🛸 MOVE</button>
-      <button class="btn" @click="store.closeModal()">Cancel</button>
+      <button class="btn" @click="store.commit('ui/closeModal')">Cancel</button>
     </div>
   </ModalShell>
 </template>

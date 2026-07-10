@@ -1,4 +1,4 @@
-import { store } from './index';
+import { store } from '@/stores';
 
 /* Component-facing view of the effects module: the GameBoard render
    loop drains the animation queue (the array reference is stable). */

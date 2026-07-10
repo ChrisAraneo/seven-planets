@@ -19,19 +19,14 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { installAi } from '@/ai/agent';
 import { getAiWeights } from '@/ai/functions/get-ai-weights';
 import { setAiWeights } from '@/ai/functions/set-ai-weights';
 import type { Weights as AiWeights } from '@/ai/weights';
 import { PRIORITIES } from '@/game/config/constants';
 import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
-// The game state lives in the Vuex store — importing it creates the store
-// and installs the accessor every engine/AI function reads it through.
+// The game state lives in the Vuex store — importing it creates the store,
+// installs the state accessor, and seats the AI (the ai module's plugin).
 import '@/stores';
-
-// Seat the AI agent; no presentation layer is installed, so the engine's
-// pacing/animation hooks are no-ops and games run at pure logic speed.
-installAi();
 
 const SEATS = 7;
 const DEFAULT_GAMES = 240;

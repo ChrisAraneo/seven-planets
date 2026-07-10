@@ -3,7 +3,7 @@ import { getPlanets } from '@/stores/game/getters/get-planets.ts';
 import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { getTurn } from '@/stores/game/getters/get-turn.ts';
 import { computed, ref, watch } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
   COMBAT,
@@ -22,12 +22,11 @@ import { siloBonus } from '@/stores/game/functions/silo-bonus.ts';
 import { singularityDefBonus } from '@/stores/game/functions/singularity-def-bonus.ts';
 import { isUnderTruce } from '@/stores/game/functions/is-under-truce';
 
-const store = useGameStore();
-const human = store.human;
+const human = store.state.game.state.players[0];
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPls = ownedPlanets(store.state, human).filter(
+const siloPls = ownedPlanets(store.state.game.state, human).filter(
   (pl) => pl.buildings.SILO && pl.troops >= 1,
 );
 const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id);
@@ -36,7 +35,7 @@ const n = ref(1);
 
 const source = computed(() => getPlanets()[srcId.value]);
 const sources = computed(() =>
-  ownedPlanets(store.state, human).filter((pl) => pl.buildings.SILO),
+  ownedPlanets(store.state.game.state, human).filter((pl) => pl.buildings.SILO),
 );
 const targets = computed(() =>
   getPlanets().filter((pl: Planet) => pl.ownerId !== 0),
@@ -70,7 +69,7 @@ const preview = computed(() => {
   const dp =
     2 * target.value.troops +
     (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    pacifistDefBonus(store.state, target.value) +
+    pacifistDefBonus(store.state.game.state, target.value) +
     singularityDefBonus(target.value) +
     HOME_FIELD;
   const pWin = battleWinProb(ap, dp); // exact P(win), same math the dice roll
@@ -95,12 +94,18 @@ function inc(): void {
 }
 function launch(): void {
   if (!canLaunch.value) return;
-  void store.attack(srcId.value, sel.value, n.value);
+  store.commit('ui/closeModal');
+  void store.dispatch('game/attackPlanet', {
+    playerId: 0,
+    sourceId: srcId.value,
+    targetId: sel.value,
+    n: n.value,
+  });
 }
 </script>
 
 <template>
-  <ModalShell @close="store.closeModal()">
+  <ModalShell @close="store.commit('ui/closeModal')">
     <h2>🚀 LAUNCH ATTACK</h2>
     <p class="dimtx">
       Rockets launch only from planets with a 🚀 Rocket Silo, using that
@@ -199,7 +204,7 @@ function launch(): void {
       <button class="btn danger" :disabled="!canLaunch" @click="launch">
         🚀 LAUNCH
       </button>
-      <button class="btn" @click="store.closeModal()">Cancel</button>
+      <button class="btn" @click="store.commit('ui/closeModal')">Cancel</button>
     </div>
   </ModalShell>
 </template>

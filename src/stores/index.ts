@@ -7,10 +7,11 @@ import { createStore } from 'vuex';
 import { installStore } from '@/stores/game-state';
 import { getOver } from '@/stores/game/getters/get-over';
 
-import { effects, type EffectsModuleState } from './modules/effects';
+import { ai, aiPlugin, type AiModuleState } from '@/ai/ai-module';
+import { effects, type EffectsModuleState } from '@/effects/effects-module';
 import { game, type GameModuleState } from './game/game';
-import { ui, type UiModuleState } from './modules/ui';
-import { unlocks, type UnlocksModuleState } from './modules/unlocks';
+import { ui, type UiModuleState } from '@/ui/ui-module';
+import { unlocks, type UnlocksModuleState } from '@/ui/unlocks-module';
 
 /* =====================================================================
    The Vuex store. One store, four modules:
@@ -30,13 +31,15 @@ import { unlocks, type UnlocksModuleState } from './modules/unlocks';
 
 export interface RootState {
   game: GameModuleState;
+  ai: AiModuleState;
   ui: UiModuleState;
   effects: EffectsModuleState;
   unlocks: UnlocksModuleState;
 }
 
 export const store = createStore<RootState>({
-  modules: { game, ui, effects, unlocks },
+  modules: { game, ai, ui, effects, unlocks },
+  plugins: [aiPlugin],
 });
 
 // Engine/AI/effects code accesses the store through @/stores/game-state

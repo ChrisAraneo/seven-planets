@@ -7,7 +7,6 @@ import '@/stores';
 
 import { describe, expect, it } from 'vitest';
 
-import { installAi } from '@/ai/agent';
 import { battleWinProb } from '@/ai/functions/battle-win-prob';
 import { bestAttackNow } from '@/ai/functions/best-attack-now';
 import { buildCandidates } from '@/ai/functions/build-candidates';
@@ -22,9 +21,6 @@ import { COMBAT } from '@/game/config/constants';
 import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
 import type { GameState } from '@/game/types';
 import { getGameState, resetGameState } from '@/stores/game-state';
-
-// Full games need an agent at the table.
-installAi();
 
 /** A deterministic mid-game state: player 0 is the mastermind. Installed into
     the store's game module, which is where the AI functions read it from. */

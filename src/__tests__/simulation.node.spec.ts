@@ -8,11 +8,7 @@ import '@/stores';
 
 import { describe, expect, it } from 'vitest';
 
-import { installAi } from '@/ai/agent';
 import { simulateGameWithPersonalities } from '@/stores/game/functions/simulate-game-with-personalities';
-
-// Seat the AI agent before any game runs.
-installAi();
 
 describe('headless game simulation', () => {
   it('plays full AI-vs-AI games to a resolution without throwing', async () => {

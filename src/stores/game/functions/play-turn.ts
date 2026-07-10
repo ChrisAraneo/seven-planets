@@ -9,7 +9,7 @@ import {
   INFLUENCE_CARDS_FROM_TURN,
   MOVE_CARDS_FROM_TURN,
 } from '@/game/config/constants';
-import type { GameState } from '@/game/types';
+import { getGameState } from '@/stores/game-state';
 
 import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
 import { doIncome } from './do-income';
@@ -21,7 +21,10 @@ import { runActionPhase } from '../functions/run-action-phase';
 import { runDraft } from '../functions/run-draft';
 import { updatePacifistStatus } from './update-pacifist-status';
 
-export async function playTurn(state: GameState): Promise<void> {
+export async function playTurn(): Promise<void> {
+  // The prelude is synchronous — no store mutation reassigns the state
+  // object here — so one reference is safe until the first `await`.
+  const state = getGameState();
   state.turn++;
   for (const p of state.players) {
     p.tradedThisTurn = false;
@@ -93,18 +96,18 @@ export async function playTurn(state: GameState): Promise<void> {
     );
   }
 
-  await runDraft(state);
+  await runDraft();
   if (getOver()) {
     return;
   }
   // Nobody can hold an action card before they exist, so skip the action phase.
   if (getTurn() < ACTION_CARDS_FROM_TURN) {
     log(
-      state,
+      getGameState(),
       `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
       'sys',
     );
     return;
   }
-  await runActionPhase(state);
+  await runActionPhase();
 }

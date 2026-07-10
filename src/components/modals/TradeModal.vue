@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed, reactive, ref } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { CARDS, RESOURCE_TYPES } from '@/game/config/constants.ts';
 import { filterAlivePlayers } from '@/stores/game/functions/filter-alive-players';
 import { hasActionCard } from '@/stores/game/functions/has-action-card';
 import type { Cost } from '@/game/types';
 
-const store = useGameStore();
-const human = store.human;
+const human = store.state.game.state.players[0];
 
-const partners = filterAlivePlayers(store.state).filter((p) => !p.isHuman);
+const partners = filterAlivePlayers(store.state.game.state).filter(
+  (p) => !p.isHuman,
+);
 const partnerId = ref(partners[0].id);
 const partner = computed(() => getPlayers()[partnerId.value]);
 
@@ -55,7 +56,12 @@ async function propose(): Promise<void> {
     note.value = { msg: 'You have no 🔁 Trade cards left.', cls: 'warn' };
     return;
   }
-  const accept = await store.proposeTrade(partnerId.value, gives, gets);
+  const accept = await store.dispatch('game/tradeResources', {
+    playerId: 0,
+    partnerId: partnerId.value,
+    gives,
+    gets,
+  });
   if (accept) {
     for (const t of RESOURCE_TYPES) {
       give[t] = 0;
@@ -72,7 +78,7 @@ async function propose(): Promise<void> {
 </script>
 
 <template>
-  <ModalShell @close="store.closeModal()">
+  <ModalShell @close="store.commit('ui/closeModal')">
     <h2>🔁 TRADE NEGOTIATION</h2>
     <p>
       Partner:
@@ -119,7 +125,7 @@ async function propose(): Promise<void> {
     </div>
     <div class="mbtns">
       <button class="btn" @click="propose">📡 Transmit Offer</button>
-      <button class="btn" @click="store.closeModal()">Close</button>
+      <button class="btn" @click="store.commit('ui/closeModal')">Close</button>
     </div>
   </ModalShell>
 </template>

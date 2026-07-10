@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { DIFFICULTIES, type Difficulty } from '@/game/config/difficulty.ts';
-import { useUnlocksStore } from '@/stores/unlocks';
-
-const store = useGameStore();
+import { useUnlocksStore } from '@/ui/unlocks-store';
 
 // Unlocks live in the unlocks store; they only change on a win, which
 // reloads the page, so reading the set once here is safe.
@@ -12,7 +10,7 @@ const unlocked = useUnlocksStore().unlocked;
 
 function choose(level: Difficulty): void {
   if (!unlocked.has(level)) return; // locked — earn it by winning the level below
-  store.chooseDifficulty(level);
+  void store.dispatch('ui/chooseDifficulty', level);
 }
 </script>
 

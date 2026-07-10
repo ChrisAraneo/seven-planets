@@ -1,16 +1,14 @@
-import type { Cost, GameState, Player, TradeOffer } from '@/game/types';
+import type { Cost, GameState, Player } from '@/game/types';
 import { getGameState } from '@/stores/game-state';
 
 import { fmtCards, RESOURCE_TYPES, CARDS } from '@/game/config/constants';
 import { setStatus } from '../../functions/set-status';
-import { getPlayerAgent } from '../../functions/agent';
 import { AUTO_HUMAN } from '../../functions/auto-human';
 import { hasActionCard } from '../../functions/has-action-card';
 import { log } from '../../functions/log';
 import { setOfferResolve } from '../../functions/resolver-state';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { GameModuleState } from '../../game';
-import { cloneDeep } from 'lodash-es';
 
 export interface MakeOfferPayload {
   playerId: number;
@@ -19,12 +17,17 @@ export interface MakeOfferPayload {
   gets: Cost;
 }
 
+/* A trade offer parks on `pendingOffer` and waits for the partner's answer.
+   Because that parked flag must be visible to the partner (the human's
+   TradeOfferModal or the `ai` module watching `pendingOffer`), this works on
+   the LIVE game state rather than a clone-then-replace copy — otherwise the
+   offer would only appear after the wait had already ended. */
 export async function makeOffer(
-  moduleState: GameModuleState,
+  _moduleState: GameModuleState,
   payload: MakeOfferPayload,
 ): Promise<void> {
-  const state = cloneDeep(moduleState.state);
   const { playerId, partnerId, gives, gets } = payload;
+  const state = getGameState();
 
   if (playerId !== state.activeId || state.over) {
     return;
@@ -45,45 +48,45 @@ export async function makeOffer(
   // (nothing restricts the human's seat, matching the original behavior).
   player.tradedThisTurn = true;
 
-  await f(state, player, { partner, gives, gets });
-
-  moduleState.state = state;
-}
-
-async function f(
-  state: GameState,
-  p: Player,
-  offer: TradeOffer,
-): Promise<void> {
-  const { partner } = offer;
-  const wantKey = Object.keys(offer.gets)[0];
+  const wantKey = Object.keys(gets)[0];
   if (wantKey && RESOURCE_TYPES.includes(wantKey as never)) {
     log(
       state,
-      `📡 ${p.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
+      `📡 ${player.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
       'trade',
     );
   }
-  // Every partner seat answers through the same parked `resolveOffer` store
-  // Action — the human via the TradeOfferModal, any other seat via the agent.
   const humanControlled = partner.isHuman && !AUTO_HUMAN;
   if (humanControlled) {
-    setStatus(state, `${p.name} is hailing you with a trade offer…`);
+    setStatus(state, `${player.name} is hailing you with a trade offer…`);
   }
-  const pending = waitOffer(state, p, offer);
-  if (!humanControlled) {
-    getPlayerAgent().considerOffer(partner);
-  }
-  const accept = await pending;
-  if (state.over) {
+
+  // Park the offer on the live state; the partner answers via resolveOffer —
+  // the human through the TradeOfferModal, an AI seat through the ai module.
+  const accept = await new Promise<boolean>((res) => {
+    setOfferResolve(res);
+    getGameState().pendingOffer = {
+      fromId: playerId,
+      toId: partnerId,
+      gives,
+      gets,
+    };
+  });
+
+  // resolveOffer may have replaced the state object — re-read by id.
+  const cur = getGameState();
+  if (cur.over) {
     return;
   }
   if (accept) {
-    execTrade(state, p, partner, offer.gives, offer.gets);
+    execTrade(cur, cur.players[playerId], cur.players[partnerId], gives, gets);
     return;
   }
-  log(state, `🔁 ${partner.name} declines ${p.name}'s trade offer.`, 'trade');
-  return;
+  log(
+    cur,
+    `🔁 ${cur.players[partnerId].name} declines ${cur.players[playerId].name}'s trade offer.`,
+    'trade',
+  );
 }
 
 function execTrade(
@@ -108,20 +111,4 @@ function execTrade(
     `🔁 ${a.name} trades ${fmtCards(aGives)} to ${b.name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
     'trade',
   );
-}
-
-function waitOffer(
-  state: GameState,
-  from: Player,
-  offer: TradeOffer,
-): Promise<boolean> {
-  return new Promise((res) => {
-    setOfferResolve(res);
-    state.pendingOffer = {
-      fromId: from.id,
-      toId: offer.partner.id,
-      gives: offer.gives,
-      gets: offer.gets,
-    };
-  });
 }

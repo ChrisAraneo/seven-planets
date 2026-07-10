@@ -11,16 +11,15 @@ export async function simulateGameWithPersonalities(
   opts: { kamikazeCount?: number } = {},
 ) {
   // Each simulated game runs on a fresh state in the store's game module;
-  // Every engine/AI function reads it from there. Games run strictly
-  // Sequentially, so resetting between games is safe. `raw` skips
-  // Reactivity — nothing renders here and the proxy overhead would
-  // Throttle the simulation.
-  resetGameState({ raw: true });
-  const state = getGameState();
-  assignKamikazes(state, opts.kamikazeCount ?? 0);
+  // every engine/AI function reads it from there. Games run strictly
+  // sequentially, so resetting between games is safe. The state must stay
+  // reactive: the AI is a store plugin that watches the game flags, so it
+  // only reacts (drives AI seats) when those mutations are observable.
+  resetGameState();
+  assignKamikazes(getGameState(), opts.kamikazeCount ?? 0);
 
   while (!getOver() && getTurn() < maxTurns) {
-    await playTurn(state);
+    await playTurn();
   }
 
   const over = getOver();

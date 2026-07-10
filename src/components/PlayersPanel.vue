@@ -2,7 +2,7 @@
 import { getActiveId } from '@/stores/game/getters/get-active-id';
 import { getOver } from '@/stores/game/getters/get-over';
 import { getPlayers } from '@/stores/game/getters/get-players';
-import { useGameStore } from '@/stores/game';
+import { store } from '@/stores';
 import {
   CARDS,
   RESOURCE_TYPES,
@@ -13,8 +13,6 @@ import { buildingCount } from '@/stores/game/functions/building-count';
 import { techLevel } from '@/stores/game/functions/tech-level';
 import { totalTroops } from '@/stores/game/functions/total-troops';
 import type { Player } from '@/game/types';
-
-const store = useGameStore();
 
 function resLine(p: Player): string {
   return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${p.hand[t]}`).join(' ');
@@ -45,11 +43,14 @@ function actLine(p: Player): string {
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
-        🪰{{ p.planets.length }} 🔬T{{ techLevel(store.state, p) }} 🦵{{
-          totalTroops(store.state, p)
+        🪐{{ p.planets.length }} 🔬T{{
+          techLevel(store.state.game.state, p)
         }}
-        🏛️{{ buildingCount(store.state, p) }} ⭐{{ p.influence
-        }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} · {{ resLine(p) }}
+        🦵{{ totalTroops(store.state.game.state, p) }} 🏛️{{
+          buildingCount(store.state.game.state, p)
+        }}
+        ⭐{{ p.influence }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} ·
+        {{ resLine(p) }}
       </div>
       <div class="pstats">{{ actLine(p) }}</div>
     </div>

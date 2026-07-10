@@ -1,4 +1,4 @@
-import type { Module } from 'vuex';
+import { createStore, type Module } from 'vuex';
 import type { GameState } from '@/game/types';
 import type { RootState } from '../index';
 import { ACTIONS } from './actions/actions';

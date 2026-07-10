@@ -2,15 +2,18 @@
 import { getPendingOffer } from '@/stores/game/getters/get-pending-offer.ts';
 import { getPlayers } from '@/stores/game/getters/get-players.ts';
 import { computed } from 'vue';
-import { useGameStore } from '@/stores/game.ts';
+import { store } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { fmtCards } from '@/game/config/constants.ts';
 
-const store = useGameStore();
 const offer = computed(() => getPendingOffer());
 const from = computed(() =>
   offer.value ? getPlayers()[offer.value.fromId] : null,
 );
+
+function resolveOffer(accept: boolean): void {
+  void store.dispatch('game/resolveOffer', { playerId: 0, accept });
+}
 </script>
 
 <template>
@@ -26,10 +29,8 @@ const from = computed(() =>
       They want: <b>{{ fmtCards(offer.gets) }}</b>
     </p>
     <div class="mbtns">
-      <button class="btn" @click="store.resolveOffer(true)">Accept</button>
-      <button class="btn danger" @click="store.resolveOffer(false)">
-        Decline
-      </button>
+      <button class="btn" @click="resolveOffer(true)">Accept</button>
+      <button class="btn danger" @click="resolveOffer(false)">Decline</button>
     </div>
   </ModalShell>
 </template>
