@@ -141,30 +141,34 @@ function propose(): void {
       </select>
     </p>
     <table class="ttable">
-      <tr>
-        <th></th>
-        <th>YOU GIVE</th>
-        <th>YOU RECEIVE</th>
-      </tr>
-      <tr v-for="t in RESOURCE_TYPES" :key="t">
-        <td>{{ CARDS[t].icon }} {{ CARDS[t].name }}</td>
-        <td>
-          <span class="stepper">
-            <button @click="step('give', t, -1)">−</button
-            ><span class="sval">{{ give[t] }}</span
-            ><button @click="step('give', t, 1)">+</button>
-          </span>
-          <span class="dimtx">/ {{ human.hand[t] }}</span>
-        </td>
-        <td>
-          <span class="stepper">
-            <button @click="step('get', t, -1)">−</button
-            ><span class="sval">{{ get[t] }}</span
-            ><button @click="step('get', t, 1)">+</button>
-          </span>
-          <span class="dimtx">/ {{ partner.hand[t] }}</span>
-        </td>
-      </tr>
+      <thead>
+        <tr>
+          <th></th>
+          <th>YOU GIVE</th>
+          <th>YOU RECEIVE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="t in RESOURCE_TYPES" :key="t">
+          <td>{{ CARDS[t].icon }} {{ CARDS[t].name }}</td>
+          <td>
+            <span class="stepper">
+              <button @click="step('give', t, -1)">−</button
+              ><span class="sval">{{ give[t] }}</span
+              ><button @click="step('give', t, 1)">+</button>
+            </span>
+            <span class="dimtx">/ {{ human.hand[t] }}</span>
+          </td>
+          <td>
+            <span class="stepper">
+              <button @click="step('get', t, -1)">−</button
+              ><span class="sval">{{ get[t] }}</span
+              ><button @click="step('get', t, 1)">+</button>
+            </span>
+            <span class="dimtx">/ {{ partner.hand[t] }}</span>
+          </td>
+        </tr>
+      </tbody>
     </table>
     <div
       class="mnote"
