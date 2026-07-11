@@ -44,3 +44,4 @@ playwright-report/
 reports/*.md
 
 .nx/workspace-data
+.nx/cache
