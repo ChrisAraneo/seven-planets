@@ -10,5 +10,6 @@ export function reset(
   gameModuleState.state = opts.raw
     ? markRaw(initializeState())
     : initializeState();
+  gameModuleState.raw = Boolean(opts.raw);
   resetResolvers();
 }

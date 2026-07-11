@@ -1,6 +1,5 @@
 import type { Cost } from '../../interfaces/cost';
 import type { GameState } from '../../interfaces/game-state';
-import type { Player } from '../../interfaces/player';
 import { getGameState } from '../../game-state';
 
 import { fmtCards, RESOURCE_TYPES, CARDS } from '../../config/constants';
@@ -23,7 +22,8 @@ export interface MakeOfferPayload {
    Because that parked flag must be visible to the partner (the human's
    TradeOfferModal or the `ai` module watching `pendingOffer`), this works on
    the LIVE game state rather than a clone-then-replace copy — otherwise the
-   offer would only appear after the wait had already ended. */
+   offer would only appear after the wait had already ended. Pure engine results
+   are applied in place via Object.assign so the live object identity is kept. */
 export async function makeOffer(
   _moduleState: GameModuleState,
   payload: MakeOfferPayload,
@@ -52,15 +52,21 @@ export async function makeOffer(
 
   const wantKey = Object.keys(gets)[0];
   if (wantKey && RESOURCE_TYPES.includes(wantKey as never)) {
-    log(
-      state,
-      `📡 ${player.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
-      'trade',
+    Object.assign(
+      getGameState(),
+      log(
+        getGameState(),
+        `📡 ${player.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
+        'trade',
+      ),
     );
   }
   const humanControlled = partner.isHuman && !AUTO_HUMAN;
   if (humanControlled) {
-    setStatus(state, `${player.name} is hailing you with a trade offer…`);
+    Object.assign(
+      getGameState(),
+      setStatus(getGameState(), `${player.name} is hailing you with a trade offer…`),
+    );
   }
 
   // Park the offer on the live state; the partner answers via resolveOffer —
@@ -81,36 +87,42 @@ export async function makeOffer(
     return;
   }
   if (accept) {
-    execTrade(cur, cur.players[playerId], cur.players[partnerId], gives, gets);
+    execTrade(cur, playerId, partnerId, gives, gets);
     return;
   }
-  log(
-    cur,
-    `🔁 ${cur.players[partnerId].name} declines ${cur.players[playerId].name}'s trade offer.`,
-    'trade',
+  Object.assign(
+    getGameState(),
+    log(
+      getGameState(),
+      `🔁 ${cur.players[partnerId].name} declines ${cur.players[playerId].name}'s trade offer.`,
+      'trade',
+    ),
   );
 }
 
 function execTrade(
   state: GameState,
-  a: Player,
-  b: Player,
+  aId: number,
+  bId: number,
   aGives: Cost,
   bGives: Cost,
 ): void {
-  spendActionCard(a, 'TRADE');
+  Object.assign(state, spendActionCard(state, aId, 'TRADE'));
   for (const t in aGives) {
-    a.hand[t] -= aGives[t];
-    b.hand[t] += aGives[t];
+    state.players[aId].hand[t] -= aGives[t];
+    state.players[bId].hand[t] += aGives[t];
   }
   for (const t in bGives) {
-    b.hand[t] -= bGives[t];
-    a.hand[t] += bGives[t];
+    state.players[bId].hand[t] -= bGives[t];
+    state.players[aId].hand[t] += bGives[t];
   }
-  a.influence++;
-  log(
+  state.players[aId].influence++;
+  Object.assign(
     state,
-    `🔁 ${a.name} trades ${fmtCards(aGives)} to ${b.name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
-    'trade',
+    log(
+      state,
+      `🔁 ${state.players[aId].name} trades ${fmtCards(aGives)} to ${state.players[bId].name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
+      'trade',
+    ),
   );
 }

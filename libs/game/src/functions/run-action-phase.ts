@@ -22,11 +22,14 @@ export async function runActionPhase(): Promise<void> {
       continue;
     }
     getGameState().activeId = seatId;
-    setStatus(
+    Object.assign(
       getGameState(),
-      p.isHuman && !AUTO_HUMAN
-        ? 'YOUR TURN — recruit, attack or trade. End turn when done.'
-        : `${p.name} is taking actions…`,
+      setStatus(
+        getGameState(),
+        p.isHuman && !AUTO_HUMAN
+          ? 'YOUR TURN — recruit, attack or trade. End turn when done.'
+          : `${p.name} is taking actions…`,
+      ),
     );
     await humanActionTurn(getGameState());
     if (getOver()) {

@@ -6,6 +6,7 @@ import { pick } from './pick-card/pick-card';
 import { recruitTroops } from './recruit-troops/recruit-troops';
 import { reset } from './reset';
 import { resolveOffer } from './resolve-offer/resolve-offer';
+import { setState } from './set-state';
 import { useInfluence } from './use-influence/use-influence';
 
 export const MUTATIONS = {
@@ -16,6 +17,7 @@ export const MUTATIONS = {
   recruitTroops,
   resolveOffer,
   reset,
+  setState,
   tradeResources: makeOffer,
   useInfluence,
 };

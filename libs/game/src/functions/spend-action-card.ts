@@ -1,6 +1,18 @@
 import type { ActionType } from '../interfaces/action-type';
-import type { Player } from '../interfaces/player';
+import type { GameState } from '../interfaces/game-state';
 
-export function spendActionCard(player: Player, actionType: ActionType): void {
-  player.hand[actionType] = Math.max(0, (player.hand[actionType] || 0) - 1);
+import { updatePlayer } from './update-player';
+
+export function spendActionCard(
+  state: GameState,
+  playerId: number,
+  actionType: ActionType,
+): GameState {
+  return updatePlayer(state, playerId, (player) => ({
+    ...player,
+    hand: {
+      ...player.hand,
+      [actionType]: Math.max(0, (player.hand[actionType] || 0) - 1),
+    },
+  }));
 }

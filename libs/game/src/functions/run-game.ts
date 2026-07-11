@@ -6,11 +6,17 @@ import { log } from './log';
 import { playTurn } from './play-turn';
 
 export async function runGame(): Promise<void> {
-  log(getGameState(), 'SEVEN PLANETS — seven worlds, one victor.', 'sys');
-  log(
+  Object.assign(
     getGameState(),
-    'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
-    'sys',
+    log(getGameState(), 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
+  );
+  Object.assign(
+    getGameState(),
+    log(
+      getGameState(),
+      'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
+      'sys',
+    ),
   );
   while (!getOver() && getTurn() < 400) {
     await playTurn();

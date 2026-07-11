@@ -16,7 +16,10 @@ export async function simulateGameWithPersonalities(
   // reactive: the AI is a store plugin that watches the game flags, so it
   // only reacts (drives AI seats) when those mutations are observable.
   resetGameState();
-  assignKamikazes(getGameState(), opts.kamikazeCount ?? 0);
+  Object.assign(
+    getGameState(),
+    assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
+  );
 
   while (!getOver() && getTurn() < maxTurns) {
     await playTurn();

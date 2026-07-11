@@ -82,7 +82,9 @@ export const ui: Module<UiModuleState, RootState> = {
       // Apply this level's handicap to every mastermind AI before the loop runs,
       // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
       setAiDifficulty(def.ai);
-      assignKamikazes(getGameState(), def.kamikazeCount);
+      commit('game/setState', assignKamikazes(getGameState(), def.kamikazeCount), {
+        root: true,
+      });
       commit('setStarted');
       void runGame();
     },

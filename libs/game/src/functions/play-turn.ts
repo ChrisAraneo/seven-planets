@@ -26,22 +26,28 @@ export async function playTurn(): Promise<void> {
     if (p.skipTurns > 0) {
       p.skipTurns--;
       if (p.alive) {
-        log(
+        Object.assign(
           state,
-          `⏭️ ${p.name} is paralysed and sits this turn out${p.skipTurns > 0 ? ` (${p.skipTurns} more)` : ''}`,
-          'sys',
+          log(
+            state,
+            `⏭️ ${p.name} is paralysed and sits this turn out${p.skipTurns > 0 ? ` (${p.skipTurns} more)` : ''}`,
+            'sys',
+          ),
         );
       }
     }
   }
-  updatePacifistStatus(state);
-  doIncome(state);
+  Object.assign(state, updatePacifistStatus(state));
+  Object.assign(state, doIncome(state));
   if (!getSingularityAnnounced() && isSingularityInPlay(state)) {
     state.singularityAnnounced = true;
-    log(
+    Object.assign(
       state,
-      '🌀 A Research Lab stands complete somewhere — the SINGULARITY card (technology + extra draft picks) can now appear in the pool!',
-      'sys',
+      log(
+        state,
+        '🌀 A Research Lab stands complete somewhere — the SINGULARITY card (technology + extra draft picks) can now appear in the pool!',
+        'sys',
+      ),
     );
   }
   state.pool = makePool(state);
@@ -55,37 +61,48 @@ export async function playTurn(): Promise<void> {
       : getTurn() >= BUILDINGS_FROM_TURN
         ? ' · 🃏 5 buildings · 11 resources'
         : '';
-  log(
+  Object.assign(
     state,
-    `— TURN ${getTurn()} — ${first.name} drafts first${flavor}`,
-    'sys',
+    log(state, `— TURN ${getTurn()} — ${first.name} drafts first${flavor}`, 'sys'),
   );
   if (getTurn() === BUILDINGS_FROM_TURN) {
-    log(
+    Object.assign(
       state,
-      '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
-      'sys',
+      log(
+        state,
+        '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
+        'sys',
+      ),
     );
   }
   if (getTurn() === ACTION_CARDS_FROM_TURN) {
-    log(
+    Object.assign(
       state,
-      '⚡ Action cards have entered the pool — ⚔️ Attack, 🪖 Recruit and 🔁 Trade can now be drafted!',
-      'sys',
+      log(
+        state,
+        '⚡ Action cards have entered the pool — ⚔️ Attack, 🪖 Recruit and 🔁 Trade can now be drafted!',
+        'sys',
+      ),
     );
   }
   if (getTurn() === MOVE_CARDS_FROM_TURN) {
-    log(
+    Object.assign(
       state,
-      '🛸 Move cards have entered the pool — troops can now be redeployed (Spaceport required)!',
-      'sys',
+      log(
+        state,
+        '🛸 Move cards have entered the pool — troops can now be redeployed (Spaceport required)!',
+        'sys',
+      ),
     );
   }
   if (getTurn() === ADVANCED_FROM_TURN) {
-    log(
+    Object.assign(
       state,
-      '🔬 Advanced blueprints unlocked — the 🔬 Research Lab can now appear in the pool!',
-      'sys',
+      log(
+        state,
+        '🔬 Advanced blueprints unlocked — the 🔬 Research Lab can now appear in the pool!',
+        'sys',
+      ),
     );
   }
 
@@ -95,10 +112,13 @@ export async function playTurn(): Promise<void> {
   }
   // Nobody can hold an action card before they exist, so skip the action phase.
   if (getTurn() < ACTION_CARDS_FROM_TURN) {
-    log(
+    Object.assign(
       getGameState(),
-      `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
-      'sys',
+      log(
+        getGameState(),
+        `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
+        'sys',
+      ),
     );
     return;
   }

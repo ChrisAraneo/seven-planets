@@ -2,6 +2,7 @@ import {
   getOfferResolve,
   setOfferResolve,
 } from '../../functions/resolver-state';
+import { setState } from '../set-state';
 import type { GameModuleState } from '../../game';
 import { cloneDeep } from 'lodash-es';
 
@@ -34,5 +35,5 @@ export function resolveOffer(
 
   resolve(accept);
 
-  moduleState.state = state;
+  setState(moduleState, state);
 }

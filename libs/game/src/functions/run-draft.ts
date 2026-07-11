@@ -48,22 +48,31 @@ export async function runDraft(): Promise<void> {
 
         if (!state.pool.some((t) => canPickCard(state, p, t, planet))) {
           if (humanControlled) {
-            setStatus(state, `No card you can take — ${planet.name} passes.`);
+            Object.assign(
+              state,
+              setStatus(state, `No card you can take — ${planet.name} passes.`),
+            );
           }
-          log(
+          Object.assign(
             state,
-            `🃏 ${p.name} passes (nothing pickable for ${planet.name})`,
-            'draft',
+            log(
+              state,
+              `🃏 ${p.name} passes (nothing pickable for ${planet.name})`,
+              'draft',
+            ),
           );
           await sleep(humanControlled ? 600 : 300);
           continue;
         }
 
-        setStatus(
+        Object.assign(
           state,
-          humanControlled
-            ? `YOUR PICK — ${planet.name} drafts card ${k + 1} of ${picks}${s > 0 ? ' (extra planet turn)' : ''}`
-            : `${p.name} is drafting for ${planet.name}…`,
+          setStatus(
+            state,
+            humanControlled
+              ? `YOUR PICK — ${planet.name} drafts card ${k + 1} of ${picks}${s > 0 ? ' (extra planet turn)' : ''}`
+              : `${p.name} is drafting for ${planet.name}…`,
+          ),
         );
         if (!humanControlled) {
           await sleep(300); // Let the AI's draft read at a human pace.
@@ -80,7 +89,11 @@ export async function runDraft(): Promise<void> {
         const pl = state.planets[planetId];
         const type = state.pool.splice(idx, 1)[0];
         if (CARDS[type].building) {
-          buildBuilding(state, p, pl, type as BuildingType); // Pays cost from hand, may win the game
+          // Pays cost from hand, may win the game
+          Object.assign(
+            state,
+            buildBuilding(state, p.id, pl.id, type as BuildingType),
+          );
           if (getOver()) {
             return;
           }
@@ -88,17 +101,23 @@ export async function runDraft(): Promise<void> {
           const it = type as InfluenceType;
           p.influence -= INFLUENCE_CARDS[it].cost;
           p.hand[it]++;
-          log(
+          Object.assign(
             state,
-            `⭐ ${p.name} drafts ${CARDS[it].icon} ${CARDS[it].name} (−${INFLUENCE_CARDS[it].cost}⭐) — holds it for a later action turn`,
-            'draft',
+            log(
+              state,
+              `⭐ ${p.name} drafts ${CARDS[it].icon} ${CARDS[it].name} (−${INFLUENCE_CARDS[it].cost}⭐) — holds it for a later action turn`,
+              'draft',
+            ),
           );
         } else {
           p.hand[type]++;
-          log(
+          Object.assign(
             state,
-            `🃏 ${p.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${s > 0 ? ` (${planet.name}'s turn)` : ''}`,
-            'draft',
+            log(
+              state,
+              `🃏 ${p.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${s > 0 ? ` (${planet.name}'s turn)` : ''}`,
+              'draft',
+            ),
           );
         }
       }

@@ -1,12 +1,11 @@
 import { hasActionCard } from '../../functions/has-action-card';
 import { setBusy } from '../../functions/set-busy';
 import type { GameState } from '../../interfaces/game-state';
-import type { Planet } from '../../interfaces/planet';
-import type { Player } from '../../interfaces/player';
 import { animateRocket, floatText } from '../../hooks';
 import { hasBuilding } from '../../functions/has-building';
 import { log } from '../../functions/log';
 import { spendActionCard } from '../../functions/spend-action-card';
+import { setState } from '../set-state';
 import type { GameModuleState } from '../../game';
 import { cloneDeep } from 'lodash-es';
 
@@ -28,47 +27,52 @@ export async function moveTroops(
     return;
   }
 
-  const p = state.players[playerId];
-
-  if (!hasActionCard(p, 'MOVE')) {
+  if (!hasActionCard(state.players[playerId], 'MOVE')) {
     return;
   }
 
-  setBusy(state, true);
+  Object.assign(state, setBusy(state, true));
 
   try {
-    await f(state, p, state.planets[fromId], state.planets[toId], n);
+    await f(state, playerId, fromId, toId, n);
   } finally {
-    setBusy(state, false);
+    Object.assign(state, setBusy(state, false));
   }
 
-  moduleState.state = state;
+  setState(moduleState, state);
 }
 
 async function f(
   state: GameState,
-  p: Player,
-  from: Planet,
-  to: Planet,
+  playerId: number,
+  fromId: number,
+  toId: number,
   n: number,
 ): Promise<void> {
-  if (!hasBuilding(state, p, 'SPACEPORT')) {
+  if (!hasBuilding(state, state.players[playerId], 'SPACEPORT')) {
     return;
   }
 
-  spendActionCard(p, 'MOVE');
+  Object.assign(state, spendActionCard(state, playerId, 'MOVE'));
 
-  from.troops -= n;
+  state.planets[fromId].troops -= n;
 
-  log(
+  Object.assign(
     state,
-    `🛸 ${p.name} redeploys ${n} troop${n > 1 ? 's' : ''} from ${from.name} to ${to.name}`,
-    'build',
+    log(
+      state,
+      `🛸 ${state.players[playerId].name} redeploys ${n} troop${n > 1 ? 's' : ''} from ${state.planets[fromId].name} to ${state.planets[toId].name}`,
+      'build',
+    ),
   );
 
-  await animateRocket(from, to, p.color);
+  await animateRocket(
+    state.planets[fromId],
+    state.planets[toId],
+    state.players[playerId].color,
+  );
 
-  to.troops += n;
+  state.planets[toId].troops += n;
 
-  floatText(to, `+${n}🪖`, '#7fd9ff');
+  floatText(state.planets[toId], `+${n}🪖`, '#7fd9ff');
 }

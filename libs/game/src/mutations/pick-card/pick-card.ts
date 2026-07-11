@@ -1,6 +1,7 @@
 import { canPickCard } from '../../functions/can-pick-card';
 import { homePlanet } from '../../functions/home-planet';
 import { getPoolResolve, setPoolResolve } from '../../functions/resolver-state';
+import { setState } from '../set-state';
 import type { GameModuleState } from '../../game';
 import { cloneDeep } from 'lodash-es';
 
@@ -38,5 +39,5 @@ export async function pick(
 
   resolve(idx);
 
-  moduleState.state = state;
+  setState(moduleState, state);
 }

@@ -1,4 +1,3 @@
-import { getTurn } from '../getters/get-turn';
 import { ACTION_CARDS_FROM_TURN, ADVANCED_FROM_TURN, BUILD_ORDER, BUILDINGS_FROM_TURN, choice, INFLUENCE_CARDS, INFLUENCE_CARDS_FROM_TURN, shuffleArr } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceType } from '../interfaces/influence-type';
@@ -12,17 +11,17 @@ import { singularityTotal } from './singularity-total';
 
 export function makePool(state: GameState): PoolType[] {
   // Turns 1–5: pure resource draft, 14 random resource cards.
-  if (getTurn() < BUILDINGS_FROM_TURN) {
+  if (state.turn < BUILDINGS_FROM_TURN) {
     const pool: PoolType[] = [];
     for (let i = 0; i < 14; i++) {
-      pool.push(drawResourceCard());
+      pool.push(drawResourceCard(state));
     }
     return pool;
   }
 
   // Turn 6+: 5 unique buildings + 11 other cards = 16 total.
   const eligibleBuildings = BUILD_ORDER.filter((b) => {
-    if (b === 'LAB' && getTurn() < ADVANCED_FROM_TURN) {
+    if (b === 'LAB' && state.turn < ADVANCED_FROM_TURN) {
       return false;
     }
     if (b === 'SINGULARITY') {
@@ -31,17 +30,17 @@ export function makePool(state: GameState): PoolType[] {
     return true;
   });
   const buildingSlots = shuffleArr([...eligibleBuildings]).slice(0, 5);
-  const actionCount = getTurn() >= ACTION_CARDS_FROM_TURN ? 6 : 0;
+  const actionCount = state.turn >= ACTION_CARDS_FROM_TURN ? 6 : 0;
   const resourceSlots = Array.from({ length: 11 - actionCount }, () =>
-    drawResourceCard(),
+    drawResourceCard(state),
   );
   const actionSlots = Array.from({ length: actionCount }, () =>
-    drawActionCard(),
+    drawActionCard(state),
   );
 
   // From turn 30: 2 random influence cards join every pool.
   const influenceSlots: PoolType[] =
-    getTurn() >= INFLUENCE_CARDS_FROM_TURN
+    state.turn >= INFLUENCE_CARDS_FROM_TURN
       ? Array.from({ length: 2 }, () =>
           choice(Object.keys(INFLUENCE_CARDS) as InfluenceType[]),
         )
@@ -53,7 +52,7 @@ export function makePool(state: GameState): PoolType[] {
     0,
   );
   const bonusSlots = Array.from({ length: singBonus }, () =>
-    Math.random() < 0.55 ? drawResourceCard() : drawActionCard(),
+    Math.random() < 0.55 ? drawResourceCard(state) : drawActionCard(state),
   );
 
   return shuffleArr([

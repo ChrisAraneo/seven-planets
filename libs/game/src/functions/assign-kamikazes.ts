@@ -1,17 +1,20 @@
 import { shuffleArr } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
-// KAMIKAZE (Hard mode) — flag `count` random living AI as kamikazes. Their only
-// Conquest target becomes the human; every other AI ignores them. Called once
-// At game start from the store (chooseDifficulty).
-export function assignKamikazes(state: GameState, count: number): void {
-  for (const p of state.players) {
-    p.kamikaze = false;
-  }
+
+import { updatePlayers } from './update-players';
+
+// Clear every player's kamikaze flag, then mark a random `count` of alive AI seats
+// as kamikaze (Hard mode). Pure: returns a new state.
+export function assignKamikazes(state: GameState, count: number): GameState {
+  const cleared = updatePlayers(state, (p) =>
+    p.kamikaze ? { ...p, kamikaze: false } : p,
+  );
   if (count <= 0) {
-    return;
+    return cleared;
   }
-  const ai = shuffleArr(state.players.filter((p) => !p.isHuman && p.alive));
-  for (const p of ai.slice(0, count)) {
-    p.kamikaze = true;
-  }
+  const ai = shuffleArr(cleared.players.filter((p) => !p.isHuman && p.alive));
+  const chosen = new Set(ai.slice(0, count).map((p) => p.id));
+  return updatePlayers(cleared, (p) =>
+    chosen.has(p.id) ? { ...p, kamikaze: true } : p,
+  );
 }

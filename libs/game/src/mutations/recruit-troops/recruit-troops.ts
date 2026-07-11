@@ -1,6 +1,4 @@
 import type { GameState } from '../../interfaces/game-state';
-import type { Player } from '../../interfaces/player';
-import type { Planet } from '../../interfaces/planet';
 import { hasActionCard } from '../../functions/has-action-card';
 import { recruitCost } from '../../functions/recruit-cost';
 import { canAfford } from '../../config/constants';
@@ -9,6 +7,7 @@ import { recruitYield } from '../../functions/recruit-yield';
 import { log } from '../../functions/log';
 import { payCost } from '../../functions/pay-cost';
 import { spendActionCard } from '../../functions/spend-action-card';
+import { setState } from '../set-state';
 import type { GameModuleState } from '../../game';
 import { cloneDeep } from 'lodash-es';
 
@@ -28,36 +27,40 @@ export async function recruitTroops(
     return;
   }
 
-  const player = state.players[playerId];
-
-  if (!hasActionCard(player, 'RECRUIT')) {
+  if (!hasActionCard(state.players[playerId], 'RECRUIT')) {
     return;
   }
 
-  f(state, player, state.planets[planetId]);
+  f(state, playerId, planetId);
 
-  moduleState.state = state;
+  setState(moduleState, state);
 }
 
-function f(state: GameState, player: Player, planet: Planet): void {
+// Applies pure engine results onto the private clone via Object.assign so the
+// object identity (and the caller's `state` reference) stays stable.
+function f(state: GameState, playerId: number, planetId: number): void {
+  const planet = state.planets[planetId];
   if (!planet.buildings.BARRACKS) {
     return;
   }
 
-  if (!canAfford(player.hand, recruitCost(planet))) {
+  if (!canAfford(state.players[playerId].hand, recruitCost(planet))) {
     return;
   }
 
-  spendActionCard(player, 'RECRUIT');
-  payCost(player, recruitCost(planet));
+  Object.assign(state, spendActionCard(state, playerId, 'RECRUIT'));
+  Object.assign(state, payCost(state, playerId, recruitCost(planet)));
 
   const n = recruitYield(planet);
-  planet.troops += n;
-  log(
+  state.planets[planetId].troops += n;
+  Object.assign(
     state,
-    `🪖 ${player.name} recruits ${n} troop${n > 1 ? 's' : ''} on ${planet.name} (garrison now ${planet.troops})`,
-    'build',
+    log(
+      state,
+      `🪖 ${state.players[playerId].name} recruits ${n} troop${n > 1 ? 's' : ''} on ${planet.name} (garrison now ${state.planets[planetId].troops})`,
+      'build',
+    ),
   );
 
-  floatText(planet, `+${n}🪖`, '#7fd9ff');
+  floatText(state.planets[planetId], `+${n}🪖`, '#7fd9ff');
 }

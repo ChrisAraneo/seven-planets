@@ -2,6 +2,7 @@ import {
   getHumanResolve,
   setHumanResolve,
 } from '../../functions/resolver-state';
+import { setState } from '../set-state';
 import type { GameModuleState } from '../../game';
 import { cloneDeep } from 'lodash-es';
 
@@ -31,5 +32,5 @@ export async function endTurn(
 
   humanResolve();
 
-  moduleState.state = state;
+  setState(moduleState, state);
 }

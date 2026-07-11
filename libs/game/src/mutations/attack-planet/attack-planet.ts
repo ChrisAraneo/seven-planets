@@ -1,8 +1,6 @@
 import { hasActionCard } from '../../functions/has-action-card';
 import { setBusy } from '../../functions/set-busy';
 import type { GameState } from '../../interfaces/game-state';
-import type { Planet } from '../../interfaces/planet';
-import type { Player } from '../../interfaces/player';
 import { checkWin } from '../../functions/check-win';
 import { CONQUEST_TRUCE, fmtCards, CARD_TYPES, INFLUENCE_TYPES, choice, COMBAT, HOME_FIELD, PACIFIST_DEF_BONUS, PACIFIST_INFLUENCE, randInt, SHIELD_DEFENSE, TAUNTS } from '../../config/constants';
 import { animateRocket, boom, floatText } from '../../hooks';
@@ -15,12 +13,18 @@ import { isUnderTruce } from '../../functions/is-under-truce';
 import { ownedPlanets } from '../../functions/owned-planets';
 import { pacifistDefBonus } from '../../functions/pacifist-def-bonus';
 import { spendActionCard } from '../../functions/spend-action-card';
+import { setState } from '../set-state';
 import type { GameModuleState } from '../../game';
 import { cloneDeep } from 'lodash-es';
 
 /* The `attack` store action: launch a rocket from one planet at another.
    The human's AttackModal and the AI agent both dispatch this. Returns
-   whether an Attack card was spent on the launch attempt. */
+   whether an Attack card was spent on the launch attempt.
+
+   The private helpers work on the cloned `state` and apply pure engine
+   results via Object.assign, so the object identity stays stable. Players
+   are read inline (the players array is replaced by spendActionCard/steal);
+   planet references stay valid (no pure call here replaces the planets array). */
 export interface AttackPlanetPayload {
   playerId: number;
   sourceId: number;
@@ -39,96 +43,125 @@ export async function attackPlanet(
     return;
   }
 
-  const player = state.players[playerId];
-
-  if (!hasActionCard(player, 'ATTACK')) {
+  if (!hasActionCard(state.players[playerId], 'ATTACK')) {
     return;
   }
 
-  setBusy(state, true);
+  Object.assign(state, setBusy(state, true));
 
   try {
-    await doAttack(
-      state,
-      player,
-      state.planets[sourceId],
-      state.planets[targetId],
-      n,
-    );
+    await doAttack(state, playerId, sourceId, targetId, n);
   } finally {
-    setBusy(state, false);
+    Object.assign(state, setBusy(state, false));
   }
 
-  moduleState.state = state;
+  setState(moduleState, state);
 }
 
 function conquerPlanet(
   state: GameState,
-  attacker: Player,
-  target: Planet,
+  attackerId: number,
+  targetId: number,
   garrison: number,
 ): void {
-  const defender = state.players[target.ownerId];
+  const target = state.planets[targetId];
+  const defenderId = target.ownerId;
 
-  target.ownerId = attacker.id;
-  defender.planets = defender.planets.filter((id) => id !== target.id);
-  attacker.planets.push(target.id);
+  target.ownerId = attackerId;
+  state.players[defenderId].planets = state.players[defenderId].planets.filter(
+    (id) => id !== targetId,
+  );
+  state.players[attackerId].planets.push(targetId);
   target.troops = garrison;
   target.protectedUntil = state.turn + CONQUEST_TRUCE;
 
   floatText(target, 'CONQUERED!', '#ff9e3d');
-  log(
+  Object.assign(
     state,
-    `🏴 ${attacker.name} CONQUERS ${target.name} — ${garrison}🪖 garrison it! Under truce for ${CONQUEST_TRUCE} turns.`,
-    'war',
+    log(
+      state,
+      `🏴 ${state.players[attackerId].name} CONQUERS ${target.name} — ${garrison}🪖 garrison it! Under truce for ${CONQUEST_TRUCE} turns.`,
+      'war',
+    ),
   );
 
-  if (defender.planets.length === 0) {
-    const lootN = Math.min(6, handSize(defender));
+  if (state.players[defenderId].planets.length === 0) {
+    const lootN = Math.min(6, handSize(state.players[defenderId]));
 
     if (lootN > 0) {
-      const taken = stealCards(defender, attacker, lootN);
-      log(
+      const { state: looted, taken } = stealCards(
         state,
-        `💰 ${attacker.name} salvages ${fmtCards(taken)} from the ruins!`,
-        'war',
+        defenderId,
+        attackerId,
+        lootN,
+      );
+      Object.assign(state, looted);
+      Object.assign(
+        state,
+        log(
+          state,
+          `💰 ${state.players[attackerId].name} salvages ${fmtCards(taken)} from the ruins!`,
+          'war',
+        ),
       );
     }
 
     for (const cardType of CARD_TYPES) {
-      defender.hand[cardType] = 0;
+      state.players[defenderId].hand[cardType] = 0;
     }
 
     for (const influenceType of INFLUENCE_TYPES) {
-      defender.hand[influenceType] = 0;
+      state.players[defenderId].hand[influenceType] = 0;
     }
 
-    defender.alive = false;
+    state.players[defenderId].alive = false;
 
-    log(state, `☠️ ${defender.name} has been wiped from the galaxy!`, 'war');
-  } else {
-    const lootN = Math.min(5, Math.ceil(handSize(defender) / 2));
-
-    if (lootN > 0) {
-      const taken = stealCards(defender, attacker, lootN);
+    Object.assign(
+      state,
       log(
         state,
-        `💰 ${attacker.name} seizes ${fmtCards(taken)} from the fleeing ${defender.name}!`,
+        `☠️ ${state.players[defenderId].name} has been wiped from the galaxy!`,
         'war',
+      ),
+    );
+  } else {
+    const lootN = Math.min(
+      5,
+      Math.ceil(handSize(state.players[defenderId]) / 2),
+    );
+
+    if (lootN > 0) {
+      const { state: looted, taken } = stealCards(
+        state,
+        defenderId,
+        attackerId,
+        lootN,
+      );
+      Object.assign(state, looted);
+      Object.assign(
+        state,
+        log(
+          state,
+          `💰 ${state.players[attackerId].name} seizes ${fmtCards(taken)} from the fleeing ${state.players[defenderId].name}!`,
+          'war',
+        ),
       );
     }
   }
 
-  checkWin(state);
+  Object.assign(state, checkWin(state));
 }
 
 async function doAttack(
   state: GameState,
-  attacker: Player,
-  source: Planet,
-  target: Planet,
+  attackerId: number,
+  sourceId: number,
+  targetId: number,
   n: number,
 ): Promise<void> {
+  const source = state.planets[sourceId];
+  const target = state.planets[targetId];
+
   if (isUnderTruce(target)) {
     return;
   } // Freshly conquered planets cannot be attacked
@@ -139,37 +172,46 @@ async function doAttack(
 
   // Breaking the vow: a PACIFIST may attack, but doing so permanently strips the
   // Status and its bonuses — and pacifismForfeited bars them from ever regaining it.
-  if (attacker.pacifistStatus) {
-    attacker.pacifistStatus = false;
-    attacker.pacifismForfeited = true;
+  if (state.players[attackerId].pacifistStatus) {
+    state.players[attackerId].pacifistStatus = false;
+    state.players[attackerId].pacifismForfeited = true;
 
-    log(
+    Object.assign(
       state,
-      `⚔️ ${attacker.name} breaks their pacifist vow to strike — the +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per planet are gone for good.`,
-      'war',
+      log(
+        state,
+        `⚔️ ${state.players[attackerId].name} breaks their pacifist vow to strike — the +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per planet are gone for good.`,
+        'war',
+      ),
     );
 
-    for (const pl of ownedPlanets(state, attacker)) {
+    for (const pl of ownedPlanets(state, state.players[attackerId])) {
       floatText(pl, '⚔️ VOW BROKEN', '#ff6b6b');
     }
   }
 
-  spendActionCard(attacker, 'ATTACK');
+  Object.assign(state, spendActionCard(state, attackerId, 'ATTACK'));
 
-  attacker.lastAttackTurn = state.turn; // Resets the pacifist countdown
-  const defender = state.players[target.ownerId];
+  state.players[attackerId].lastAttackTurn = state.turn; // Resets the pacifist countdown
+  const defenderId = target.ownerId;
 
   source.troops -= n;
-  log(
+  Object.assign(
     state,
-    `🚀 ${attacker.name} launches a rocket with ${n} troops from ${source.name} at ${target.name} (${defender.name})!`,
-    'war',
+    log(
+      state,
+      `🚀 ${state.players[attackerId].name} launches a rocket with ${n} troops from ${source.name} at ${target.name} (${state.players[defenderId].name})!`,
+      'war',
+    ),
   );
 
-  if (!attacker.isHuman && Math.random() < 0.4) {
-    log(state, `   ${attacker.name}: ${choice(TAUNTS)}`, 'war');
+  if (!state.players[attackerId].isHuman && Math.random() < 0.4) {
+    Object.assign(
+      state,
+      log(state, `   ${state.players[attackerId].name}: ${choice(TAUNTS)}`, 'war'),
+    );
   }
-  await animateRocket(source, target, attacker.color);
+  await animateRocket(source, target, state.players[attackerId].color);
 
   // Battle resolution reads every coefficient from constants.COMBAT so the
   // Planning AI (./ai) predicts with the exact numbers the dice use.
@@ -204,16 +246,19 @@ async function doAttack(
   const survivors = n - attLoss;
   target.troops -= defLoss;
   boom(target);
-  log(
+  Object.assign(
     state,
-    `💥 Battle for ${target.name}: attack ${ap} vs defense ${dp} — ${win ? `${attacker.name} WINS` : `${defender.name} holds`}! Losses: ${attacker.name} -${attLoss}🪖, ${defender.name} -${defLoss}🪖`,
-    'war',
+    log(
+      state,
+      `💥 Battle for ${target.name}: attack ${ap} vs defense ${dp} — ${win ? `${state.players[attackerId].name} WINS` : `${state.players[defenderId].name} holds`}! Losses: ${state.players[attackerId].name} -${attLoss}🪖, ${state.players[defenderId].name} -${defLoss}🪖`,
+      'war',
+    ),
   );
 
   if (win) {
     // No spoils for merely winning a battle — only conquest pays
     if (target.troops <= 0) {
-      conquerPlanet(state, attacker, target, survivors); // The surviving strike force garrisons it
+      conquerPlanet(state, attackerId, targetId, survivors); // The surviving strike force garrisons it
     } else {
       source.troops += survivors; // Raiders fly home
       floatText(target, 'RAIDED!', '#ff8a97');
@@ -223,5 +268,5 @@ async function doAttack(
     floatText(target, 'DEFENDED!', '#7dff8a');
   }
 
-  checkWin(state);
+  Object.assign(state, checkWin(state));
 }
