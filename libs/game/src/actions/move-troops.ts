@@ -1,12 +1,13 @@
 import { hasActionCard } from '../functions/has-action-card';
 import { setBusy } from '../functions/set-busy';
 import type { GameState } from '../interfaces/game-state';
-import { animateRocket, floatText } from '../hooks';
 import { hasBuilding } from '../functions/has-building';
 import { log } from '../functions/log';
 import { spendActionCard } from '../functions/spend-action-card';
 import { getGameState, setGameState } from '../game-state';
 import { cloneDeep } from 'lodash-es';
+import { NO_PRESENTATION } from '../config/constants';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export interface MoveTroopsPayload {
   playerId: number;
@@ -15,7 +16,10 @@ export interface MoveTroopsPayload {
   n: number;
 }
 
-export async function moveTroops(payload: MoveTroopsPayload): Promise<void> {
+export async function moveTroops(
+  payload: MoveTroopsPayload,
+  hooks: PresentationHooks = NO_PRESENTATION,
+): Promise<void> {
   const state = cloneDeep(getGameState());
   const { playerId, fromId, toId, n } = payload;
 
@@ -30,7 +34,7 @@ export async function moveTroops(payload: MoveTroopsPayload): Promise<void> {
   Object.assign(state, setBusy(state, true));
 
   try {
-    await f(state, playerId, fromId, toId, n);
+    await f(state, playerId, fromId, toId, n, hooks);
   } finally {
     Object.assign(state, setBusy(state, false));
   }
@@ -44,6 +48,7 @@ async function f(
   fromId: number,
   toId: number,
   n: number,
+  hooks: PresentationHooks,
 ): Promise<void> {
   if (!hasBuilding(state, state.players[playerId], 'SPACEPORT')) {
     return;
@@ -62,7 +67,7 @@ async function f(
     ),
   );
 
-  await animateRocket(
+  await hooks.rocket(
     state.planets[fromId],
     state.planets[toId],
     state.players[playerId].color,
@@ -70,5 +75,5 @@ async function f(
 
   state.planets[toId].troops += n;
 
-  floatText(state.planets[toId], `+${n}🪖`, '#7fd9ff');
+  hooks.floatText(state.planets[toId], `+${n}🪖`, '#7fd9ff');
 }

@@ -12,6 +12,7 @@ import { AUTO_HUMAN } from '@seven-planets/game';
 import { runGame } from '@seven-planets/game';
 import { getGameState, setGameState } from '@seven-planets/game';
 
+import { getEffectsHooks } from '@seven-planets/effects';
 import { useEffectsStore } from './effects-store';
 
 /* =====================================================================
@@ -57,7 +58,7 @@ export const useUiStore = defineStore('ui', () => {
     setAiDifficulty(def.ai);
     setGameState(assignKamikazes(getGameState(), def.kamikazeCount));
     started.value = true;
-    void runGame();
+    void runGame(getEffectsHooks());
   }
 
   /** Called from the root component on mount. In demo mode ("?auto"/headless)

@@ -4,8 +4,12 @@ import { getGameState } from '../game-state';
 
 import { log } from './log';
 import { playTurn } from './play-turn';
+import { NO_PRESENTATION } from '../config/constants';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
-export async function runGame(): Promise<void> {
+export async function runGame(
+  hooks: PresentationHooks = NO_PRESENTATION,
+): Promise<void> {
   Object.assign(
     getGameState(),
     log(getGameState(), 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
@@ -19,7 +23,7 @@ export async function runGame(): Promise<void> {
     ),
   );
   while (!getOver() && getTurn() < 400) {
-    await playTurn();
+    await playTurn(hooks);
   }
   getGameState().activeId = -1;
 }

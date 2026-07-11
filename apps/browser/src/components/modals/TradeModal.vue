@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getPlayers } from '@seven-planets/game';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { makeOffer } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
@@ -30,6 +30,37 @@ const note = ref<{ msg: string; cls: 'info' | 'ok' | 'warn' }>({
   cls: 'info',
 });
 
+/** Snapshot of the human's influence taken just before sending an offer,
+    used to detect whether the partner accepted (influence goes up by 1). */
+const offerPending = ref(false);
+const influenceSnapshot = ref(0);
+
+watch(
+  () => game.state.pendingOffer,
+  (offer) => {
+    if (offerPending.value && offer === null) {
+      offerPending.value = false;
+      const accepted =
+        game.state.players[0].influence > influenceSnapshot.value;
+      if (accepted) {
+        for (const t of RESOURCE_TYPES) {
+          give[t] = 0;
+          get[t] = 0;
+        }
+        note.value = {
+          msg: `${partner.value.name} accepts the deal!`,
+          cls: 'ok',
+        };
+      } else {
+        note.value = {
+          msg: `${partner.value.name} scoffs at your offer.`,
+          cls: 'warn',
+        };
+      }
+    }
+  },
+);
+
 function changePartner(id: number): void {
   partnerId.value = id;
   for (const t of RESOURCE_TYPES)
@@ -43,7 +74,7 @@ function step(side: 'give' | 'get', t: string, delta: number): void {
   else get[t] = Math.max(0, Math.min(partner.value.hand[t], get[t] + delta));
 }
 
-async function propose(): Promise<void> {
+function propose(): void {
   const gives: Cost = {};
   const gets: Cost = {};
   for (const t of RESOURCE_TYPES) {
@@ -58,22 +89,38 @@ async function propose(): Promise<void> {
     note.value = { msg: 'You have no 🔁 Trade cards left.', cls: 'warn' };
     return;
   }
-  const accept = await makeOffer({
+  const influenceBefore = game.state.players[0].influence;
+  makeOffer({
     playerId: 0,
     partnerId: partnerId.value,
     gives,
     gets,
   });
-  if (accept) {
-    for (const t of RESOURCE_TYPES) {
-      give[t] = 0;
-      get[t] = 0;
+  // If the AI responded synchronously the offer is already resolved.
+  if (game.state.pendingOffer === null) {
+    const accepted = game.state.players[0].influence > influenceBefore;
+    if (accepted) {
+      for (const t of RESOURCE_TYPES) {
+        give[t] = 0;
+        get[t] = 0;
+      }
+      note.value = {
+        msg: `${partner.value.name} accepts the deal!`,
+        cls: 'ok',
+      };
+    } else {
+      note.value = {
+        msg: `${partner.value.name} scoffs at your offer.`,
+        cls: 'warn',
+      };
     }
-    note.value = { msg: `${partner.value.name} accepts the deal!`, cls: 'ok' };
   } else {
+    // Human partner — watch will fire when they respond via TradeOfferModal.
+    offerPending.value = true;
+    influenceSnapshot.value = influenceBefore;
     note.value = {
-      msg: `${partner.value.name} scoffs at your offer.`,
-      cls: 'warn',
+      msg: `Offer sent — waiting for ${partner.value.name}\u2026`,
+      cls: 'ok',
     };
   }
 }

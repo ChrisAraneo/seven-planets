@@ -7,8 +7,6 @@ import {
   setHumanResolve,
   getPoolResolve,
   setPoolResolve,
-  getOfferResolve,
-  setOfferResolve,
 } from './resolver-state';
 
 // End the game. Pure w.r.t. GameState (returns a new state carrying the result and
@@ -57,11 +55,8 @@ export function triggerGameOver(
     s = { ...s, awaitingPick: false };
     pick(0);
   }
-  const offer = getOfferResolve();
-  if (offer) {
-    setOfferResolve(null);
+  if (s.pendingOffer) {
     s = { ...s, pendingOffer: null };
-    offer(false);
   }
   return s;
 }

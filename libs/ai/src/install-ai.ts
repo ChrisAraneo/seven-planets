@@ -1,11 +1,14 @@
 import { watch } from 'vue';
 
-import { sleep } from '@seven-planets/game';
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 import type { InfluenceOpts, InfluenceType, Cost } from '@seven-planets/game';
 import { AUTO_HUMAN } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
 import { homePlanet } from '@seven-planets/game';
 import { getGameState } from '@seven-planets/game';
+import { setPendingOfferCallback } from '@seven-planets/game';
 import {
   attackPlanet,
   endTurn,
@@ -143,6 +146,14 @@ function aiConsiderOffer(playerId: number): void {
 export function installAi(): void {
   const gs = () => getGameState();
 
+  // Trade offer directed at an AI seat: respond synchronously via the
+  // registered callback (makeOffer calls it right after updating state).
+  setPendingOfferCallback((toId) => {
+    if (isAiSeat(toId)) {
+      aiConsiderOffer(toId);
+    }
+  });
+
   // Draft pick parked for the active seat.
   watch(
     () => (gs().awaitingPick && !gs().over ? gs().activeId : -1),
@@ -159,16 +170,6 @@ export function installAi(): void {
     (seatId) => {
       if (isAiSeat(seatId)) {
         void aiTakeTurn(seatId);
-      }
-    },
-  );
-
-  // Trade offer parked for some seat.
-  watch(
-    () => gs().pendingOffer?.toId ?? -1,
-    (toId) => {
-      if (gs().pendingOffer && isAiSeat(toId)) {
-        aiConsiderOffer(toId);
       }
     },
   );

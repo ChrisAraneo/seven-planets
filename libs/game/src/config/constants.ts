@@ -3,20 +3,19 @@
    Ported from the original vanilla-JS game.js.
    ===================================================================== */
 
-import type {
-  ActionType,
-  BuildingDef,
-  BuildingType,
-  CardDef,
-  CardType,
-  Cost,
-  Hand,
-  InfluenceCardDef,
-  InfluenceType,
-  PlanetStyle,
-  PoolType,
-  ResourceType,
-} from '../types';
+import type { ActionType } from '../interfaces/action-type';
+import type { BuildingDef } from '../interfaces/building-def';
+import type { BuildingType } from '../interfaces/building-type';
+import type { CardDef } from '../interfaces/card-def';
+import type { CardType } from '../interfaces/card-type';
+import type { Cost } from '../interfaces/cost';
+import type { Hand } from '../interfaces/hand';
+import type { InfluenceCardDef } from '../interfaces/influence-card-def';
+import type { InfluenceType } from '../interfaces/influence-type';
+import type { PlanetStyle } from '../interfaces/planet-style';
+import type { PoolType } from '../interfaces/pool-type';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
+import type { ResourceType } from '../interfaces/resource-type';
 
 export const RESOURCE_TYPES: ResourceType[] = [
   'ORE',
@@ -550,3 +549,10 @@ export function fmtCards(map: Hand | Cost): string {
   );
   return parts.length > 0 ? parts.join(' ') : 'nothing';
 }
+
+export const NO_PRESENTATION: PresentationHooks = {
+  sleep: () => Promise.resolve(),
+  rocket: () => Promise.resolve(),
+  boom: () => {},
+  floatText: () => {},
+};

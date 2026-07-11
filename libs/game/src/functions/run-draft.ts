@@ -1,6 +1,5 @@
 import { getOver } from '../getters/get-over';
-import { CARDS, INFLUENCE_CARDS } from '../config/constants';
-import { sleep } from '../hooks';
+import { CARDS, INFLUENCE_CARDS, NO_PRESENTATION } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { InfluenceType } from '../interfaces/influence-type';
 import { getGameState } from '../game-state';
@@ -13,6 +12,7 @@ import { log } from './log';
 import { mainPicks } from './main-picks';
 import { setStatus } from './set-status';
 import { waitPoolPick } from './wait-pool-pick';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 /* Every seat drafts through the same parked `pick` store action. We raise
    `awaitingPick` and wait: the human answers with a pool click; an AI seat
@@ -20,7 +20,9 @@ import { waitPoolPick } from './wait-pool-pick';
    the same `pickCard` action. Because the `pickCard` mutation clones and
    replaces the state object, we never hold a state/entity reference across an
    await — everything is re-read from getGameState() by id. */
-export async function runDraft(): Promise<void> {
+export async function runDraft(
+  hooks: PresentationHooks = NO_PRESENTATION,
+): Promise<void> {
   getGameState().phase = 'draft';
 
   const order = draftOrder(getGameState()).map((pl) => pl.id);
@@ -61,7 +63,7 @@ export async function runDraft(): Promise<void> {
               'draft',
             ),
           );
-          await sleep(humanControlled ? 600 : 300);
+          await hooks.sleep(humanControlled ? 600 : 300);
           continue;
         }
 
@@ -75,7 +77,7 @@ export async function runDraft(): Promise<void> {
           ),
         );
         if (!humanControlled) {
-          await sleep(300); // Let the AI's draft read at a human pace.
+          await hooks.sleep(300); // Let the AI's draft read at a human pace.
         }
         // Raise awaitingPick and wait for the pick (human click or AI module).
         const idx = await waitPoolPick(getGameState());
@@ -92,7 +94,7 @@ export async function runDraft(): Promise<void> {
           // Pays cost from hand, may win the game
           Object.assign(
             state,
-            buildBuilding(state, p.id, pl.id, type as BuildingType),
+            buildBuilding(state, p.id, pl.id, type as BuildingType, hooks),
           );
           if (getOver()) {
             return;

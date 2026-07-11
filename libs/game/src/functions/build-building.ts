@@ -1,5 +1,4 @@
-import { buildingCost, BUILDINGS } from '../config/constants';
-import { floatText } from '../hooks';
+import { buildingCost, BUILDINGS, NO_PRESENTATION } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 
@@ -7,12 +6,14 @@ import { log } from './log';
 import { payCost } from './pay-cost';
 import { getTechLevel } from './get-tech-level';
 import { updatePlanet } from './update-planet';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export function buildBuilding(
   state: GameState,
   playerId: number,
   planetId: number,
   buildingType: BuildingType,
+  hooks: PresentationHooks = NO_PRESENTATION,
 ): GameState {
   const techBefore = getTechLevel(state, state.players[playerId]);
   const level = (state.planets[planetId].buildings[buildingType] || 0) + 1;
@@ -35,7 +36,7 @@ export function buildBuilding(
     `🏗️ ${updatedState.players[playerId].name} ${verb} on ${updatedState.planets[planetId].name}`,
     'build',
   );
-  floatText(
+  hooks.floatText(
     updatedState.planets[planetId],
     `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${level > 1 ? ` L${level}` : ''}`,
     '#7dff8a',

@@ -10,12 +10,12 @@ import {
   fmtCards,
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
+  NO_PRESENTATION,
   PEACE_TRUCE,
   SKIP_TURNS,
 } from '../config/constants';
 import { cloneDeep } from 'lodash-es';
 import { influenceTarget } from '../functions/influence-target';
-import { floatText, boom } from '../hooks';
 import { checkWin } from '../functions/check-win';
 import { coupTargets } from '../functions/coup-targets';
 import { handSize } from '../functions/hand-size';
@@ -24,6 +24,7 @@ import { log } from '../functions/log';
 import { ownedPlanets } from '../functions/owned-planets';
 import { stealCards } from '../functions/steal-cards';
 import { getGameState, setGameState } from '../game-state';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export interface UseInfluencePayload {
   playerId: number;
@@ -33,6 +34,7 @@ export interface UseInfluencePayload {
 
 export async function useInfluence(
   payload: UseInfluencePayload,
+  hooks: PresentationHooks = NO_PRESENTATION,
 ): Promise<void> {
   const state = cloneDeep(getGameState());
   const { playerId, type, opts } = payload;
@@ -41,7 +43,7 @@ export async function useInfluence(
     return;
   }
 
-  f(state, playerId, type, opts ?? {});
+  f(state, playerId, type, opts ?? {}, hooks);
 
   setGameState(state);
 }
@@ -54,6 +56,7 @@ function f(
   playerId: number,
   influenceType: InfluenceType,
   opts: InfluenceOpts = {},
+  hooks: PresentationHooks = NO_PRESENTATION,
 ): boolean {
   if ((state.players[playerId].hand[influenceType] || 0) < 1) {
     return false;
@@ -88,7 +91,7 @@ function f(
         'war',
       ),
     );
-    floatText(
+    hooks.floatText(
       homePlanet(state, state.players[target.id]),
       '⏭️ SKIPPED',
       '#ffb0d8',
@@ -118,7 +121,7 @@ function f(
             'war',
           ),
         );
-        floatText(
+        hooks.floatText(
           homePlanet(state, state.players[target.id]),
           `−1${CARDS[cardType].icon}`,
           '#ffb0d8',
@@ -148,8 +151,8 @@ function f(
         pl.ownerId = playerId;
         pl.troops = Math.max(1, Math.floor(pl.troops / 2)); // Half disbands, the rest defect
         pl.protectedUntil = state.turn + CONQUEST_TRUCE;
-        boom(pl);
-        floatText(pl, '👑 COUP!', '#ffb0d8');
+        hooks.boom(pl);
+        hooks.floatText(pl, '👑 COUP!', '#ffb0d8');
         Object.assign(
           state,
           log(

@@ -1,4 +1,4 @@
-import { setPresentationHooks } from '@seven-planets/game';
+import { NO_PRESENTATION, type PresentationHooks } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 
 /* =====================================================================
@@ -34,6 +34,7 @@ export interface EffectsSink {
 }
 
 let sink: EffectsSink | null = null;
+let installedHooks: PresentationHooks = NO_PRESENTATION;
 
 // Animation speed multiplier (the fast-animations toggle).
 function speedMult(): number {
@@ -93,5 +94,11 @@ function floatText(planet: Planet, txt: string, color: string): void {
     Called once at app startup (main.ts) with the app's animation sink. */
 export function installEffects(effectsSink: EffectsSink): void {
   sink = effectsSink;
-  setPresentationHooks({ sleep, rocket, boom, floatText });
+  installedHooks = { sleep, rocket, boom, floatText };
+}
+
+/** Returns the installed presentation hooks. Returns NO_PRESENTATION before
+    installEffects is called (headless / test environments). */
+export function getEffectsHooks(): PresentationHooks {
+  return installedHooks;
 }

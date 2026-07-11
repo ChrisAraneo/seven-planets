@@ -1,10 +1,11 @@
 import {
+  NO_PRESENTATION,
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
   PACIFIST_TURNS,
 } from '../config/constants';
-import { floatText } from '../hooks';
 import type { GameState } from '../interfaces/game-state';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 import { log } from './log';
 import { ownedPlanets } from './owned-planets';
@@ -12,7 +13,10 @@ import { updatePlayer } from './update-player';
 
 // Promote any player who has gone PACIFIST_TURNS without attacking. A player who
 // Has once broken a pacifist vow (pacifismForfeited) can never be promoted again.
-export function updatePacifistStatus(state: GameState): GameState {
+export function updatePacifistStatus(
+  state: GameState,
+  hooks: PresentationHooks = NO_PRESENTATION,
+): GameState {
   let s = state;
   for (const p of state.players) {
     if (!p.alive || p.pacifistStatus || p.pacifismForfeited) {
@@ -26,7 +30,7 @@ export function updatePacifistStatus(state: GameState): GameState {
         'sys',
       );
       for (const pl of ownedPlanets(s, p)) {
-        floatText(pl, '☮️ PACIFIST', '#8affc0');
+        hooks.floatText(pl, '☮️ PACIFIST', '#8affc0');
       }
     }
   }

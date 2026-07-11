@@ -6,8 +6,8 @@ import {
   ADVANCED_FROM_TURN,
   BUILDINGS_FROM_TURN,
   choice,
-  INFLUENCE_CARDS_FROM_TURN,
   MOVE_CARDS_FROM_TURN,
+  NO_PRESENTATION,
 } from '../config/constants';
 import { getGameState } from '../game-state';
 
@@ -20,8 +20,11 @@ import { makePool } from './make-pool';
 import { runActionPhase } from '../functions/run-action-phase';
 import { runDraft } from '../functions/run-draft';
 import { updatePacifistStatus } from './update-pacifist-status';
+import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
-export async function playTurn(): Promise<void> {
+export async function playTurn(
+  hooks: PresentationHooks = NO_PRESENTATION,
+): Promise<void> {
   // The prelude is synchronous — no store mutation reassigns the state
   // object here — so one reference is safe until the first `await`.
   const state = getGameState();
@@ -44,7 +47,7 @@ export async function playTurn(): Promise<void> {
       }
     }
   }
-  Object.assign(state, updatePacifistStatus(state));
+  Object.assign(state, updatePacifistStatus(state, hooks));
   Object.assign(state, doIncome(state));
   if (!getSingularityAnnounced() && isSingularityInPlay(state)) {
     state.singularityAnnounced = true;
@@ -117,7 +120,7 @@ export async function playTurn(): Promise<void> {
     );
   }
 
-  await runDraft();
+  await runDraft(hooks);
   if (getOver()) {
     return;
   }

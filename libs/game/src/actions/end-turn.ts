@@ -6,7 +6,7 @@ export interface EndTurnPayload {
   playerId: number;
 }
 
-export async function endTurn(payload: EndTurnPayload): Promise<void> {
+export function endTurn(payload: EndTurnPayload): void {
   const state = cloneDeep(getGameState());
 
   if (payload.playerId !== state.activeId) {
