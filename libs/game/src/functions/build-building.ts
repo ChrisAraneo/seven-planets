@@ -5,41 +5,51 @@ import type { GameState } from '../interfaces/game-state';
 
 import { log } from './log';
 import { payCost } from './pay-cost';
-import { techLevel } from './tech-level';
+import { getTechLevel } from './get-tech-level';
 import { updatePlanet } from './update-planet';
 
-// Called from the draft when a building card is picked: pay the cost, then
-// Build or upgrade it (validated in canPickCard). Pure: returns a new state.
 export function buildBuilding(
   state: GameState,
   playerId: number,
   planetId: number,
-  id: BuildingType,
+  buildingType: BuildingType,
 ): GameState {
-  const techBefore = techLevel(state, state.players[playerId]);
-  const lvl = (state.planets[planetId].buildings[id] || 0) + 1;
-  let s = payCost(state, playerId, buildingCost(id, lvl));
-  s = updatePlanet(s, planetId, (planet) => ({
+  const techBefore = getTechLevel(state, state.players[playerId]);
+  const level = (state.planets[planetId].buildings[buildingType] || 0) + 1;
+
+  let updatedState = payCost(
+    state,
+    playerId,
+    buildingCost(buildingType, level),
+  );
+  updatedState = updatePlanet(updatedState, planetId, (planet) => ({
     ...planet,
-    buildings: { ...planet.buildings, [id]: lvl },
+    buildings: { ...planet.buildings, [buildingType]: level },
   }));
   const verb =
-    lvl > 1
-      ? `upgrades ${BUILDINGS[id].icon} ${BUILDINGS[id].name} to level ${lvl}`
-      : `builds ${BUILDINGS[id].icon} ${BUILDINGS[id].name}`;
-  s = log(s, `🏗️ ${s.players[playerId].name} ${verb} on ${s.planets[planetId].name}`, 'build');
+    level > 1
+      ? `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${level}`
+      : `builds ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}`;
+  updatedState = log(
+    updatedState,
+    `🏗️ ${updatedState.players[playerId].name} ${verb} on ${updatedState.planets[planetId].name}`,
+    'build',
+  );
   floatText(
-    s.planets[planetId],
-    `${BUILDINGS[id].icon} ${BUILDINGS[id].name}${lvl > 1 ? ` L${lvl}` : ''}`,
+    updatedState.planets[planetId],
+    `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${level > 1 ? ` L${level}` : ''}`,
     '#7dff8a',
   );
-  const techAfter = techLevel(s, s.players[playerId]);
+
+  const techAfter = getTechLevel(updatedState, updatedState.players[playerId]);
+
   if (techAfter > techBefore) {
-    s = log(
-      s,
-      `🔬 ${s.players[playerId].name} reaches TECHNOLOGY ${techAfter} — level-${techAfter} upgrades unlocked, and they now draft before lower-tech rivals!`,
+    updatedState = log(
+      updatedState,
+      `🔬 ${updatedState.players[playerId].name} reaches TECHNOLOGY ${techAfter} — level-${techAfter} upgrades unlocked, and they now draft before lower-tech rivals!`,
       'sys',
     );
   }
-  return s;
+
+  return updatedState;
 }

@@ -1,4 +1,12 @@
-import { CARD_TYPES, INFLUENCE_TYPES, shuffleArr, AI_NAMES, AI_PLANET_NAMES, AI_COLORS, PLANET_STYLES } from '../config/constants';
+import {
+  CARD_TYPES,
+  INFLUENCE_TYPES,
+  shuffleArray,
+  AI_NAMES,
+  AI_PLANET_NAMES,
+  AI_COLORS,
+  PLANET_STYLES,
+} from '../config/constants';
 import type { Hand } from '../interfaces/hand';
 import type { GameState } from '../interfaces/game-state';
 
@@ -18,11 +26,11 @@ export function initializeState(): GameState {
   const aiPersonalities: string[] = Array(6).fill('mastermind');
   // Task 3: name, homeworld, color and planet style are all randomized
   // INDEPENDENTLY of personality, so no AI is a fixed character any more.
-  const names = shuffleArr(AI_NAMES).slice(0, 6);
-  const planetNames = shuffleArr(AI_PLANET_NAMES).slice(0, 6);
-  const colors = shuffleArr(AI_COLORS).slice(0, 6);
+  const names = shuffleArray(AI_NAMES).slice(0, 6);
+  const planetNames = shuffleArray(AI_PLANET_NAMES).slice(0, 6);
+  const colors = shuffleArray(AI_COLORS).slice(0, 6);
   // The human owns planet style 0 (Terra Prime); AI draw distinct styles from the rest.
-  const styles = shuffleArr(
+  const styles = shuffleArray(
     PLANET_STYLES.map((_, i) => i).filter((i) => i !== 0),
   ).slice(0, 6);
   const aiSlots = aiPersonalities.map((personality: string, i: number) => ({

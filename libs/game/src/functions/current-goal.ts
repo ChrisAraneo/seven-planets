@@ -1,4 +1,9 @@
-import { buildingCost, maxLevel, PRIORITIES, RESOURCE_TYPES } from '../config/constants';
+import {
+  buildingCost,
+  maxLevel,
+  PRIORITIES,
+  RESOURCE_TYPES,
+} from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
@@ -8,7 +13,7 @@ import type { Player } from '../interfaces/player';
 import { ownedPlanets } from './owned-planets';
 import { persOf } from './pers-of';
 import { singularityReadyPlanet } from '../functions/singularity-ready-planet';
-import { techLevel } from './tech-level';
+import { getTechLevel } from './get-tech-level';
 
 // The next thing this player is saving for (used for drafting, trading, refusals).
 export function currentGoal(
@@ -26,7 +31,7 @@ export function currentGoal(
       ),
     };
   }
-  const tech = techLevel(state, p);
+  const tech = getTechLevel(state, p);
   for (const id of PRIORITIES[persOf(p)]) {
     if (id === 'SINGULARITY') {
       continue;

@@ -6,6 +6,7 @@ import { pick } from './pick-card/pick-card';
 import { recruitTroops } from './recruit-troops/recruit-troops';
 import { reset } from './reset';
 import { resolveOffer } from './resolve-offer/resolve-offer';
+import { setPlanetLayout } from './set-planet-layout';
 import { setState } from './set-state';
 import { useInfluence } from './use-influence/use-influence';
 
@@ -17,6 +18,7 @@ export const MUTATIONS = {
   recruitTroops,
   resolveOffer,
   reset,
+  setPlanetLayout,
   setState,
   tradeResources: makeOffer,
   useInfluence,

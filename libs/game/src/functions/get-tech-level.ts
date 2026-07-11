@@ -5,8 +5,7 @@ import type { Player } from '../interfaces/player';
 
 import { ownedPlanets } from './owned-planets';
 
-// Give tech 3; a single FULLY BUILT planet lifts the owner to tech 4.
-export function techLevel(state: GameState, player: Player): number {
+export function getTechLevel(state: GameState, player: Player): number {
   if (ownedPlanets(state, player).some(isFullyBuilt)) {
     return 4;
   }

@@ -3,7 +3,7 @@ import type { InfluenceType } from '../interfaces/influence-type';
 import type { Player } from '../interfaces/player';
 
 import { filterAlivePlayers } from './filter-alive-players';
-import { techLevel } from './tech-level';
+import { getTechLevel } from './get-tech-level';
 import { totalTroops } from './total-troops';
 
 // Whom would this skip card hit? Always a RIVAL — the caster is never a target.
@@ -31,7 +31,7 @@ export function influenceTarget(
   }
   if (t === 'SKIP_TECH') {
     return rivals.reduce((a, b) =>
-      techLevel(state, b) > techLevel(state, a) ? b : a,
+      getTechLevel(state, b) > getTechLevel(state, a) ? b : a,
     );
   }
   return null;

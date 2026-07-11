@@ -1,4 +1,4 @@
-import { createStore, type Module } from 'vuex';
+import { type Module } from 'vuex';
 import type { GameState } from './interfaces/game-state';
 import { ACTIONS } from './actions/actions';
 import { GETTERS } from './getters/getters';

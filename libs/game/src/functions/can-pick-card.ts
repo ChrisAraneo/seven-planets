@@ -1,4 +1,10 @@
-import { buildingCost, canAfford, CARDS, INFLUENCE_CARDS, maxLevel } from '../config/constants';
+import {
+  buildingCost,
+  canAfford,
+  CARDS,
+  INFLUENCE_CARDS,
+  maxLevel,
+} from '../config/constants';
 import { isSingularityLabOk } from './is-singularity-lab-ok';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
@@ -8,7 +14,7 @@ import type { Player } from '../interfaces/player';
 import type { PoolType } from '../interfaces/pool-type';
 
 import { hasBuilding } from './has-building';
-import { techLevel } from './tech-level';
+import { getTechLevel } from './get-tech-level';
 import { totalTroops } from './total-troops';
 
 // Can this player take pool card `t` during `planet`'s draft turn?
@@ -27,7 +33,7 @@ export function canPickCard(
     if (next > maxLevel(bt)) {
       return false;
     }
-    if (next > techLevel(state, p)) {
+    if (next > getTechLevel(state, p)) {
       return false;
     } // Upgrades are gated by technology
     if (bt === 'SINGULARITY' && !isSingularityLabOk(planet, next)) {

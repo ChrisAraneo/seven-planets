@@ -1,4 +1,4 @@
-import { getPoolResolve, setPoolResolve } from './resolver-state';
+import { setPoolResolve } from './resolver-state';
 import type { GameState } from '../interfaces/game-state';
 
 /** Park until the seat in play answers with the `pick` store action —

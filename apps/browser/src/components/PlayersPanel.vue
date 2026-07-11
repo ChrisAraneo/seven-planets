@@ -10,7 +10,7 @@ import {
   INFLUENCE_TYPES,
 } from '@seven-planets/game';
 import { buildingCount } from '@seven-planets/game';
-import { techLevel } from '@seven-planets/game';
+import { getTechLevel } from '@seven-planets/game';
 import { totalTroops } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
 
@@ -44,7 +44,7 @@ function actLine(p: Player): string {
       >
       <div class="pstats">
         🪐{{ p.planets.length }} 🔬T{{
-          techLevel(store.state.game.state, p)
+          getTechLevel(store.state.game.state, p)
         }}
         🦵{{ totalTroops(store.state.game.state, p) }} 🏛️{{
           buildingCount(store.state.game.state, p)

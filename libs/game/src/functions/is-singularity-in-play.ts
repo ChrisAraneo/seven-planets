@@ -4,7 +4,7 @@ import type { GameState } from '../interfaces/game-state';
 
 import { filterAlivePlayers } from './filter-alive-players';
 import { ownedPlanets } from './owned-planets';
-import { techLevel } from './tech-level';
+import { getTechLevel } from './get-tech-level';
 
 // The Singularity card is only dealt while someone can still build or upgrade one:
 // The next level must be within their technology and satisfy the Lab requirement.
@@ -14,7 +14,7 @@ export function isSingularityInPlay(state: GameState): boolean {
       const next = (pl.buildings.SINGULARITY || 0) + 1;
       return (
         next <= maxLevel('SINGULARITY') &&
-        next <= techLevel(state, p) &&
+        next <= getTechLevel(state, p) &&
         isSingularityLabOk(pl, next)
       );
     }),

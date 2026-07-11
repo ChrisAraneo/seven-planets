@@ -50,7 +50,7 @@ export * from './functions/singularity-ready-planet';
 export * from './functions/singularity-total';
 export * from './functions/spend-action-card';
 export * from './functions/steal-cards';
-export * from './functions/tech-level';
+export * from './functions/get-tech-level';
 export * from './functions/total-troops';
 export * from './functions/trigger-game-over';
 export * from './functions/troop-target';

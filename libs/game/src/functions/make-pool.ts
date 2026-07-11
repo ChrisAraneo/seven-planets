@@ -1,4 +1,13 @@
-import { ACTION_CARDS_FROM_TURN, ADVANCED_FROM_TURN, BUILD_ORDER, BUILDINGS_FROM_TURN, choice, INFLUENCE_CARDS, INFLUENCE_CARDS_FROM_TURN, shuffleArr } from '../config/constants';
+import {
+  ACTION_CARDS_FROM_TURN,
+  ADVANCED_FROM_TURN,
+  BUILD_ORDER,
+  BUILDINGS_FROM_TURN,
+  choice,
+  INFLUENCE_CARDS,
+  INFLUENCE_CARDS_FROM_TURN,
+  shuffleArray,
+} from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceType } from '../interfaces/influence-type';
 import type { PoolType } from '../interfaces/pool-type';
@@ -29,7 +38,7 @@ export function makePool(state: GameState): PoolType[] {
     }
     return true;
   });
-  const buildingSlots = shuffleArr([...eligibleBuildings]).slice(0, 5);
+  const buildingSlots = shuffleArray([...eligibleBuildings]).slice(0, 5);
   const actionCount = state.turn >= ACTION_CARDS_FROM_TURN ? 6 : 0;
   const resourceSlots = Array.from({ length: 11 - actionCount }, () =>
     drawResourceCard(state),
@@ -55,7 +64,7 @@ export function makePool(state: GameState): PoolType[] {
     Math.random() < 0.55 ? drawResourceCard(state) : drawActionCard(state),
   );
 
-  return shuffleArr([
+  return shuffleArray([
     ...buildingSlots,
     ...resourceSlots,
     ...actionSlots,
