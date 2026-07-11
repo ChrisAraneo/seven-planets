@@ -5,8 +5,7 @@ import { getGameState, resetGameState } from '../game-state';
 import { assignKamikazes } from './assign-kamikazes';
 import { playTurn } from './play-turn';
 
-export async function simulateGameWithPersonalities(
-  _personalities: string[],
+export async function simulateGame(
   maxTurns = 400,
   opts: { kamikazeCount?: number } = {},
 ) {
@@ -32,7 +31,7 @@ export async function simulateGameWithPersonalities(
       ? {
           id: over.winner.id,
           name: over.winner.name,
-          personality: over.winner.personality,
+          isHuman: over.winner.isHuman,
         }
       : null,
     reason: over ? over.reason || 'timeout' : 'timeout',

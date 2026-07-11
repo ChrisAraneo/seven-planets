@@ -100,7 +100,7 @@ export function mastermindAction(p: Player): MastermindDecision | null {
   }
 
   // 4. Move
-  if ((p.hand.MOVE || 0) > 0 && hasB(p, 'SPACEPORT') && p.planets.length >= 2) {
+  if ((p.hand.MOVE || 0) > 0 && hasB(p, 'SPACEPORT') && owned(p).length >= 2) {
     const floor = garrisonFloor();
     const inDanger = pls
       .filter((pl) => immediateFallProb(p, pl) >= 0.3)
@@ -141,7 +141,11 @@ export function mastermindAction(p: Player): MastermindDecision | null {
   }
 
   // 5. Trade
-  if (!p.tradedThisTurn && (p.hand.TRADE || 0) > 0 && hasB(p, 'EMBASSY')) {
+  if (
+    !p.hasTradedCurrentTurn &&
+    (p.hand.TRADE || 0) > 0 &&
+    hasB(p, 'EMBASSY')
+  ) {
     const offer = planTradeOffer(p, plan);
     if (offer) {
       return { kind: 'trade', ...offer };

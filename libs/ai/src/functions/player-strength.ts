@@ -7,7 +7,7 @@ import { totalTroops } from './total-troops';
 export function playerStrength(p: Player): number {
   const resources = handValue(p.hand);
   const military = totalTroops(p) * 1.5;
-  const territory = p.planets.length * 8;
+  const territory = owned(p).length * 8;
   const income = owned(p).reduce(
     (sum, pl) =>
       sum +

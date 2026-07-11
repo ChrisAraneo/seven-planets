@@ -19,11 +19,11 @@ export function updatePacifistStatus(
 ): GameState {
   let s = state;
   for (const p of state.players) {
-    if (!p.alive || p.pacifistStatus || p.pacifismForfeited) {
+    if (!p.isAlive || p.hasPacifistStatus || p.pacifismForfeited) {
       continue;
     }
     if (state.turn - p.lastAttackTurn >= PACIFIST_TURNS) {
-      s = updatePlayer(s, p.id, (pl) => ({ ...pl, pacifistStatus: true }));
+      s = updatePlayer(s, p.id, (pl) => ({ ...pl, hasPacifistStatus: true }));
       s = log(
         s,
         `☮️ ${p.name} has forsworn war for ${PACIFIST_TURNS} turns and becomes a PACIFIST — every planet gains +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per turn. Attacking would break the vow for good.`,

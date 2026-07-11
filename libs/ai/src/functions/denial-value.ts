@@ -38,7 +38,7 @@ export function denialValue(p: Player, t: PoolType): number {
       }
     } else if (t === 'ATTACK') {
       if (
-        !r.pacifistStatus &&
+        !r.hasPacifistStatus &&
         hasB(r, 'SILO') &&
         aggression(r) >= aiState.W.willNeutral
       ) {

@@ -31,9 +31,9 @@ export function holdProbability(
   const shield =
     (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE +
     singularityDefBonus(planet);
-  const pacBonus = owner.pacifistStatus ? PACIFIST_DEF_BONUS : 0;
+  const pacBonus = owner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0;
   for (const r of alive()) {
-    if (r.id === owner.id || r.pacifistStatus) {
+    if (r.id === owner.id || r.hasPacifistStatus) {
       continue;
     }
     if (!mayTarget(r, owner)) {

@@ -41,18 +41,21 @@ export interface AttackPlan {
 
 export function evaluateAttacks(p: Player): AttackPlan[] {
   const aiState = getAiState();
-  if (p.pacifistStatus) {
+  if (p.hasPacifistStatus) {
     return [];
   }
   const avgStr = avgStrength();
   const minWin = effMinConquerProb(p);
+  // A kamikaze does not fear losing troops — expected losses barely register
+  // when it scores a strike, so even long-shot attacks stay on the table.
+  const lossWeight = aiState.W.troopValue * (p.isKamikaze ? 0.25 : 1);
   const plans: AttackPlan[] = [];
   for (const target of getGameState().planets) {
     if (target.ownerId === p.id) {
       continue;
     }
     const defOwner = getGameState().players[target.ownerId];
-    if (!defOwner.alive || isUnderTruce(target)) {
+    if (!defOwner.isAlive || isUnderTruce(target)) {
       continue;
     }
     if (!mayTarget(p, defOwner)) {
@@ -74,7 +77,7 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
       if (maxN >= nConq) {
         const value =
           planetValue(target) +
-          (defOwner.planets.length === 1 ? 10 : 0) +
+          (owned(defOwner).length === 1 ? 10 : 0) +
           (playerStrength(defOwner) > 1.25 * avgStr ? 4 : 0);
         let lean = nConq;
         while (
@@ -103,7 +106,7 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
             survivors: surv,
             holdProb: hold,
             value,
-            score: pWin * hold * value - eLoss * aiState.W.troopValue,
+            score: pWin * hold * value - eLoss * lossWeight,
           };
           if (!best || plan.score > best.score) {
             best = plan;
@@ -119,8 +122,8 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
         );
         const eLoss =
           pWin * (n - survivorsAfterWin(n)) + (1 - pWin) * lossesOnDefeat(n);
-        const zeal = p.kamikaze
-          ? 1.5
+        const zeal = p.isKamikaze
+          ? 3
           : playerStrength(defOwner) > 1.3 * avgStr
             ? 1.4
             : 1.05;
@@ -134,8 +137,7 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
           holdProb: 0,
           value: defLoss,
           score:
-            pWin * defLoss * aiState.W.troopValue * zeal -
-            eLoss * aiState.W.troopValue,
+            pWin * defLoss * aiState.W.troopValue * zeal - eLoss * lossWeight,
         });
       }
     }

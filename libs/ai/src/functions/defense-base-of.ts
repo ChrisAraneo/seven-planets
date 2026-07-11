@@ -9,7 +9,7 @@ import { singularityDefBonus } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 
 export function defenseBaseOf(pl: Planet, troops = pl.troops): number {
-  const pac = getGameState().players[pl.ownerId]?.pacifistStatus
+  const pac = getGameState().players[pl.ownerId]?.hasPacifistStatus
     ? PACIFIST_DEF_BONUS
     : 0;
   return (

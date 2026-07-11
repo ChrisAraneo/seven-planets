@@ -11,7 +11,6 @@ import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
 
 import { ownedPlanets } from './owned-planets';
-import { persOf } from './pers-of';
 import { singularityReadyPlanet } from '../functions/singularity-ready-planet';
 import { getTechLevel } from './get-tech-level';
 
@@ -32,7 +31,7 @@ export function currentGoal(
     };
   }
   const tech = getTechLevel(state, p);
-  for (const id of PRIORITIES[persOf(p)]) {
+  for (const id of PRIORITIES) {
     if (id === 'SINGULARITY') {
       continue;
     } // Handled above — needs a Lab of the same level

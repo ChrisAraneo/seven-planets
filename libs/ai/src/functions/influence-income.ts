@@ -10,7 +10,7 @@ export function influenceIncome(p: Player): number {
     if ((pl.buildings.EMBASSY || 0) >= 2) {
       inc += 1;
     }
-    if (p.pacifistStatus) {
+    if (p.hasPacifistStatus) {
       inc += PACIFIST_INFLUENCE;
     }
   }

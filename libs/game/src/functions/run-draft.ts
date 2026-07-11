@@ -11,6 +11,7 @@ import { draftOrder } from './draft-order';
 import { log } from './log';
 import { mainPicks } from './main-picks';
 import { setStatus } from './set-status';
+import { ownedPlanets } from './owned-planets';
 import { waitPoolPick } from './wait-pool-pick';
 import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
@@ -30,15 +31,19 @@ export async function runDraft(
     if (getGameState().players[seatId].skippedNow) {
       continue;
     } // Paralysed by an influence card
-    for (let s = 0; s < getGameState().players[seatId].planets.length; s++) {
+    for (
+      let s = 0;
+      s < ownedPlanets(getGameState(), getGameState().players[seatId]).length;
+      s++
+    ) {
       if (getOver()) {
         return;
       }
       let p = getGameState().players[seatId];
-      if (!p.alive || getGameState().pool.length === 0) {
+      if (!p.isAlive || getGameState().pool.length === 0) {
         continue;
       }
-      const planetId = p.planets[s];
+      const planetId = ownedPlanets(getGameState(), p)[s].id;
       const picks = s === 0 ? mainPicks(getGameState(), p) : 1;
       getGameState().activeId = seatId;
       getGameState().draftPlanetId = planetId;

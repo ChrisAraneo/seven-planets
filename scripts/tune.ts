@@ -8,7 +8,7 @@
 
    Method: coordinate descent. For every tunable weight it tries a step up
    and a step down, measures the mastermind's win rate over a batch of
-   headless games against random personality line-ups, and keeps any change
+   headless games, and keeps any change
    that beats the incumbent by more than sampling noise. The winner is
    written back to src/ai/weights.ts plus a markdown report.
 
@@ -22,18 +22,13 @@ import { resolve } from 'node:path';
 import { getAiWeights } from '@seven-planets/ai';
 import { setAiWeights } from '@seven-planets/ai';
 import type { Weights as AiWeights } from '@seven-planets/ai';
-import { PRIORITIES } from '@seven-planets/game';
-import { simulateGameWithPersonalities } from '@seven-planets/game';
+import { simulateGame } from '@seven-planets/game';
 // The game state lives in the Vuex store — importing it creates the store,
 // installs the state accessor, and seats the AI (the ai module's plugin).
 import '@/stores';
 
-const SEATS = 7;
 const DEFAULT_GAMES = 240;
 const DEFAULT_PASSES = 2;
-
-// Opponents are drawn from every personality EXCEPT the mastermind itself.
-const OTHERS = Object.keys(PRIORITIES).filter((s) => s !== 'mastermind');
 
 interface ParamSpec {
   key: keyof AiWeights;
@@ -64,30 +59,17 @@ const SPECS: ParamSpec[] = [
   { key: 'willDefensive', step: 0.1, min: 0.05, max: 0.7 },
 ];
 
-function fisherYates<T>(arr: T[]): T[] {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
-/** Win rate of one mastermind seated among 6 random rival personalities. */
+/** Win rate of the AI seats against the human-proxy seat. */
 async function winRate(weights: AiWeights, games: number): Promise<number> {
   setAiWeights(weights);
   let wins = 0;
   for (let g = 0; g < games; g++) {
-    const lineup = fisherYates([
-      'mastermind',
-      ...fisherYates(OTHERS).slice(0, SEATS - 1),
-    ]);
-    const result = await simulateGameWithPersonalities(lineup);
-    if (result.winner?.personality === 'mastermind') wins++;
+    const result = await simulateGame();
+    if (result.winner && !result.winner.isHuman) wins++;
   }
   return wins / games;
 }

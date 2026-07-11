@@ -21,7 +21,7 @@ export function doIncome(state: GameState): GameState {
   const infAdd: Record<number, number> = {};
   for (const pl of state.planets) {
     const owner = state.players[pl.ownerId];
-    if (!owner.alive) {
+    if (!owner.isAlive) {
       continue;
     }
     for (const b of BUILD_ORDER) {
@@ -46,7 +46,7 @@ export function doIncome(state: GameState): GameState {
       infGains[owner.id] = (infGains[owner.id] || 0) + 1;
     }
     // Pacifist perk: every planet radiates extra influence every turn.
-    if (owner.pacifistStatus) {
+    if (owner.hasPacifistStatus) {
       infAdd[owner.id] = (infAdd[owner.id] || 0) + PACIFIST_INFLUENCE;
       pacGains[owner.id] = (pacGains[owner.id] || 0) + PACIFIST_INFLUENCE;
     }

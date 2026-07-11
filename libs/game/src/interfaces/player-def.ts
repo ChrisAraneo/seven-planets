@@ -3,6 +3,5 @@ export interface PlayerDef {
   planet: string;
   color: string;
   human?: boolean;
-  personality: string;
   styleIdx: number;
 }

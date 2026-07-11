@@ -15,7 +15,7 @@ export function buildBuilding(
   buildingType: BuildingType,
   hooks: PresentationHooks = NO_PRESENTATION,
 ): GameState {
-  const techBefore = getTechLevel(state, state.players[playerId]);
+  const currentTech = getTechLevel(state, state.players[playerId]);
   const level = (state.planets[planetId].buildings[buildingType] || 0) + 1;
 
   let updatedState = payCost(
@@ -42,12 +42,15 @@ export function buildBuilding(
     '#7dff8a',
   );
 
-  const techAfter = getTechLevel(updatedState, updatedState.players[playerId]);
+  const updatedTech = getTechLevel(
+    updatedState,
+    updatedState.players[playerId],
+  );
 
-  if (techAfter > techBefore) {
+  if (updatedTech > currentTech) {
     updatedState = log(
       updatedState,
-      `🔬 ${updatedState.players[playerId].name} reaches TECHNOLOGY ${techAfter} — level-${techAfter} upgrades unlocked, and they now draft before lower-tech rivals!`,
+      `🔬 ${updatedState.players[playerId].name} reaches TECHNOLOGY ${updatedTech} — level-${updatedTech} upgrades unlocked, and they now draft before lower-tech rivals!`,
       'sys',
     );
   }

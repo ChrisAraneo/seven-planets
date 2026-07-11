@@ -3,5 +3,5 @@ import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
 
 export function homePlanet(state: GameState, p: Player): Planet {
-  return state.planets[p.planets[0]];
+  return state.planets.find((pl) => pl.ownerId === p.id) ?? state.planets[p.id];
 }

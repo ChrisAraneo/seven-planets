@@ -6,6 +6,7 @@ import {
   maxLevel,
 } from '../config/constants';
 import { isSingularityLabOk } from './is-singularity-lab-ok';
+import { ownedPlanets } from './owned-planets';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceType } from '../interfaces/influence-type';
@@ -51,7 +52,7 @@ export function canPickCard(
   if (t === 'MOVE') {
     return (
       hasBuilding(state, p, 'SPACEPORT') &&
-      p.planets.length >= 2 &&
+      ownedPlanets(state, p).length >= 2 &&
       totalTroops(state, p) >= 1
     );
   }

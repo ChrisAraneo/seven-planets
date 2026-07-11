@@ -2,10 +2,11 @@ import { getTurn } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
 
 import { holdProbability } from './hold-probability';
+import { owned } from './owned';
 
 export function desiredGarrison(p: Player, planet: Planet): number {
   let want = 4 + Math.min(11, Math.floor(getTurn() / 3));
-  if (p.planets.length === 1) {
+  if (owned(p).length === 1) {
     want += 4;
   }
   if (planet.buildings.SILO) {

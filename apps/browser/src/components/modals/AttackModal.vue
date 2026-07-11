@@ -152,7 +152,7 @@ function launch(): void {
       <div>
         🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }}
         <span
-          v-if="getPlayers()[pl.ownerId].pacifistStatus"
+          v-if="getPlayers()[pl.ownerId].hasPacifistStatus"
           title="Pacifist — +6 defense"
           >☮️</span
         >

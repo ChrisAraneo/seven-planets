@@ -30,12 +30,12 @@ export async function playTurn(
   const state = getGameState();
   state.turn++;
   for (const p of state.players) {
-    p.tradedThisTurn = false;
+    p.hasTradedCurrentTurn = false;
     // Influence skip cards: paralysed players sit out draft AND action phases.
-    p.skippedNow = p.alive && p.skipTurns > 0;
+    p.skippedNow = p.isAlive && p.skipTurns > 0;
     if (p.skipTurns > 0) {
       p.skipTurns--;
-      if (p.alive) {
+      if (p.isAlive) {
         Object.assign(
           state,
           log(

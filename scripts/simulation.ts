@@ -20,7 +20,7 @@ import { resolve } from 'node:path';
 
 import { setAiDifficulty } from '@seven-planets/ai';
 import { DIFFICULTIES } from '@seven-planets/game';
-import { simulateGameWithPersonalities } from '@seven-planets/game';
+import { simulateGame } from '@seven-planets/game';
 // The game state lives in the Vuex store — importing it creates the store,
 // installs the state accessor, and seats the AI (the ai module's plugin).
 // No presentation layer, so the engine's pacing/animation hooks are no-ops
@@ -30,9 +30,6 @@ import '@/stores';
 const SEATS = 7; // seat 0 = the human proxy (standard mastermind) + 6 AI opponents
 const HUMAN_SEAT = 0;
 const DEFAULT_GAMES = 3_000; // games PER difficulty
-// Every seat is the standard mastermind; the difficulty handicap (applied to the
-// AI seats only) is what varies between opponents and the human proxy.
-const LINEUP = Array<string>(SEATS).fill('mastermind');
 
 function median(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -86,7 +83,7 @@ async function main(): Promise<void> {
     };
 
     for (let g = 0; g < gamesPer; g++) {
-      const result = await simulateGameWithPersonalities(LINEUP, 400, {
+      const result = await simulateGame(400, {
         kamikazeCount: def.kamikazeCount,
       });
       st.allTurns.push(result.turns);
@@ -201,7 +198,7 @@ function buildConsoleReport(stats: DiffStat[], sum: Summary): string {
   const aligns: ('l' | 'r')[] = ['l', 'r', 'r', 'r', 'r', 'r', 'r'];
   const body = stats.map((st) => [
     `${st.icon} ${st.name}`,
-    String(st.kamikaze),
+    String(st.isKamikaze),
     st.games.toLocaleString('en-US'),
     st.humanWins.toLocaleString('en-US'),
     fmt(winRate(st)),
@@ -257,7 +254,7 @@ function buildMarkdownReport(stats: DiffStat[], sum: Summary): string {
   L.push('| :--- | ---: | ---: | ---: | ---: | ---: | ---: |');
   for (const st of stats) {
     L.push(
-      `| ${st.icon} ${st.name} | ${st.kamikaze} | ${st.games.toLocaleString('en-US')} | ${st.humanWins.toLocaleString('en-US')} | ${fmt(winRate(st))}% | ${st.humanWins ? fmt(mean(st.humanWinTurns)) : '—'} | ${st.humanWins ? fmt(median(st.humanWinTurns)) : '—'} |`,
+      `| ${st.icon} ${st.name} | ${st.isKamikaze} | ${st.games.toLocaleString('en-US')} | ${st.humanWins.toLocaleString('en-US')} | ${fmt(winRate(st))}% | ${st.humanWins ? fmt(mean(st.humanWinTurns)) : '—'} | ${st.humanWins ? fmt(median(st.humanWinTurns)) : '—'} |`,
     );
   }
   L.push('');

@@ -38,14 +38,17 @@ function actLine(p: Player): string {
       class="prow"
       :class="{
         active: p.id === getActiveId() && !getOver(),
-        dead: !p.alive,
+        dead: !p.isAlive,
       }"
       :style="{ borderLeftColor: p.color }">
       <span class="pname" :style="{ color: p.color }"
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
-        🪐{{ p.planets.length }} 🔬T{{ getTechLevel(game.state, p) }} 🦵{{
+        🪐{{
+          game.state.planets.filter((pl) => pl.ownerId === p.id).length
+        }}
+        🔬T{{ getTechLevel(game.state, p) }} 🦵{{
           totalTroops(game.state, p)
         }}
         🏛️{{ buildingCount(game.state, p) }} ⭐{{ p.influence

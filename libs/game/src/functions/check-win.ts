@@ -14,7 +14,7 @@ export function checkWin(state: GameState): GameState {
     return triggerGameOver(state, alivePlayers[0].id, 'conquest');
   }
 
-  if (!AUTO_HUMAN && !state.players[0].alive) {
+  if (!AUTO_HUMAN && !state.players[0].isAlive) {
     return triggerGameOver(state, null, 'eliminated');
   }
 

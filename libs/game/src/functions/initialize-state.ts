@@ -22,10 +22,8 @@ function startingHand(): Hand {
 }
 
 export function initializeState(): GameState {
-  // All 6 AI seats are always mastermind.
-  const aiPersonalities: string[] = Array(6).fill('mastermind');
-  // Task 3: name, homeworld, color and planet style are all randomized
-  // INDEPENDENTLY of personality, so no AI is a fixed character any more.
+  // Name, homeworld, color and planet style are all randomized,
+  // so no AI is a fixed character.
   const names = shuffleArray(AI_NAMES).slice(0, 6);
   const planetNames = shuffleArray(AI_PLANET_NAMES).slice(0, 6);
   const colors = shuffleArray(AI_COLORS).slice(0, 6);
@@ -33,11 +31,10 @@ export function initializeState(): GameState {
   const styles = shuffleArray(
     PLANET_STYLES.map((_, i) => i).filter((i) => i !== 0),
   ).slice(0, 6);
-  const aiSlots = aiPersonalities.map((personality: string, i: number) => ({
-    name: names[i],
+  const aiSlots = names.map((name: string, i: number) => ({
+    name,
     planet: planetNames[i],
     color: colors[i],
-    personality,
     styleIdx: styles[i],
   }));
   const gameDefs = [
@@ -46,7 +43,6 @@ export function initializeState(): GameState {
       planet: 'Terra Prime',
       color: '#3df0ff',
       human: true,
-      personality: 'human',
       styleIdx: 0,
     },
     ...aiSlots.map((r: (typeof aiSlots)[0]) => ({ ...r, human: false })),
@@ -66,18 +62,16 @@ export function initializeState(): GameState {
       name: d.name,
       color: d.color,
       isHuman: Boolean(d.human),
-      personality: d.personality,
       hand: startingHand(),
       influence: 0,
       skipTurns: 0,
       skippedNow: false,
-      alive: true,
-      planets: [i],
-      tradedThisTurn: false,
+      isAlive: true,
+      hasTradedCurrentTurn: false,
       lastAttackTurn: 0,
-      pacifistStatus: false,
+      hasPacifistStatus: false,
       pacifismForfeited: false,
-      kamikaze: false,
+      isKamikaze: false,
     })),
     planets: gameDefs.map((d, i) => ({
       id: i,

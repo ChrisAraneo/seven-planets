@@ -63,7 +63,7 @@ export function buildingWorth(
       break;
     }
     case 'SILO': {
-      if (p.pacifistStatus) {
+      if (p.hasPacifistStatus) {
         break;
       }
       gross += hasB(p, 'SILO')
@@ -77,7 +77,7 @@ export function buildingWorth(
         for (const tp of getGameState().planets) {
           if (
             tp.ownerId === p.id ||
-            !getGameState().players[tp.ownerId].alive ||
+            !getGameState().players[tp.ownerId].isAlive ||
             isUnderTruce(tp)
           ) {
             continue;
@@ -101,8 +101,8 @@ export function buildingWorth(
       break;
     }
     case 'SPACEPORT': {
-      gross += p.planets.length >= 2 ? (level === 1 ? 4 : 2.5) : 0.5;
-      if (!hasB(p, 'SPACEPORT') && p.planets.length >= 2) {
+      gross += owned(p).length >= 2 ? (level === 1 ? 4 : 2.5) : 0.5;
+      if (!hasB(p, 'SPACEPORT') && owned(p).length >= 2) {
         const silos = owned(p).filter((pl) => pl.buildings.SILO);
         if (silos.length > 0) {
           const staged = silos.reduce((x, pl) => Math.max(x, pl.troops), 0);

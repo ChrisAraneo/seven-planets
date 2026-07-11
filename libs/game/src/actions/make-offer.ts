@@ -30,7 +30,7 @@ export function makeOffer(payload: MakeOfferPayload): void {
   const player = state.players[playerId];
   const partner = state.players[partnerId];
 
-  if (!partner || partner.id === player.id || !partner.alive) {
+  if (!partner || partner.id === player.id || !partner.isAlive) {
     return;
   }
 
@@ -40,7 +40,7 @@ export function makeOffer(payload: MakeOfferPayload): void {
 
   // Note the attempt; the AI plans at most one trade per turn off this flag
   // (nothing restricts the human's seat, matching the original behavior).
-  player.tradedThisTurn = true;
+  player.hasTradedCurrentTurn = true;
 
   const wantKey = Object.keys(gets)[0];
 

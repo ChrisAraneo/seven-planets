@@ -427,7 +427,7 @@ function drawPlanet(pl: Planet, now: number): void {
 
   ctx.strokeStyle = owner.color;
   ctx.lineWidth = 2;
-  ctx.globalAlpha = owner.alive ? 0.9 : 0.25;
+  ctx.globalAlpha = owner.isAlive ? 0.9 : 0.25;
   circle(x, y, r + 5);
   ctx.stroke();
   ctx.globalAlpha = 1;
@@ -443,7 +443,7 @@ function drawPlanet(pl: Planet, now: number): void {
   ctx.font = '12px sans-serif';
   ctx.fillStyle = '#fff';
   ctx.fillText(
-    `🪖${pl.troops}${isUnderTruce(pl) ? ' 🕊️' : ''}${owner.pacifistStatus ? ' ☮️' : ''}`,
+    `🪖${pl.troops}${isUnderTruce(pl) ? ' 🕊️' : ''}${owner.hasPacifistStatus ? ' ☮️' : ''}`,
     x,
     y + r + 18,
   );

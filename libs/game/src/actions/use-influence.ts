@@ -103,7 +103,7 @@ function f(
         const target = opts.target && state.players[opts.target.id];
         if (
           !target ||
-          !target.alive ||
+          !target.isAlive ||
           !cardType ||
           !ACTION_TYPES.includes(cardType) ||
           (target.hand[cardType] || 0) < 1
@@ -144,10 +144,6 @@ function f(
             'sys',
           ),
         );
-        state.players[defId].planets = state.players[defId].planets.filter(
-          (id) => id !== pl.id,
-        );
-        state.players[playerId].planets.push(pl.id);
         pl.ownerId = playerId;
         pl.troops = Math.max(1, Math.floor(pl.troops / 2)); // Half disbands, the rest defect
         pl.protectedUntil = state.turn + CONQUEST_TRUCE;
@@ -161,7 +157,7 @@ function f(
             'war',
           ),
         );
-        if (state.players[defId].planets.length === 0) {
+        if (ownedPlanets(state, state.players[defId]).length === 0) {
           const lootN = Math.min(6, handSize(state.players[defId]));
           if (lootN > 0) {
             const { state: looted, taken } = stealCards(
@@ -186,7 +182,7 @@ function f(
           for (const ct of INFLUENCE_TYPES) {
             state.players[defId].hand[ct] = 0;
           }
-          state.players[defId].alive = false;
+          state.players[defId].isAlive = false;
           Object.assign(
             state,
             log(

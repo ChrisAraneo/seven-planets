@@ -478,23 +478,21 @@ export const AI_COLORS = [
   '#f25f5c',
 ];
 
-// Build/upgrade priorities — mastermind uses this as a static fallback only;
+// Build/upgrade priorities — the AI uses this as a static fallback only;
 // The advanced AI (./ai) plans dynamically by expected return-on-investment.
-export const PRIORITIES: Record<string, BuildingType[]> = {
-  mastermind: [
-    'MINE',
-    'EXTRACTOR',
-    'SOLAR',
-    'BARRACKS',
-    'SILO',
-    'LAB',
-    'SHIELD',
-    'HARVESTER',
-    'SINGULARITY',
-    'EMBASSY',
-    'SPACEPORT',
-  ],
-};
+export const PRIORITIES: BuildingType[] = [
+  'MINE',
+  'EXTRACTOR',
+  'SOLAR',
+  'BARRACKS',
+  'SILO',
+  'LAB',
+  'SHIELD',
+  'HARVESTER',
+  'SINGULARITY',
+  'EMBASSY',
+  'SPACEPORT',
+];
 
 export const TAUNTS: string[] = [
   '"Every outcome was computed before you moved."',

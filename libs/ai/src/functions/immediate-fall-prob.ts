@@ -18,7 +18,7 @@ export function immediateFallProb(ownerP: Player, planet: Planet): number {
   }
   let pSafe = 1;
   for (const r of alive()) {
-    if (r.id === ownerP.id || r.pacifistStatus || (r.hand.ATTACK || 0) < 1) {
+    if (r.id === ownerP.id || r.hasPacifistStatus || (r.hand.ATTACK || 0) < 1) {
       continue;
     }
     if (!mayTarget(r, ownerP)) {

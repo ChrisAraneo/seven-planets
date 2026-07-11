@@ -11,12 +11,16 @@ export function bestAttackNow(p: Player): AttackPlan | null {
   if ((p.hand.ATTACK || 0) < 1) {
     return null;
   }
-  const holdFloor = p.kamikaze ? 0.05 : 0.2;
+  // A kamikaze barely cares about keeping what it takes — hurting the human
+  // is the whole point — so its hold requirements all but vanish.
+  const holdFloor = p.isKamikaze ? 0.01 : 0.2;
   const minHold = Math.max(
     holdFloor,
-    aiState.W.minHoldProb * (p.kamikaze ? 0.5 : 1) -
+    aiState.W.minHoldProb * (p.isKamikaze ? 0.15 : 1) -
       getTurn() * aiState.W.aggressionRamp * 0.5,
   );
+  // ...and any raid with a positive score is worth launching for it.
+  const raidScoreFloor = p.isKamikaze ? 0 : 2;
   for (const plan of evaluateAttacks(p)) {
     if (plan.score <= 0) {
       break;
@@ -25,7 +29,7 @@ export function bestAttackNow(p: Player): AttackPlan | null {
       if (plan.pWin >= effMinConquerProb(p) && plan.holdProb >= minHold) {
         return plan;
       }
-    } else if (plan.score > 2) {
+    } else if (plan.score > raidScoreFloor) {
       return plan;
     }
   }

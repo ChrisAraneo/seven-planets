@@ -8,5 +8,5 @@ export function turnOrder(state: GameState): Player[] {
   for (let i = 0; i < n; i++) {
     order.push(state.players[(getStartIdx() + i) % n]);
   }
-  return order.filter((p) => p.alive);
+  return order.filter((p) => p.isAlive);
 }

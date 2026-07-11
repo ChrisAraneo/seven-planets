@@ -84,8 +84,8 @@ async function doAttack(
 
   // Breaking the vow: a PACIFIST may attack, but doing so permanently strips the
   // Status and its bonuses — and pacifismForfeited bars them from ever regaining it.
-  if (state.players[attackerId].pacifistStatus) {
-    state.players[attackerId].pacifistStatus = false;
+  if (state.players[attackerId].hasPacifistStatus) {
+    state.players[attackerId].hasPacifistStatus = false;
     state.players[attackerId].pacifismForfeited = true;
 
     Object.assign(
@@ -198,10 +198,6 @@ function conquerPlanet(
   const defenderId = target.ownerId;
 
   target.ownerId = attackerId;
-  state.players[defenderId].planets = state.players[defenderId].planets.filter(
-    (id) => id !== targetId,
-  );
-  state.players[attackerId].planets.push(targetId);
   target.troops = garrison;
   target.protectedUntil = state.turn + CONQUEST_TRUCE;
 
@@ -215,7 +211,7 @@ function conquerPlanet(
     ),
   );
 
-  if (state.players[defenderId].planets.length === 0) {
+  if (ownedPlanets(state, state.players[defenderId]).length === 0) {
     const lootN = Math.min(6, handSize(state.players[defenderId]));
 
     if (lootN > 0) {
@@ -244,7 +240,7 @@ function conquerPlanet(
       state.players[defenderId].hand[influenceType] = 0;
     }
 
-    state.players[defenderId].alive = false;
+    state.players[defenderId].isAlive = false;
 
     Object.assign(
       state,

@@ -114,7 +114,7 @@ function onRecruit(): void {
         !my ||
         !hasActionCard(human, 'MOVE') ||
         !hasPort ||
-        human.planets.length < 2 ||
+        game.state.planets.filter((pl) => pl.ownerId === human.id).length < 2 ||
         totalTroops(game.state, human) < 1
       "
       :title="moveTitle"

@@ -8,12 +8,12 @@ import '@/stores';
 
 import { describe, expect, it } from 'vitest';
 
-import { simulateGameWithPersonalities } from '@seven-planets/game';
+import { simulateGame } from '@seven-planets/game';
 
 describe('headless game simulation', () => {
   it('plays full AI-vs-AI games to a resolution without throwing', async () => {
     for (let g = 0; g < 20; g++) {
-      const result = await simulateGameWithPersonalities([]);
+      const result = await simulateGame();
       expect(result.turns).toBeGreaterThan(0);
       // Either someone conquered the galaxy, or the 400-turn cap was hit.
       expect(['conquest', 'timeout']).toContain(result.reason);

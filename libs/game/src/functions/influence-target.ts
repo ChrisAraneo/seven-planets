@@ -4,6 +4,7 @@ import type { Player } from '../interfaces/player';
 
 import { filterAlivePlayers } from './filter-alive-players';
 import { getTechLevel } from './get-tech-level';
+import { ownedPlanets } from './owned-planets';
 import { totalTroops } from './total-troops';
 
 // Whom would this skip card hit? Always a RIVAL — the caster is never a target.
@@ -23,7 +24,7 @@ export function influenceTarget(
   }
   if (t === 'SKIP_PLANETS') {
     return rivals.reduce((a, b) =>
-      b.planets.length > a.planets.length ? b : a,
+      ownedPlanets(state, b).length > ownedPlanets(state, a).length ? b : a,
     );
   }
   if (t === 'SKIP_INFLUENCE') {

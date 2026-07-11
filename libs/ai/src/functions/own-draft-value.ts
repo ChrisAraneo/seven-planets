@@ -55,7 +55,7 @@ export function ownDraftValue(
     return influenceDraftValue(p, t as InfluenceType, plan);
   }
   if (t === 'ATTACK') {
-    if (p.pacifistStatus) {
+    if (p.hasPacifistStatus) {
       return -1;
     }
     let v = 1.2;
@@ -86,7 +86,7 @@ export function ownDraftValue(
   }
   if (t === 'MOVE') {
     let v = 0.8;
-    if (p.planets.length >= 2 && hasB(p, 'SPACEPORT')) {
+    if (owned(p).length >= 2 && hasB(p, 'SPACEPORT')) {
       v += 0.8;
     }
     return v - (p.hand.MOVE || 0) * 0.6;

@@ -40,7 +40,8 @@ const sub = computed(() => {
     </div>
     <div class="gostats">
       {{ sub }}<br /><br />
-      Turns played: {{ getTurn() }} · Planets held: {{ human.planets.length }} ·
+      Turns played: {{ getTurn() }} · Planets held:
+      {{ game.state.planets.filter((pl) => pl.ownerId === human.id).length }} ·
       Buildings: {{ buildingCount(game.state, human) }} · Troops:
       {{ totalTroops(game.state, human) }}
     </div>

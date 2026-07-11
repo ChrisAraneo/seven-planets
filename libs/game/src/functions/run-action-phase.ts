@@ -18,7 +18,7 @@ export async function runActionPhase(): Promise<void> {
       return;
     }
     const p = getGameState().players[seatId];
-    if (!p.alive || p.skippedNow) {
+    if (!p.isAlive || p.skippedNow) {
       continue;
     }
     getGameState().activeId = seatId;

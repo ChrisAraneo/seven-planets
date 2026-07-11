@@ -10,7 +10,7 @@ import { projectedStrike } from './projected-strike';
 import { isUnderTruce } from './is-under-truce';
 
 export function isImminentAttacker(us: Player, r: Player): boolean {
-  if (r.pacifistStatus || (r.hand.ATTACK || 0) < 1) {
+  if (r.hasPacifistStatus || (r.hand.ATTACK || 0) < 1) {
     return false;
   }
   if (!mayTarget(r, us)) {

@@ -18,7 +18,7 @@ import { planFor } from '../functions/plan-for';
 import { resetAiWeights } from '../functions/reset-ai-weights';
 import { survivorsAfterWin } from '../functions/survivors-after-win';
 import { COMBAT } from '@seven-planets/game';
-import { simulateGameWithPersonalities } from '@seven-planets/game';
+import { simulateGame } from '@seven-planets/game';
 import type { GameState } from '@seven-planets/game';
 import { getGameState, resetGameState } from '@seven-planets/game';
 
@@ -28,9 +28,6 @@ function midGameState(): GameState {
   resetGameState({ raw: true }); // Headless — skip reactivity
   const s = getGameState();
   s.turn = 20;
-  for (const p of getGameState().players) {
-    p.personality = 'mastermind';
-  }
   return s;
 }
 
@@ -117,7 +114,7 @@ describe('mastermind attack planning', () => {
   it('never plans an attack for a pacifist', () => {
     const s = midGameState();
     const me = getGameState().players[0];
-    me.pacifistStatus = true;
+    me.hasPacifistStatus = true;
     getGameState().planets[0].buildings.SILO = 3;
     getGameState().planets[0].troops = 30;
     me.hand.ATTACK = 3;
@@ -178,7 +175,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     resetAiWeights();
     const s = midGameState();
     const kami = getGameState().players[1];
-    kami.kamikaze = true;
+    kami.isKamikaze = true;
     // Arm the kamikaze with a real strike force.
     getGameState().planets[1].buildings.SILO = 2;
     getGameState().planets[1].troops = 16;
@@ -198,7 +195,7 @@ describe('kamikaze (Hard mode) targeting', () => {
   it('a normal AI ignores kamikazes — never plans an attack against one', () => {
     resetAiWeights();
     const s = midGameState();
-    getGameState().players[1].kamikaze = true;
+    getGameState().players[1].isKamikaze = true;
     // A normal AI (id 2) with a strike force.
     const normal = getGameState().players[2];
     getGameState().planets[2].buildings.SILO = 2;
@@ -219,7 +216,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     resetAiWeights();
     const s = midGameState();
     const kami = getGameState().players[1];
-    kami.kamikaze = true;
+    kami.isKamikaze = true;
     // Heavily arm the kamikaze so it WOULD threaten anyone it could reach.
     getGameState().planets[1].buildings.SILO = 3;
     getGameState().planets[1].buildings.BARRACKS = 3;
@@ -250,7 +247,7 @@ describe('mastermind in full headless games', () => {
     let wins = 0;
     const games = 24;
     for (let g = 0; g < games; g++) {
-      const result = await simulateGameWithPersonalities([]);
+      const result = await simulateGame();
       expect(result.turns).toBeGreaterThan(0);
       expect(['conquest', 'timeout']).toContain(result.reason);
       if (result.winner?.id === 0) {

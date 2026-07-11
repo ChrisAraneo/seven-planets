@@ -7,9 +7,8 @@ import { techLevel } from './tech-level';
 export function rivalGoalBuilding(
   r: Player,
 ): { id: BuildingType; cost: Cost } | null {
-  const prio = PRIORITIES.mastermind;
   const tech = techLevel(r);
-  for (const id of prio) {
+  for (const id of PRIORITIES) {
     if (id === 'SINGULARITY') {
       continue;
     }

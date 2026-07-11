@@ -61,7 +61,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
             : a,
         )
       : null;
-  if (!p.pacifistStatus) {
+  if (!p.hasPacifistStatus) {
     const rr = Math.max(0.4, recruitRate(p));
     const bonus = staging ? (staging.buildings.SILO || 0) * 2 : 0;
     for (const target of getGameState().planets) {
@@ -69,7 +69,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
         continue;
       }
       const defOwner = getGameState().players[target.ownerId];
-      if (!defOwner.alive) {
+      if (!defOwner.isAlive) {
         continue;
       }
       if (!mayTarget(p, defOwner)) {
@@ -80,7 +80,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
       const defB =
         COMBAT.defensePerTroop * futureDef +
         (target.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-        (defOwner.pacifistStatus ? PACIFIST_DEF_BONUS : 0) +
+        (defOwner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0) +
         singularityDefBonus(target) +
         HOME_FIELD;
       while (
@@ -111,7 +111,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
         getTurn() + CONQUEST_TRUCE,
       );
       const value =
-        planetValue(target) + (defOwner.planets.length === 1 ? 10 : 0);
+        planetValue(target) + (owned(defOwner).length === 1 ? 10 : 0);
       const sc =
         (value * 0.75 * hold * 0.9 ** eta - need * aiState.W.troopValue * 0.3) *
         tempo;
@@ -128,7 +128,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
     threat +=
       (1 - holdProbability(p, pl, pl.troops)) *
       planetValue(pl) *
-      (p.planets.length === 1 ? 3 : 0.6);
+      (owned(p).length === 1 ? 3 : 0.6);
   }
   const fortify = threat * 0.9;
 
@@ -147,7 +147,7 @@ export function computePlan(p: Player, prevKind: StrategyKind | null): Plan {
       coupBank = coupTgt.value * 0.92 ** turnsTo * 0.8;
     }
     if (p.influence < coupCost) {
-      if (p.planets.length <= 1) {
+      if (owned(p).length <= 1) {
         coupBank *= 0.35;
       }
       coupBank *= Math.max(0.3, 1 - threat * 0.08);
