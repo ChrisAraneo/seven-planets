@@ -1,6 +1,9 @@
+import { chain, cloneDeep, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import type { Cost } from '../interfaces/cost';
+import type { GameState } from '../interfaces/game-state';
+import type { Player } from '../interfaces/player';
 import { getGameState, setGameState } from '../game-state';
-import { cloneDeep } from 'lodash-es';
 
 import { RESOURCE_TYPES, CARDS } from '../config/constants';
 import { setStatus } from '../functions/set-status';
@@ -20,55 +23,85 @@ export interface MakeOfferPayload {
    seat (human via TradeOfferModal, or the AI watcher) must answer by
    dispatching resolveOffer, which executes or declines the trade. */
 export function makeOffer(payload: MakeOfferPayload): void {
-  const { playerId, partnerId, gives, gets } = payload;
-  const state = cloneDeep(getGameState());
-
-  if (playerId !== state.activeId || state.over) {
-    return;
-  }
-
-  const player = state.players[playerId];
-  const partner = state.players[partnerId];
-
-  if (!partner || partner.id === player.id || !partner.isAlive) {
-    return;
-  }
-
-  if (!hasActionCard(player, 'TRADE')) {
-    return;
-  }
-
-  // Note the attempt; the AI plans at most one trade per turn off this flag
-  // (nothing restricts the human's seat, matching the original behavior).
-  player.hasTradedCurrentTurn = true;
-
-  const wantKey = Object.keys(gets)[0];
-
-  if (wantKey && RESOURCE_TYPES.includes(wantKey as never)) {
-    Object.assign(
+  return chain(cloneDeep(getGameState()))
+    .thru((state) => ({
       state,
-      log(
+      player: state.players[payload.playerId],
+      partner: state.players[payload.partnerId] as Player | undefined,
+    }))
+    .thru(({ state, player, partner }) =>
+      match({ state, player, partner })
+        .when(
+          ({ state: s }) => payload.playerId !== s.activeId || Boolean(s.over),
+          noop,
+        )
+        .when(
+          ({ player: pl, partner: pa }) =>
+            !pa || pa.id === pl.id || !pa.isAlive,
+          noop,
+        )
+        .when(({ player: pl }) => !hasActionCard(pl, 'TRADE'), noop)
+        .otherwise(
+          ({ state: s, player: pl, partner: pa }) =>
+            void (pa && sendOffer(s, pl, pa, payload)),
+        ),
+    )
+    .value();
+}
+
+function sendOffer(
+  state: GameState,
+  player: Player,
+  partner: Player,
+  { playerId, partnerId, gives, gets }: MakeOfferPayload,
+): void {
+  return void chain(state)
+    // Note the attempt; the AI plans at most one trade per turn off this flag
+    // (nothing restricts the human's seat, matching the original behavior).
+    .tap(() => Object.assign(player, { hasTradedCurrentTurn: true }))
+    .thru((s) => logSeeking(s, player, gets))
+    .thru((s) => statusIfHuman(s, player, partner))
+    .thru((s) =>
+      Object.assign(s, {
+        pendingOffer: { fromId: playerId, toId: partnerId, gives, gets },
+      }),
+    )
+    .tap((s) => setGameState(s))
+    // Notify synchronously so AI seats can respond without relying on async
+    // Vue watchers, which may not fire reliably across full state replacements.
+    .tap(() => getPendingOfferCallback()?.(partnerId))
+    .value();
+}
+
+function logSeeking(state: GameState, player: Player, gets: Cost): GameState {
+  return match(Object.keys(gets)[0])
+    .when(
+      (wantKey) =>
+        Boolean(wantKey && RESOURCE_TYPES.includes(wantKey as never)),
+      (wantKey) =>
+        Object.assign(
+          state,
+          log(
+            state,
+            `📡 ${player.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
+            'trade',
+          ),
+        ),
+    )
+    .otherwise(() => state);
+}
+
+function statusIfHuman(
+  state: GameState,
+  player: Player,
+  partner: Player,
+): GameState {
+  return match(partner.isHuman && !AUTO_HUMAN)
+    .with(true, () =>
+      Object.assign(
         state,
-        `📡 ${player.name} opens a trade channel — seeking ${CARDS[wantKey].icon} ${CARDS[wantKey].name}`,
-        'trade',
+        setStatus(state, `${player.name} is hailing you with a trade offer…`),
       ),
-    );
-  }
-
-  const humanControlled = partner.isHuman && !AUTO_HUMAN;
-
-  if (humanControlled) {
-    Object.assign(
-      state,
-      setStatus(state, `${player.name} is hailing you with a trade offer…`),
-    );
-  }
-
-  state.pendingOffer = { fromId: playerId, toId: partnerId, gives, gets };
-
-  setGameState(state);
-
-  // Notify synchronously so AI seats can respond without relying on async
-  // Vue watchers, which may not fire reliably across full state replacements.
-  getPendingOfferCallback()?.(partnerId);
+    )
+    .otherwise(() => state);
 }

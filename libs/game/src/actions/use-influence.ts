@@ -1,6 +1,10 @@
+import { chain, cloneDeep, noop } from 'lodash-es';
+import { match, P } from 'ts-pattern';
+import type { ActionType } from '../interfaces/action-type';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceOpts } from '../interfaces/influence-opts';
 import type { InfluenceType } from '../interfaces/influence-type';
+import type { Player } from '../interfaces/player';
 
 import {
   ACTION_TYPES,
@@ -14,7 +18,6 @@ import {
   PEACE_TRUCE,
   SKIP_TURNS,
 } from '../config/constants';
-import { cloneDeep } from 'lodash-es';
 import { influenceTarget } from '../functions/influence-target';
 import { checkWin } from '../functions/check-win';
 import { coupTargets } from '../functions/coup-targets';
@@ -26,6 +29,8 @@ import { stealCards } from '../functions/steal-cards';
 import { getGameState, setGameState } from '../game-state';
 import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
+const { nullish } = P;
+
 export interface UseInfluencePayload {
   playerId: number;
   type: InfluenceType;
@@ -36,137 +41,263 @@ export async function useInfluence(
   payload: UseInfluencePayload,
   hooks: PresentationHooks = NO_PRESENTATION,
 ): Promise<void> {
-  const state = cloneDeep(getGameState());
-  const { playerId, type, opts } = payload;
-
-  if (playerId !== state.activeId || state.over) {
-    return;
-  }
-
-  f(state, playerId, type, opts ?? {}, hooks);
-
-  setGameState(state);
+  return match(cloneDeep(getGameState()))
+    .when(
+      (state) => payload.playerId !== state.activeId || Boolean(state.over),
+      noop,
+    )
+    .otherwise(
+      (state) =>
+        void chain(state)
+          .tap((s) =>
+            playInfluence(
+              s,
+              payload.playerId,
+              payload.type,
+              payload.opts ?? {},
+              hooks,
+            ),
+          )
+          .tap((s) => setGameState(s))
+          .value(),
+    );
 }
 
 // Applies pure engine results onto the private clone via Object.assign and reads
 // entities by id (opts carry frozen selector clones — we use only their ids), so the
 // whole play resolves consistently on the state that gets written back.
-function f(
+function playInfluence(
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-  opts: InfluenceOpts = {},
-  hooks: PresentationHooks = NO_PRESENTATION,
+  opts: InfluenceOpts,
+  hooks: PresentationHooks,
 ): boolean {
-  if ((state.players[playerId].hand[influenceType] || 0) < 1) {
-    return false;
-  }
+  return match(state.players[playerId].hand[influenceType] || 0)
+    .when(
+      (held) => held < 1,
+      () => false,
+    )
+    .otherwise(() =>
+      match(influenceType)
+        .when(
+          (t) => t.startsWith('SKIP_'),
+          (t) => playSkip(state, playerId, t, hooks),
+        )
+        .with('STEAL_ACTION', (t) =>
+          playStealAction(state, playerId, t, opts, hooks),
+        )
+        .with('COUP', (t) => playCoup(state, playerId, t, opts, hooks))
+        .with('PEACE', (t) => playPeace(state, playerId, t))
+        .otherwise(() => false),
+    );
+}
 
-  const C = INFLUENCE_CARDS[influenceType];
+function playSkip(
+  state: GameState,
+  playerId: number,
+  influenceType: InfluenceType,
+  hooks: PresentationHooks,
+): boolean {
+  return match(influenceTarget(state, state.players[playerId], influenceType))
+    .with(nullish, () => false)
+    .otherwise((target) =>
+      chain(state)
+        .tap((s) => spendInfluenceCard(s, playerId, influenceType))
+        .tap((s) => logPlay(s, playerId, influenceType, 'sys'))
+        .tap((s) =>
+          Object.assign(s.players[target.id], {
+            skipTurns: s.players[target.id].skipTurns + SKIP_TURNS,
+          }),
+        )
+        .tap((s) =>
+          Object.assign(
+            s,
+            log(
+              s,
+              `⏭️ ${s.players[target.id].name} is paralysed — they skip their next ${SKIP_TURNS} turn${match(
+                SKIP_TURNS,
+              )
+                .with(1, () => '')
+                .otherwise(() => 's')}!`,
+              'war',
+            ),
+          ),
+        )
+        .tap((s) =>
+          hooks.floatText(
+            homePlanet(s, s.players[target.id]),
+            '⏭️ SKIPPED',
+            '#ffb0d8',
+          ),
+        )
+        .thru(() => true)
+        .value(),
+    );
+}
 
-  if (influenceType.startsWith('SKIP_')) {
-    const target = influenceTarget(
-      state,
-      state.players[playerId],
-      influenceType,
-    );
-    if (!target) {
-      return false;
-    }
-    state.players[playerId].hand[influenceType]--;
-    Object.assign(
-      state,
-      log(
-        state,
-        `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${C.name}`,
-        'sys',
-      ),
-    );
-    state.players[target.id].skipTurns += SKIP_TURNS;
-    Object.assign(
-      state,
-      log(
-        state,
-        `⏭️ ${state.players[target.id].name} is paralysed — they skip their next ${SKIP_TURNS} turn${SKIP_TURNS === 1 ? '' : 's'}!`,
-        'war',
-      ),
-    );
-    hooks.floatText(
-      homePlanet(state, state.players[target.id]),
-      '⏭️ SKIPPED',
-      '#ffb0d8',
-    );
-  } else {
-    switch (influenceType) {
-      case 'STEAL_ACTION': {
-        const { cardType } = opts;
-        const target = opts.target && state.players[opts.target.id];
-        if (
-          !target ||
-          !target.isAlive ||
-          !cardType ||
-          !ACTION_TYPES.includes(cardType) ||
-          (target.hand[cardType] || 0) < 1
-        ) {
-          return false;
-        }
-        state.players[playerId].hand[influenceType]--;
-        state.players[target.id].hand[cardType]--;
-        state.players[playerId].hand[cardType]++;
-        Object.assign(
-          state,
-          log(
-            state,
-            `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${C.name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${state.players[target.id].name}!`,
-            'war',
+function playStealAction(
+  state: GameState,
+  playerId: number,
+  influenceType: InfluenceType,
+  opts: InfluenceOpts,
+  hooks: PresentationHooks,
+): boolean {
+  return match(stealContext(state, opts))
+    .with(nullish, () => false)
+    .otherwise(({ cardType, target }) =>
+      chain(state)
+        .tap((s) => spendInfluenceCard(s, playerId, influenceType))
+        .tap((s) =>
+          Object.assign(s.players[target.id].hand, {
+            [cardType]: s.players[target.id].hand[cardType] - 1,
+          }),
+        )
+        .tap((s) =>
+          Object.assign(s.players[playerId].hand, {
+            [cardType]: s.players[playerId].hand[cardType] + 1,
+          }),
+        )
+        .tap((s) =>
+          Object.assign(
+            s,
+            log(
+              s,
+              `⭐ ${s.players[playerId].name} plays ${CARDS[influenceType].icon} ${INFLUENCE_CARDS[influenceType].name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${s.players[target.id].name}!`,
+              'war',
+            ),
           ),
-        );
-        hooks.floatText(
-          homePlanet(state, state.players[target.id]),
-          `−1${CARDS[cardType].icon}`,
-          '#ffb0d8',
-        );
+        )
+        .tap((s) =>
+          hooks.floatText(
+            homePlanet(s, s.players[target.id]),
+            `−1${CARDS[cardType].icon}`,
+            '#ffb0d8',
+          ),
+        )
+        .thru(() => true)
+        .value(),
+    );
+}
 
-        break;
-      }
-      case 'COUP': {
-        const pl = opts.planet && state.planets[opts.planet.id];
-        if (!pl || !coupTargets(state, state.players[playerId]).includes(pl)) {
-          return false;
-        }
-        const defId = pl.ownerId;
-        state.players[playerId].hand[influenceType]--;
-        Object.assign(
-          state,
-          log(
+// The play is only legal against an alive rival holding at least one copy of a
+// real action card; anything else yields no context and the play is refused.
+function stealContext(
+  state: GameState,
+  opts: InfluenceOpts,
+): { cardType: ActionType; target: Player } | undefined {
+  return match({
+    cardType: opts.cardType,
+    target: opts.target && state.players[opts.target.id],
+  })
+    .when(
+      ({ cardType, target }) =>
+        Boolean(
+          target &&
+          target.isAlive &&
+          cardType &&
+          ACTION_TYPES.includes(cardType) &&
+          (target.hand[cardType] || 0) >= 1,
+        ),
+      ({ cardType, target }) => ({
+        cardType: cardType as ActionType,
+        target: target as Player,
+      }),
+    )
+    .otherwise(() => undefined);
+}
+
+function playCoup(
+  state: GameState,
+  playerId: number,
+  influenceType: InfluenceType,
+  opts: InfluenceOpts,
+  hooks: PresentationHooks,
+): boolean {
+  return match(opts.planet && state.planets[opts.planet.id])
+    .with(nullish, () => false)
+    .when(
+      (pl) => !coupTargets(state, state.players[playerId]).includes(pl),
+      () => false,
+    )
+    .otherwise((pl) =>
+      chain({ defId: pl.ownerId })
+        .tap(() => spendInfluenceCard(state, playerId, influenceType))
+        .tap(() => logPlay(state, playerId, influenceType, 'sys'))
+        .tap(() =>
+          Object.assign(pl, {
+            ownerId: playerId,
+            troops: Math.max(1, Math.floor(pl.troops / 2)), // Half disbands, the rest defect
+            protectedUntil: state.turn + CONQUEST_TRUCE,
+          }),
+        )
+        .tap(() => hooks.boom(pl))
+        .tap(() => hooks.floatText(pl, '👑 COUP!', '#ffb0d8'))
+        .tap(({ defId }) =>
+          Object.assign(
             state,
-            `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${C.name}`,
-            'sys',
-          ),
-        );
-        pl.ownerId = playerId;
-        pl.troops = Math.max(1, Math.floor(pl.troops / 2)); // Half disbands, the rest defect
-        pl.protectedUntil = state.turn + CONQUEST_TRUCE;
-        hooks.boom(pl);
-        hooks.floatText(pl, '👑 COUP!', '#ffb0d8');
-        Object.assign(
-          state,
-          log(
-            state,
-            `👑 ${pl.name} defects to ${state.players[playerId].name} — half of ${state.players[defId].name}'s garrison disbands, ${pl.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
-            'war',
-          ),
-        );
-        if (ownedPlanets(state, state.players[defId]).length === 0) {
-          const lootN = Math.min(6, handSize(state.players[defId]));
-          if (lootN > 0) {
-            const { state: looted, taken } = stealCards(
+            log(
               state,
-              defId,
-              playerId,
-              lootN,
-            );
-            Object.assign(state, looted);
+              `👑 ${pl.name} defects to ${state.players[playerId].name} — half of ${state.players[defId].name}'s garrison disbands, ${pl.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
+              'war',
+            ),
+          ),
+        )
+        .tap(({ defId }) => maybeToppleRegime(state, playerId, defId))
+        .thru(() => true)
+        .value(),
+    );
+}
+
+function maybeToppleRegime(
+  state: GameState,
+  playerId: number,
+  defId: number,
+): void {
+  return match(ownedPlanets(state, state.players[defId]).length)
+    .when((owned) => owned > 0, noop)
+    .otherwise(
+      () =>
+        void chain(state)
+          .tap((s) => lootToppledRegime(s, playerId, defId))
+          .tap((s) =>
+            Object.assign(s.players[defId], {
+              hand: {
+                ...s.players[defId].hand,
+                ...Object.fromEntries(
+                  [...CARD_TYPES, ...INFLUENCE_TYPES].map((t) => [t, 0]),
+                ),
+              },
+              isAlive: false,
+            }),
+          )
+          .tap((s) =>
+            Object.assign(
+              s,
+              log(
+                s,
+                `☠️ ${s.players[defId].name} has been wiped from the galaxy — overthrown without a shot!`,
+                'war',
+              ),
+            ),
+          )
+          .tap((s) => Object.assign(s, checkWin(s)))
+          .value(),
+    );
+}
+
+function lootToppledRegime(
+  state: GameState,
+  playerId: number,
+  defId: number,
+): void {
+  return match(Math.min(6, handSize(state.players[defId])))
+    .when((lootN) => lootN <= 0, noop)
+    .otherwise(
+      (lootN) =>
+        void chain(stealCards(state, defId, playerId, lootN))
+          .tap(({ state: looted }) => Object.assign(state, looted))
+          .tap(({ taken }) =>
             Object.assign(
               state,
               log(
@@ -174,60 +305,67 @@ function f(
                 `💰 ${state.players[playerId].name} salvages ${fmtCards(taken)} from the toppled regime!`,
                 'war',
               ),
-            );
-          }
-          for (const ct of CARD_TYPES) {
-            state.players[defId].hand[ct] = 0;
-          }
-          for (const ct of INFLUENCE_TYPES) {
-            state.players[defId].hand[ct] = 0;
-          }
-          state.players[defId].isAlive = false;
-          Object.assign(
-            state,
-            log(
-              state,
-              `☠️ ${state.players[defId].name} has been wiped from the galaxy — overthrown without a shot!`,
-              'war',
             ),
-          );
-          Object.assign(state, checkWin(state));
-        }
+          )
+          .value(),
+    );
+}
 
-        break;
-      }
-      case 'PEACE': {
-        state.players[playerId].hand[influenceType]--;
-        Object.assign(
-          state,
-          log(
-            state,
-            `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${C.name}`,
-            'sys',
-          ),
-        );
-        for (const pl of ownedPlanets(state, state.players[playerId])) {
-          pl.protectedUntil = Math.max(
-            pl.protectedUntil,
-            state.turn + PEACE_TRUCE,
-          );
-        }
-        Object.assign(
-          state,
-          log(
-            state,
-            `🕊️ ${state.players[playerId].name}'s planets are under truce for ${PEACE_TRUCE} turn${PEACE_TRUCE === 1 ? '' : 's'} — no attacks allowed!`,
-            'sys',
-          ),
-        );
+function playPeace(
+  state: GameState,
+  playerId: number,
+  influenceType: InfluenceType,
+): boolean {
+  return chain(state)
+    .tap((s) => spendInfluenceCard(s, playerId, influenceType))
+    .tap((s) => logPlay(s, playerId, influenceType, 'sys'))
+    .tap((s) =>
+      ownedPlanets(s, s.players[playerId]).forEach((pl) =>
+        Object.assign(pl, {
+          protectedUntil: Math.max(pl.protectedUntil, s.turn + PEACE_TRUCE),
+        }),
+      ),
+    )
+    .tap((s) =>
+      Object.assign(
+        s,
+        log(
+          s,
+          `🕊️ ${s.players[playerId].name}'s planets are under truce for ${PEACE_TRUCE} turn${match(
+            PEACE_TRUCE,
+          )
+            .with(1, () => '')
+            .otherwise(() => 's')} — no attacks allowed!`,
+          'sys',
+        ),
+      ),
+    )
+    .thru(() => true)
+    .value();
+}
 
-        break;
-      }
-      default: {
-        return false;
-      }
-    }
-  }
+function spendInfluenceCard(
+  state: GameState,
+  playerId: number,
+  influenceType: InfluenceType,
+): void {
+  return void Object.assign(state.players[playerId].hand, {
+    [influenceType]: state.players[playerId].hand[influenceType] - 1,
+  });
+}
 
-  return true;
+function logPlay(
+  state: GameState,
+  playerId: number,
+  influenceType: InfluenceType,
+  cls: string,
+): void {
+  return void Object.assign(
+    state,
+    log(
+      state,
+      `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${INFLUENCE_CARDS[influenceType].name}`,
+      cls,
+    ),
+  );
 }

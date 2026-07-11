@@ -1,3 +1,5 @@
+import { match } from 'ts-pattern';
+import { maxBy, minBy } from 'lodash-es';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceType } from '../interfaces/influence-type';
 import type { Player } from '../interfaces/player';
@@ -13,27 +15,26 @@ export function influenceTarget(
   p: Player,
   t: InfluenceType,
 ): Player | null {
-  const rivals = filterAlivePlayers(state).filter((x) => x.id !== p.id);
-  if (rivals.length === 0) {
-    return null;
-  }
-  if (t === 'SKIP_ARMY') {
-    return rivals.reduce((a, b) =>
-      totalTroops(state, b) > totalTroops(state, a) ? b : a,
+  return match(filterAlivePlayers(state).filter((x) => x.id !== p.id))
+    .when(
+      (rivals) => rivals.length === 0,
+      (): Player | null => null,
+    )
+    .otherwise((rivals) =>
+      match(t)
+        .with(
+          'SKIP_ARMY',
+          () => maxBy(rivals, (x) => totalTroops(state, x)) ?? null,
+        )
+        .with(
+          'SKIP_PLANETS',
+          () => maxBy(rivals, (x) => ownedPlanets(state, x).length) ?? null,
+        )
+        .with('SKIP_INFLUENCE', () => minBy(rivals, (x) => x.influence) ?? null)
+        .with(
+          'SKIP_TECH',
+          () => maxBy(rivals, (x) => getTechLevel(state, x)) ?? null,
+        )
+        .otherwise((): Player | null => null),
     );
-  }
-  if (t === 'SKIP_PLANETS') {
-    return rivals.reduce((a, b) =>
-      ownedPlanets(state, b).length > ownedPlanets(state, a).length ? b : a,
-    );
-  }
-  if (t === 'SKIP_INFLUENCE') {
-    return rivals.reduce((a, b) => (b.influence < a.influence ? b : a));
-  }
-  if (t === 'SKIP_TECH') {
-    return rivals.reduce((a, b) =>
-      getTechLevel(state, b) > getTechLevel(state, a) ? b : a,
-    );
-  }
-  return null;
 }

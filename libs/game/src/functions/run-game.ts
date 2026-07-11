@@ -1,29 +1,33 @@
-import { getOver } from '../getters/get-over';
-import { getTurn } from '../getters/get-turn';
+import { chain, noop } from 'lodash-es';
 import { getGameState } from '../game-state';
 
 import { log } from './log';
-import { playTurn } from './play-turn';
+import { playTurns } from './play-turns';
 import { NO_PRESENTATION } from '../config/constants';
 import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export async function runGame(
   hooks: PresentationHooks = NO_PRESENTATION,
 ): Promise<void> {
-  Object.assign(
-    getGameState(),
-    log(getGameState(), 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
-  );
-  Object.assign(
-    getGameState(),
-    log(
-      getGameState(),
-      'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
-      'sys',
-    ),
-  );
-  while (!getOver() && getTurn() < 400) {
-    await playTurn(hooks);
-  }
-  getGameState().activeId = -1;
+  return chain(getGameState())
+    .tap((s) =>
+      Object.assign(
+        s,
+        log(s, 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
+      ),
+    )
+    .tap((s) =>
+      Object.assign(
+        s,
+        log(
+          s,
+          'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
+          'sys',
+        ),
+      ),
+    )
+    .thru(() => playTurns(400, hooks))
+    .value()
+    .then(() => Object.assign(getGameState(), { activeId: -1 }))
+    .then(noop);
 }

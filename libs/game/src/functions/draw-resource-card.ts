@@ -1,20 +1,13 @@
-import { CARDS, RESOURCE_TYPES } from '../config/constants';
+import { RESOURCE_TYPES } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { PoolType } from '../interfaces/pool-type';
 
+import { weightedDraw } from './weighted-draw';
+
 // Draw one resource card weighted by card weight (Spice excluded — Harvester only).
 export function drawResourceCard(state: GameState): PoolType {
-  const types = RESOURCE_TYPES.filter((t) => t !== 'SPICE');
-  let total = 0;
-  for (const t of types) {
-    total += CARDS[t].weight;
-  }
-  let r = Math.random() * total;
-  for (const t of types) {
-    r -= CARDS[t].weight;
-    if (r < 0) {
-      return t;
-    }
-  }
-  return 'ORE';
+  return weightedDraw(
+    RESOURCE_TYPES.filter((t) => t !== 'SPICE'),
+    'ORE',
+  );
 }

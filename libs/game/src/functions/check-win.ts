@@ -1,22 +1,23 @@
+import { match } from 'ts-pattern';
 import { filterAlivePlayers } from './filter-alive-players';
 import { AUTO_HUMAN } from './auto-human';
 import { triggerGameOver } from './trigger-game-over';
 import type { GameState } from '../interfaces/game-state';
 
 export function checkWin(state: GameState): GameState {
-  if (state.over) {
-    return state;
-  }
-
-  const alivePlayers = filterAlivePlayers(state);
-
-  if (alivePlayers.length === 1) {
-    return triggerGameOver(state, alivePlayers[0].id, 'conquest');
-  }
-
-  if (!AUTO_HUMAN && !state.players[0].isAlive) {
-    return triggerGameOver(state, null, 'eliminated');
-  }
-
-  return state;
+  return match({ state, alivePlayers: filterAlivePlayers(state) })
+    .when(
+      ({ state: s }) => s.over,
+      ({ state: s }) => s,
+    )
+    .when(
+      ({ alivePlayers }) => alivePlayers.length === 1,
+      ({ state: s, alivePlayers }) =>
+        triggerGameOver(s, alivePlayers[0].id, 'conquest'),
+    )
+    .when(
+      ({ state: s }) => !AUTO_HUMAN && !s.players[0].isAlive,
+      ({ state: s }) => triggerGameOver(s, null, 'eliminated'),
+    )
+    .otherwise(({ state: s }) => s);
 }

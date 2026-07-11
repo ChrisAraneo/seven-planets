@@ -1,6 +1,7 @@
+import { chain, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { getSingularityAnnounced } from '../getters/get-singularity-announced';
-import { getTurn } from '../getters/get-turn';
 import {
   ACTION_CARDS_FROM_TURN,
   ADVANCED_FROM_TURN,
@@ -10,6 +11,8 @@ import {
   NO_PRESENTATION,
 } from '../config/constants';
 import { getGameState } from '../game-state';
+import type { GameState } from '../interfaces/game-state';
+import type { Player } from '../interfaces/player';
 
 import { filterAlivePlayers } from './filter-alive-players';
 import { doIncome } from './do-income';
@@ -27,114 +30,169 @@ export async function playTurn(
 ): Promise<void> {
   // The prelude is synchronous — no store mutation reassigns the state
   // object here — so one reference is safe until the first `await`.
-  const state = getGameState();
-  state.turn++;
-  for (const p of state.players) {
-    p.hasTradedCurrentTurn = false;
-    // Influence skip cards: paralysed players sit out draft AND action phases.
-    p.skippedNow = p.isAlive && p.skipTurns > 0;
-    if (p.skipTurns > 0) {
-      p.skipTurns--;
-      if (p.isAlive) {
-        Object.assign(
+  return chain(getGameState())
+    .tap((state) => Object.assign(state, { turn: state.turn + 1 }))
+    .tap((state) => state.players.forEach((p) => beginPlayerTurn(state, p)))
+    .tap((state) => Object.assign(state, updatePacifistStatus(state, hooks)))
+    .tap((state) => Object.assign(state, doIncome(state)))
+    .tap((state) => announceSingularity(state))
+    .tap((state) =>
+      Object.assign(state, {
+        pool: makePool(state),
+        startIdx: choice(filterAlivePlayers(state)).id,
+      }),
+    )
+    .tap((state) =>
+      Object.assign(
+        state,
+        log(
+          state,
+          `— TURN ${state.turn} — ${draftOrder(state)[0].name} drafts first${turnFlavor(state.turn)}`,
+          'sys',
+        ),
+      ),
+    )
+    .tap((state) => Object.assign(state, milestoneLogs(state)))
+    .thru(() => runDraft(hooks))
+    .value()
+    .then(() => afterDraft());
+}
+
+function beginPlayerTurn(state: GameState, p: Player): void {
+  return chain(
+    Object.assign(p, {
+      hasTradedCurrentTurn: false,
+      // Influence skip cards: paralysed players sit out draft AND action phases.
+      skippedNow: p.isAlive && p.skipTurns > 0,
+    }),
+  )
+    .thru((pl) => tickSkipTurns(state, pl))
+    .value();
+}
+
+function tickSkipTurns(state: GameState, p: Player): void {
+  return match(p)
+    .when((pl) => pl.skipTurns <= 0, noop)
+    .otherwise((pl) =>
+      chain(Object.assign(pl, { skipTurns: pl.skipTurns - 1 }))
+        .thru((ticked) => logParalysis(state, ticked))
+        .value(),
+    );
+}
+
+function logParalysis(state: GameState, p: Player): void {
+  return match(p)
+    .when((pl) => !pl.isAlive, noop)
+    .otherwise(
+      (pl) =>
+        void Object.assign(
           state,
           log(
             state,
-            `⏭️ ${p.name} is paralysed and sits this turn out${p.skipTurns > 0 ? ` (${p.skipTurns} more)` : ''}`,
+            `⏭️ ${pl.name} is paralysed and sits this turn out${remainingSkipsSuffix(pl.skipTurns)}`,
             'sys',
           ),
-        );
-      }
-    }
-  }
-  Object.assign(state, updatePacifistStatus(state, hooks));
-  Object.assign(state, doIncome(state));
-  if (!getSingularityAnnounced() && isSingularityInPlay(state)) {
-    state.singularityAnnounced = true;
-    Object.assign(
-      state,
-      log(
-        state,
-        '🌀 A Research Lab stands complete somewhere — the SINGULARITY card (technology + extra draft picks) can now appear in the pool!',
-        'sys',
-      ),
+        ),
     );
-  }
-  state.pool = makePool(state);
-  const alive = filterAlivePlayers(state);
-  const starter = choice(alive);
-  state.startIdx = starter.id;
-  const first = draftOrder(state)[0];
-  const flavor =
-    getTurn() >= ACTION_CARDS_FROM_TURN
-      ? ' · 🃏 5 buildings · 5 resources · 6 actions'
-      : getTurn() >= BUILDINGS_FROM_TURN
-        ? ' · 🃏 5 buildings · 11 resources'
-        : '';
-  Object.assign(
-    state,
-    log(
-      state,
-      `— TURN ${getTurn()} — ${first.name} drafts first${flavor}`,
-      'sys',
-    ),
-  );
-  if (getTurn() === BUILDINGS_FROM_TURN) {
-    Object.assign(
-      state,
-      log(
-        state,
-        '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
-        'sys',
-      ),
-    );
-  }
-  if (getTurn() === ACTION_CARDS_FROM_TURN) {
-    Object.assign(
-      state,
-      log(
-        state,
-        '⚡ Action cards have entered the pool — ⚔️ Attack, 🪖 Recruit and 🔁 Trade can now be drafted!',
-        'sys',
-      ),
-    );
-  }
-  if (getTurn() === MOVE_CARDS_FROM_TURN) {
-    Object.assign(
-      state,
-      log(
-        state,
-        '🛸 Move cards have entered the pool — troops can now be redeployed (Spaceport required)!',
-        'sys',
-      ),
-    );
-  }
-  if (getTurn() === ADVANCED_FROM_TURN) {
-    Object.assign(
-      state,
-      log(
-        state,
-        '🔬 Advanced blueprints unlocked — the 🔬 Research Lab can now appear in the pool!',
-        'sys',
-      ),
-    );
-  }
+}
 
-  await runDraft(hooks);
-  if (getOver()) {
-    return;
-  }
-  // Nobody can hold an action card before they exist, so skip the action phase.
-  if (getTurn() < ACTION_CARDS_FROM_TURN) {
-    Object.assign(
-      getGameState(),
-      log(
-        getGameState(),
-        `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
-        'sys',
+function remainingSkipsSuffix(skipTurns: number): string {
+  return match(skipTurns)
+    .when(
+      (n) => n > 0,
+      (n) => ` (${n} more)`,
+    )
+    .otherwise(() => '');
+}
+
+function announceSingularity(state: GameState): void {
+  return match(!getSingularityAnnounced() && isSingularityInPlay(state))
+    .with(
+      true,
+      () =>
+        void Object.assign(
+          state,
+          log(
+            Object.assign(state, { singularityAnnounced: true }),
+            '🌀 A Research Lab stands complete somewhere — the SINGULARITY card (technology + extra draft picks) can now appear in the pool!',
+            'sys',
+          ),
+        ),
+    )
+    .otherwise(noop);
+}
+
+function turnFlavor(turn: number): string {
+  return match(turn)
+    .when(
+      (t) => t >= ACTION_CARDS_FROM_TURN,
+      () => ' · 🃏 5 buildings · 5 resources · 6 actions',
+    )
+    .when(
+      (t) => t >= BUILDINGS_FROM_TURN,
+      () => ' · 🃏 5 buildings · 11 resources',
+    )
+    .otherwise(() => '');
+}
+
+function milestoneLogs(state: GameState): GameState {
+  return chain(state)
+    .thru((s) =>
+      logWhenTurnIs(
+        s,
+        BUILDINGS_FROM_TURN,
+        '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
       ),
-    );
-    return;
-  }
-  await runActionPhase();
+    )
+    .thru((s) =>
+      logWhenTurnIs(
+        s,
+        ACTION_CARDS_FROM_TURN,
+        '⚡ Action cards have entered the pool — ⚔️ Attack, 🪖 Recruit and 🔁 Trade can now be drafted!',
+      ),
+    )
+    .thru((s) =>
+      logWhenTurnIs(
+        s,
+        MOVE_CARDS_FROM_TURN,
+        '🛸 Move cards have entered the pool — troops can now be redeployed (Spaceport required)!',
+      ),
+    )
+    .thru((s) =>
+      logWhenTurnIs(
+        s,
+        ADVANCED_FROM_TURN,
+        '🔬 Advanced blueprints unlocked — the 🔬 Research Lab can now appear in the pool!',
+      ),
+    )
+    .value();
+}
+
+function logWhenTurnIs(s: GameState, turn: number, msg: string): GameState {
+  return match(s.turn)
+    .with(turn, () => log(s, msg, 'sys'))
+    .otherwise(() => s);
+}
+
+// The pick mutations replaced the state object during the draft — re-read it.
+async function afterDraft(): Promise<void> {
+  return match(getGameState())
+    .when(
+      () => Boolean(getOver()),
+      async (): Promise<void> => undefined,
+    )
+    .when(
+      // Nobody can hold an action card before they exist, so skip the action phase.
+      (s) => s.turn < ACTION_CARDS_FROM_TURN,
+      async (s): Promise<void> =>
+        void Object.assign(
+          s,
+          log(
+            s,
+            `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
+            'sys',
+          ),
+        ),
+    )
+    .otherwise(() => runActionPhase());
 }

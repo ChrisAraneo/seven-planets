@@ -1,4 +1,7 @@
+import { match, P } from 'ts-pattern';
 import { getGameState, setGameState } from '../game-state';
+
+const { nullish } = P;
 
 export interface PlanetLayout {
   x: number;
@@ -10,11 +13,12 @@ export interface PlanetLayout {
 // here; effects (rockets, booms, floating text) read the same coordinates off
 // the planets in state.
 export function setPlanetLayout(layout: readonly PlanetLayout[]): void {
-  const state = getGameState();
-  setGameState({
-    ...state,
-    planets: state.planets.map((pl, i) =>
-      layout[i] ? { ...pl, ...layout[i] } : pl,
+  return setGameState({
+    ...getGameState(),
+    planets: getGameState().planets.map((pl, i) =>
+      match(layout[i])
+        .with(nullish, () => pl)
+        .otherwise((coords) => ({ ...pl, ...coords })),
     ),
   });
 }

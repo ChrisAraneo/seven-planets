@@ -3,8 +3,10 @@ import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 
 // Extra flat defense every pacifist owner's planet enjoys.
+// Branch-free arithmetic: this sits in the AI's battle-prediction hot loop.
 export function pacifistDefBonus(state: GameState, planet: Planet): number {
-  return state.players[planet.ownerId]?.hasPacifistStatus
-    ? PACIFIST_DEF_BONUS
-    : 0;
+  return (
+    Number(Boolean(state.players[planet.ownerId]?.hasPacifistStatus)) *
+    PACIFIST_DEF_BONUS
+  );
 }

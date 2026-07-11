@@ -1,3 +1,5 @@
+import { chain } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { buildingCost, BUILDINGS, NO_PRESENTATION } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
@@ -15,45 +17,80 @@ export function buildBuilding(
   buildingType: BuildingType,
   hooks: PresentationHooks = NO_PRESENTATION,
 ): GameState {
-  const currentTech = getTechLevel(state, state.players[playerId]);
-  const level = (state.planets[planetId].buildings[buildingType] || 0) + 1;
+  return chain({
+    currentTech: getTechLevel(state, state.players[playerId]),
+    level: (state.planets[planetId].buildings[buildingType] || 0) + 1,
+  })
+    .thru(({ currentTech, level }) => ({
+      currentTech,
+      level,
+      state: updatePlanet(
+        payCost(state, playerId, buildingCost(buildingType, level)),
+        planetId,
+        (planet) => ({
+          ...planet,
+          buildings: { ...planet.buildings, [buildingType]: level },
+        }),
+      ),
+    }))
+    .thru(({ currentTech, level, state: built }) => ({
+      currentTech,
+      level,
+      state: log(
+        built,
+        `🏗️ ${built.players[playerId].name} ${buildVerb(buildingType, level)} on ${built.planets[planetId].name}`,
+        'build',
+      ),
+    }))
+    .tap(({ level, state: logged }) =>
+      hooks.floatText(
+        logged.planets[planetId],
+        `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${levelSuffix(level)}`,
+        '#7dff8a',
+      ),
+    )
+    .thru(({ currentTech, state: logged }) =>
+      logTechAdvance(logged, playerId, currentTech),
+    )
+    .value();
+}
 
-  let updatedState = payCost(
-    state,
-    playerId,
-    buildingCost(buildingType, level),
-  );
-  updatedState = updatePlanet(updatedState, planetId, (planet) => ({
-    ...planet,
-    buildings: { ...planet.buildings, [buildingType]: level },
-  }));
-  const verb =
-    level > 1
-      ? `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${level}`
-      : `builds ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}`;
-  updatedState = log(
-    updatedState,
-    `🏗️ ${updatedState.players[playerId].name} ${verb} on ${updatedState.planets[planetId].name}`,
-    'build',
-  );
-  hooks.floatText(
-    updatedState.planets[planetId],
-    `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${level > 1 ? ` L${level}` : ''}`,
-    '#7dff8a',
-  );
-
-  const updatedTech = getTechLevel(
-    updatedState,
-    updatedState.players[playerId],
-  );
-
-  if (updatedTech > currentTech) {
-    updatedState = log(
-      updatedState,
-      `🔬 ${updatedState.players[playerId].name} reaches TECHNOLOGY ${updatedTech} — level-${updatedTech} upgrades unlocked, and they now draft before lower-tech rivals!`,
-      'sys',
+function buildVerb(buildingType: BuildingType, level: number): string {
+  return match(level)
+    .when(
+      (l) => l > 1,
+      (l) =>
+        `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${l}`,
+    )
+    .otherwise(
+      () =>
+        `builds ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}`,
     );
-  }
+}
 
-  return updatedState;
+function levelSuffix(level: number): string {
+  return match(level)
+    .when(
+      (l) => l > 1,
+      (l) => ` L${l}`,
+    )
+    .otherwise(() => '');
+}
+
+function logTechAdvance(
+  state: GameState,
+  playerId: number,
+  previousTech: number,
+): GameState {
+  return match(getTechLevel(state, state.players[playerId]))
+    .when(
+      (updatedTech) => updatedTech > previousTech,
+      (updatedTech) =>
+        log(
+          state,
+          `🔬 ${state.players[playerId].name} reaches TECHNOLOGY ${updatedTech} — level-${updatedTech} upgrades unlocked, and they now draft before lower-tech rivals!`,
+          'sys',
+        ),
+    )
+    .otherwise(() => state);
 }

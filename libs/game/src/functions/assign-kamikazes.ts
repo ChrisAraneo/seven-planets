@@ -1,27 +1,47 @@
-import { cloneDeep } from 'lodash-es';
+import { chain, cloneDeep } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { shuffleArray } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 
 import { updatePlayers } from './update-players';
 
 export function assignKamikazes(state: GameState, count: number): GameState {
-  const cleared = updatePlayers(cloneDeep(state), (player) => ({
-    ...player,
-    isKamikaze: false,
-  }));
+  return chain(
+    updatePlayers(cloneDeep(state), (player) => ({
+      ...player,
+      isKamikaze: false,
+    })),
+  )
+    .thru((cleared) =>
+      match(count)
+        .when(
+          (n) => n <= 0,
+          () => cleared,
+        )
+        .otherwise((n) => markRandomAiAsKamikaze(cleared, n)),
+    )
+    .value();
+}
 
-  if (count <= 0) {
-    return cleared;
-  }
-
-  const aliveAiPlayers = shuffleArray(
-    cleared.players.filter((player) => !player.isHuman && player.isAlive),
-  );
-  const chosen = new Set(
-    aliveAiPlayers.slice(0, count).map((player) => player.id),
-  );
-
-  return updatePlayers(cleared, (player) =>
-    chosen.has(player.id) ? { ...player, isKamikaze: true } : player,
-  );
+function markRandomAiAsKamikaze(state: GameState, count: number): GameState {
+  return chain(
+    shuffleArray(
+      state.players.filter((player) => !player.isHuman && player.isAlive),
+    ),
+  )
+    .thru(
+      (aliveAiPlayers) =>
+        new Set(aliveAiPlayers.slice(0, count).map((player) => player.id)),
+    )
+    .thru((chosen) =>
+      updatePlayers(state, (player) =>
+        match(player)
+          .when(
+            (p) => chosen.has(p.id),
+            (p) => ({ ...p, isKamikaze: true }),
+          )
+          .otherwise((p) => p),
+      ),
+    )
+    .value();
 }

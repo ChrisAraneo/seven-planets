@@ -1,39 +1,52 @@
+import { match, P } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { getTurn } from '../getters/get-turn';
 import { getGameState, resetGameState } from '../game-state';
+import type { GameOver } from '../interfaces/game-over';
 
 import { assignKamikazes } from './assign-kamikazes';
-import { playTurn } from './play-turn';
+import { playTurns } from './play-turns';
+
+const { nonNullable } = P;
+
+interface SimulationResult {
+  turns: number;
+  winner: { id: number; name: string; isHuman: boolean } | null;
+  reason: string;
+}
 
 export async function simulateGame(
   maxTurns = 400,
   opts: { kamikazeCount?: number } = {},
-) {
+): Promise<SimulationResult> {
   // Each simulated game runs on a fresh state in the store's game module;
   // every engine/AI function reads it from there. Games run strictly
   // sequentially, so resetting between games is safe. The state must stay
   // reactive: the AI is a store plugin that watches the game flags, so it
   // only reacts (drives AI seats) when those mutations are observable.
-  resetGameState();
-  Object.assign(
-    getGameState(),
-    assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
-  );
+  return Promise.resolve(resetGameState())
+    .then(() =>
+      Object.assign(
+        getGameState(),
+        assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
+      ),
+    )
+    .then(() => playTurns(maxTurns))
+    .then(() => gameResult(getOver(), getTurn()));
+}
 
-  while (!getOver() && getTurn() < maxTurns) {
-    await playTurn();
-  }
-
-  const over = getOver();
+function gameResult(over: GameOver | null, turns: number): SimulationResult {
   return {
-    turns: getTurn(),
-    winner: over?.winner
-      ? {
-          id: over.winner.id,
-          name: over.winner.name,
-          isHuman: over.winner.isHuman,
-        }
-      : null,
-    reason: over ? over.reason || 'timeout' : 'timeout',
+    turns,
+    winner: match(over?.winner)
+      .with(nonNullable, (w) => ({
+        id: w.id,
+        name: w.name,
+        isHuman: w.isHuman,
+      }))
+      .otherwise(() => null),
+    reason: match(over)
+      .with(nonNullable, (o) => o.reason || 'timeout')
+      .otherwise(() => 'timeout'),
   };
 }

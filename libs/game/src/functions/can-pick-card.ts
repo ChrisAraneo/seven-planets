@@ -1,3 +1,4 @@
+import { match, P } from 'ts-pattern';
 import {
   buildingCost,
   canAfford,
@@ -18,6 +19,8 @@ import { hasBuilding } from './has-building';
 import { getTechLevel } from './get-tech-level';
 import { totalTroops } from './total-troops';
 
+const { nullish } = P;
+
 // Can this player take pool card `t` during `planet`'s draft turn?
 export function canPickCard(
   state: GameState,
@@ -25,42 +28,55 @@ export function canPickCard(
   t: PoolType,
   planet: Planet | undefined,
 ): boolean {
-  if (CARDS[t].building) {
-    if (!planet) {
-      return false;
-    }
-    const bt = t as BuildingType;
-    const next = (planet.buildings[bt] || 0) + 1;
-    if (next > maxLevel(bt)) {
-      return false;
-    }
-    if (next > getTechLevel(state, p)) {
-      return false;
-    } // Upgrades are gated by technology
-    if (bt === 'SINGULARITY' && !isSingularityLabOk(planet, next)) {
-      return false;
-    }
-    return canAfford(p.hand, buildingCost(bt, next));
-  }
-  // Influence cards cost ⭐ at pick time and go to hand; targets resolved later.
-  if (CARDS[t].influenceCard) {
-    return p.influence >= INFLUENCE_CARDS[t as InfluenceType].cost;
-  }
-  if (t === 'ATTACK') {
-    return hasBuilding(state, p, 'SILO') && totalTroops(state, p) >= 1;
-  }
-  if (t === 'MOVE') {
-    return (
-      hasBuilding(state, p, 'SPACEPORT') &&
-      ownedPlanets(state, p).length >= 2 &&
-      totalTroops(state, p) >= 1
+  return match(t)
+    .when(
+      (type) => Boolean(CARDS[type].building),
+      (type) => canPickBuilding(state, p, type as BuildingType, planet),
+    )
+    .when(
+      // Influence cards cost ⭐ at pick time and go to hand; targets resolved later.
+      (type) => Boolean(CARDS[type].influenceCard),
+      (type) => p.influence >= INFLUENCE_CARDS[type as InfluenceType].cost,
+    )
+    .with(
+      'ATTACK',
+      () => hasBuilding(state, p, 'SILO') && totalTroops(state, p) >= 1,
+    )
+    .with(
+      'MOVE',
+      () =>
+        hasBuilding(state, p, 'SPACEPORT') &&
+        ownedPlanets(state, p).length >= 2 &&
+        totalTroops(state, p) >= 1,
+    )
+    .with('RECRUIT', () => hasBuilding(state, p, 'BARRACKS'))
+    .with('TRADE', () => hasBuilding(state, p, 'EMBASSY'))
+    .otherwise(() => true);
+}
+
+function canPickBuilding(
+  state: GameState,
+  p: Player,
+  bt: BuildingType,
+  planet: Planet | undefined,
+): boolean {
+  return match(planet)
+    .with(nullish, () => false)
+    .otherwise((pl) =>
+      match((pl.buildings[bt] || 0) + 1)
+        .when(
+          (next) => next > maxLevel(bt),
+          () => false,
+        )
+        .when(
+          // Upgrades are gated by technology
+          (next) => next > getTechLevel(state, p),
+          () => false,
+        )
+        .when(
+          (next) => bt === 'SINGULARITY' && !isSingularityLabOk(pl, next),
+          () => false,
+        )
+        .otherwise((next) => canAfford(p.hand, buildingCost(bt, next))),
     );
-  }
-  if (t === 'RECRUIT') {
-    return hasBuilding(state, p, 'BARRACKS');
-  }
-  if (t === 'TRADE') {
-    return hasBuilding(state, p, 'EMBASSY');
-  }
-  return true;
 }

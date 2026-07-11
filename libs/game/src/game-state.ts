@@ -1,8 +1,11 @@
+import { match, P } from 'ts-pattern';
 import type { GameState } from './interfaces/game-state';
 import { initializeState } from './functions/initialize-state';
 import { markRaw } from 'vue';
 
 import { resetResolvers } from './functions/resolver-state';
+
+const { nonNullable } = P;
 
 /* =====================================================================
    The game lib owns NO store. It only needs somewhere to read the live
@@ -36,23 +39,17 @@ export function installGameState(a: GameStateAccess): void {
 
 /** The current game state, for engine/AI functions running outside components. */
 export function getGameState(): GameState {
-  if (!access) {
-    throw new Error(
-      'Game state access not installed — import "@/stores" before any engine/AI call.',
-    );
-  }
-  return access.get();
+  return requireAccess(access).get();
 }
 
 /** Install a freshly-produced (immutable) GameState as the live state.
     A spread-produced state is plain, so raw mode re-applies markRaw. */
 export function setGameState(state: GameState): void {
-  if (!access) {
-    throw new Error(
-      'Game state access not installed — import "@/stores" before any engine/AI call.',
-    );
-  }
-  access.set(raw ? markRaw(state) : state);
+  return requireAccess(access).set(
+    match(raw)
+      .with(true, () => markRaw(state))
+      .otherwise(() => state),
+  );
 }
 
 /** Swap in a fresh game state (headless simulations run many games back to
@@ -63,4 +60,16 @@ export function resetGameState(opts: { raw?: boolean } = {}): void {
   raw = Boolean(opts.raw);
   setGameState(initializeState());
   resetResolvers();
+}
+
+// The one place the lib fails fast: engine/AI calls are meaningless without an
+// installed accessor, so absence must escalate rather than fall back.
+function requireAccess(a: GameStateAccess | null): GameStateAccess {
+  return match(a)
+    .with(nonNullable, (installed) => installed)
+    .otherwise(() => {
+      throw new Error(
+        'Game state access not installed — import "@/stores" before any engine/AI call.',
+      );
+    });
 }

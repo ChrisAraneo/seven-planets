@@ -1,29 +1,26 @@
+import { chain, cloneDeep, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { getHumanResolve, setHumanResolve } from '../functions/resolver-state';
 import { getGameState, setGameState } from '../game-state';
-import { cloneDeep } from 'lodash-es';
 
 export interface EndTurnPayload {
   playerId: number;
 }
 
 export function endTurn(payload: EndTurnPayload): void {
-  const state = cloneDeep(getGameState());
-
-  if (payload.playerId !== state.activeId) {
-    return;
-  }
-
-  const humanResolve = getHumanResolve();
-
-  if (!humanResolve) {
-    return;
-  }
-
-  setHumanResolve(null);
-
-  state.awaitingAction = false;
-
-  humanResolve();
-
-  setGameState(state);
+  return match({
+    state: cloneDeep(getGameState()),
+    humanResolve: getHumanResolve(),
+  })
+    .when(({ state }) => payload.playerId !== state.activeId, noop)
+    .when(({ humanResolve }) => !humanResolve, noop)
+    .otherwise(
+      ({ state, humanResolve }) =>
+        void chain(state)
+          .tap(() => setHumanResolve(null))
+          .thru((s) => Object.assign(s, { awaitingAction: false }))
+          .tap(() => humanResolve?.())
+          .tap((s) => setGameState(s))
+          .value(),
+    );
 }

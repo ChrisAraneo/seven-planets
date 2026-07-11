@@ -1,8 +1,16 @@
+import { chain, range } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { CARD_TYPES, choice } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { Hand } from '../interfaces/hand';
 
 import { updatePlayer } from './update-player';
+
+interface LootProgress {
+  fromHand: Hand;
+  toHand: Hand;
+  taken: Hand;
+}
 
 // Loot `number` random cards from one player to another, weighted by the victim's
 // stash. Pure: returns the new state plus the `taken` tally (used in war logs).
@@ -12,34 +20,43 @@ export function stealCards(
   toId: number,
   number: number,
 ): { state: GameState; taken: Hand } {
-  const taken: Hand = {};
-  const fromHand = { ...state.players[fromId].hand };
-  const toHand = { ...state.players[toId].hand };
+  return chain(range(number))
+    .reduce((loot: LootProgress) => stealOne(loot), {
+      fromHand: { ...state.players[fromId].hand },
+      toHand: { ...state.players[toId].hand },
+      taken: {},
+    })
+    .thru(({ fromHand, toHand, taken }) => ({
+      state: updatePlayer(
+        updatePlayer(state, fromId, (p) => ({ ...p, hand: fromHand })),
+        toId,
+        (p) => ({ ...p, hand: toHand }),
+      ),
+      taken,
+    }))
+    .value();
+}
 
-  for (let i = 0; i < number; i++) {
-    const avail = CARD_TYPES.filter((t) => fromHand[t] > 0);
-
-    if (avail.length === 0) {
-      break;
-    }
-
-    // Weight by count so the loot reflects the victim's stash
-    const flat: string[] = [];
-
-    for (const t of avail) {
-      for (let k = 0; k < fromHand[t]; k++) {
-        flat.push(t);
-      }
-    }
-    const t = choice(flat);
-
-    fromHand[t]--;
-    toHand[t]++;
-    taken[t] = (taken[t] || 0) + 1;
-  }
-
-  let next = updatePlayer(state, fromId, (p) => ({ ...p, hand: fromHand }));
-  next = updatePlayer(next, toId, (p) => ({ ...p, hand: toHand }));
-
-  return { state: next, taken };
+function stealOne(loot: LootProgress): LootProgress {
+  return match(CARD_TYPES.filter((t) => loot.fromHand[t] > 0))
+    .when(
+      (avail) => avail.length === 0,
+      () => loot,
+    )
+    .otherwise((avail) =>
+      // Weight by count so the loot reflects the victim's stash
+      chain(
+        choice(
+          avail.flatMap((t) =>
+            Array.from({ length: loot.fromHand[t] }, () => t),
+          ),
+        ),
+      )
+        .thru((t) => ({
+          fromHand: { ...loot.fromHand, [t]: loot.fromHand[t] - 1 },
+          toHand: { ...loot.toHand, [t]: loot.toHand[t] + 1 },
+          taken: { ...loot.taken, [t]: (loot.taken[t] || 0) + 1 },
+        }))
+        .value(),
+    );
 }

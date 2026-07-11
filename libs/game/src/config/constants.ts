@@ -3,6 +3,8 @@
    Ported from the original vanilla-JS game.js.
    ===================================================================== */
 
+import { chain, fromPairs, mapValues, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import type { ActionType } from '../interfaces/action-type';
 import type { BuildingDef } from '../interfaces/building-def';
 import type { BuildingType } from '../interfaces/building-type';
@@ -234,33 +236,41 @@ export function maxLevel(id: BuildingType): number {
 
 // Level N of a building costs N× its base cost.
 export function buildingCost(id: BuildingType, level: number): Cost {
-  const base = BUILDINGS[id].cost;
-  if (level <= 1) {
-    return base;
-  }
-  const c: Cost = {};
-  for (const t in base) {
-    c[t] = base[t] * level;
-  }
-  return c;
+  return match(level)
+    .when(
+      (l) => l <= 1,
+      () => BUILDINGS[id].cost,
+    )
+    .otherwise((l) => mapValues(BUILDINGS[id].cost, (amount) => amount * l));
 }
 
 // Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
 export function incomeAmount(id: BuildingType, lvl: number): number {
-  return id === 'MINE' && lvl >= 2 ? 3 : lvl;
+  return match({ id, lvl })
+    .when(
+      (x) => x.id === 'MINE' && x.lvl >= 2,
+      (): number => 3,
+    )
+    .otherwise((x) => x.lvl);
 }
 
 // Building cards live in the pool alongside resources & actions.
-for (const b of BUILD_ORDER) {
-  CARDS[b] = {
-    name: BUILDINGS[b].name,
-    icon: BUILDINGS[b].icon,
-    color: BUILDINGS[b].cardColor,
-    weight: BUILDINGS[b].cardWeight,
-    value: 0,
-    building: true,
-  };
-}
+Object.assign(
+  CARDS,
+  fromPairs(
+    BUILD_ORDER.map((b) => [
+      b,
+      {
+        name: BUILDINGS[b].name,
+        icon: BUILDINGS[b].icon,
+        color: BUILDINGS[b].cardColor,
+        weight: BUILDINGS[b].cardWeight,
+        value: 0,
+        building: true,
+      },
+    ]),
+  ),
+);
 
 // INFLUENCE CARDS — dealt into the pool from turn 30.
 export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
@@ -308,16 +318,22 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
   },
 };
 export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[];
-for (const k of INFLUENCE_TYPES) {
-  CARDS[k] = {
-    name: INFLUENCE_CARDS[k].name,
-    icon: INFLUENCE_CARDS[k].icon,
-    color: '#ffb0d8',
-    weight: 1,
-    value: 0,
-    influenceCard: true,
-  };
-}
+Object.assign(
+  CARDS,
+  fromPairs(
+    INFLUENCE_TYPES.map((k) => [
+      k,
+      {
+        name: INFLUENCE_CARDS[k].name,
+        icon: INFLUENCE_CARDS[k].icon,
+        color: '#ffb0d8',
+        weight: 1,
+        value: 0,
+        influenceCard: true,
+      },
+    ]),
+  ),
+);
 export const POOL_TYPES: PoolType[] = [
   ...CARD_TYPES,
   ...BUILD_ORDER,
@@ -509,14 +525,12 @@ export function choice<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Fisher-Yates shuffle — returns a NEW array, does not mutate input.
+// Uniform shuffle (sort by random keys) — returns a NEW array, does not mutate input.
 export function shuffleArray<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+  return chain(arr.map((item) => ({ item, key: Math.random() })))
+    .sortBy(({ key }) => key)
+    .map(({ item }) => item)
+    .value();
 }
 
 export function handValue(map: Hand | Cost): number {
@@ -525,14 +539,14 @@ export function handValue(map: Hand | Cost): number {
 
 // Relics are wildcards: they can stand in for any missing resource.
 export function canAfford(hand: Hand, cost: Cost): boolean {
-  let shortfall = 0;
-  for (const t in cost) {
-    const miss = cost[t] - (hand[t] || 0);
-    if (miss > 0) {
-      shortfall += miss;
-    }
-  }
-  return shortfall <= (hand.RELIC || 0) - (cost.RELIC || 0);
+  return (
+    Object.entries(cost).reduce(
+      (shortfall, [t, amount]) =>
+        shortfall + Math.max(0, amount - (hand[t] || 0)),
+      0,
+    ) <=
+    (hand.RELIC || 0) - (cost.RELIC || 0)
+  );
 }
 
 export function costLabel(cost: Cost): string {
@@ -542,15 +556,21 @@ export function costLabel(cost: Cost): string {
 }
 
 export function fmtCards(map: Hand | Cost): string {
-  const parts = CARD_TYPES.filter((t) => (map[t] || 0) > 0).map(
-    (t) => `${map[t]}${CARDS[t].icon}`,
-  );
-  return parts.length > 0 ? parts.join(' ') : 'nothing';
+  return match(
+    CARD_TYPES.filter((t) => (map[t] || 0) > 0).map(
+      (t) => `${map[t]}${CARDS[t].icon}`,
+    ),
+  )
+    .when(
+      (parts) => parts.length > 0,
+      (parts) => parts.join(' '),
+    )
+    .otherwise(() => 'nothing');
 }
 
 export const NO_PRESENTATION: PresentationHooks = {
   sleep: () => Promise.resolve(),
   rocket: () => Promise.resolve(),
-  boom: () => {},
-  floatText: () => {},
+  boom: noop,
+  floatText: noop,
 };

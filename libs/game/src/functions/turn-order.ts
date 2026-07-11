@@ -1,12 +1,14 @@
+import { chain, range } from 'lodash-es';
 import { getStartIdx } from '../getters/get-start-idx';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 
 export function turnOrder(state: GameState): Player[] {
-  const n = state.players.length;
-  const order: Player[] = [];
-  for (let i = 0; i < n; i++) {
-    order.push(state.players[(getStartIdx() + i) % n]);
-  }
-  return order.filter((p) => p.isAlive);
+  return chain(range(state.players.length))
+    .map(
+      (offset) =>
+        state.players[(getStartIdx() + offset) % state.players.length],
+    )
+    .filter((player) => player.isAlive)
+    .value();
 }

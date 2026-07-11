@@ -1,8 +1,10 @@
+import { chain, cloneDeep, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { canPickCard } from '../functions/can-pick-card';
 import { homePlanet } from '../functions/home-planet';
 import { getPoolResolve, setPoolResolve } from '../functions/resolver-state';
 import { getGameState, setGameState } from '../game-state';
-import { cloneDeep } from 'lodash-es';
+import type { GameState } from '../interfaces/game-state';
 
 export interface PickCardPayload {
   playerId: number;
@@ -10,30 +12,40 @@ export interface PickCardPayload {
 }
 
 export async function pickCard(payload: PickCardPayload): Promise<void> {
-  const state = cloneDeep(getGameState());
-  const { playerId, idx } = payload;
-  const resolve = getPoolResolve();
+  return match({ state: cloneDeep(getGameState()), resolve: getPoolResolve() })
+    .when(
+      ({ state, resolve }) =>
+        !resolve ||
+        state.phase !== 'draft' ||
+        payload.playerId !== state.activeId,
+      noop,
+    )
+    .when(({ state }) => !isValidPick(state, payload), noop)
+    .otherwise(
+      ({ state, resolve }) =>
+        void chain(state)
+          .tap(() => setPoolResolve(null))
+          .thru((s) => Object.assign(s, { awaitingPick: false }))
+          .tap(() => resolve?.(payload.idx))
+          .tap((s) => setGameState(s))
+          .value(),
+    );
+}
 
-  if (!resolve || state.phase !== 'draft' || playerId !== state.activeId) {
-    return;
-  }
-
-  const p = state.players[playerId];
-  const planet = state.planets[state.draftPlanetId] || homePlanet(state, p);
-
-  if (
-    idx < 0 ||
-    idx >= state.pool.length ||
-    !canPickCard(state, p, state.pool[idx], planet)
-  ) {
-    return;
-  }
-
-  setPoolResolve(null);
-
-  state.awaitingPick = false;
-
-  resolve(idx);
-
-  setGameState(state);
+function isValidPick(
+  state: GameState,
+  { playerId, idx }: PickCardPayload,
+): boolean {
+  return chain(state.players[playerId])
+    .thru((p) => ({
+      p,
+      planet: state.planets[state.draftPlanetId] || homePlanet(state, p),
+    }))
+    .thru(
+      ({ p, planet }) =>
+        idx >= 0 &&
+        idx < state.pool.length &&
+        canPickCard(state, p, state.pool[idx], planet),
+    )
+    .value();
 }
