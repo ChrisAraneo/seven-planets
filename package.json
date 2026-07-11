@@ -17,12 +17,12 @@
     "type-check": "vue-tsc --build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli apps/ libs/ scripts/"
   },
   "dependencies": {
     "lodash-es": "^4.18.1",
-    "vue": "^3.5.38",
-    "vuex": "^4.1.0"
+    "pinia": "^3.0.4",
+    "vue": "^3.5.38"
   },
   "devDependencies": {
     "@chris.araneo/eslint-config": "0.0.138",

@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { store } from '@/stores';
+import { recruitTroops } from '@seven-planets/game';
+import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { canAfford, costLabel } from '@seven-planets/game';
 import { ownedPlanets } from '@seven-planets/game';
 import { recruitCost } from '@seven-planets/game';
 import { recruitYield } from '@seven-planets/game';
 
+const game = useGameStore();
+const ui = useUiStore();
+
 const barracksPls = computed(() => {
-  const state = store.state.game.state;
+  const state = game.state;
   const human = state.players[0];
   return ownedPlanets(state, human).filter(
     (pl) => pl.buildings.BARRACKS && canAfford(human.hand, recruitCost(pl)),
@@ -16,13 +20,13 @@ const barracksPls = computed(() => {
 });
 
 function recruit(planetId: number): void {
-  store.commit('ui/closeModal');
-  void store.dispatch('game/recruitTroops', { playerId: 0, planetId });
+  ui.closeModal();
+  void recruitTroops({ playerId: 0, planetId });
 }
 </script>
 
 <template>
-  <ModalShell @close="store.commit('ui/closeModal')">
+  <ModalShell @close="ui.closeModal()">
     <h2>🪖 RECRUIT</h2>
     <p class="dimtx">
       Recruiting needs a 🎖️ Barracks — each recruitment yields troops equal to
@@ -45,7 +49,7 @@ function recruit(planetId: number): void {
       <div>🪖{{ pl.troops }}</div>
     </div>
     <div class="mbtns">
-      <button class="btn" @click="store.commit('ui/closeModal')">Cancel</button>
+      <button class="btn" @click="ui.closeModal()">Cancel</button>
     </div>
   </ModalShell>
 </template>

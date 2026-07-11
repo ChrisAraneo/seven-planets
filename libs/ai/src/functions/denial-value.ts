@@ -1,9 +1,5 @@
 import { getAiState } from '../state';
-import {
-  CARDS,
-  INFLUENCE_CARDS,
-  RESOURCE_TYPES,
-} from '@seven-planets/game';
+import { CARDS, INFLUENCE_CARDS, RESOURCE_TYPES } from '@seven-planets/game';
 import type {
   BuildingType,
   InfluenceType,

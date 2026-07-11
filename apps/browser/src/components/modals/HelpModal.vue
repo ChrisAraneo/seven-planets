@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { store } from '@/stores';
+import { useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_CARDS_FROM_TURN,
@@ -18,10 +18,12 @@ import {
   maxLevel,
   MOVE_CARDS_FROM_TURN,
 } from '@seven-planets/game';
+
+const ui = useUiStore();
 </script>
 
 <template>
-  <ModalShell @close="store.commit('ui/closeModal')">
+  <ModalShell @close="ui.closeModal()">
     <h2>❓ HOW TO PLAY</h2>
     <ul class="rules">
       <li>
@@ -184,7 +186,7 @@ import {
       </li>
     </ul>
     <div class="mbtns">
-      <button class="btn" @click="store.commit('ui/closeModal')">Close</button>
+      <button class="btn" @click="ui.closeModal()">Close</button>
     </div>
   </ModalShell>
 </template>

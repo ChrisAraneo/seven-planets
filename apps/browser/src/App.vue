@@ -2,7 +2,7 @@
 import { getOver } from '@seven-planets/game';
 import { getPendingOffer } from '@seven-planets/game';
 import { computed, onMounted } from 'vue';
-import { store } from '@/stores';
+import { useGameStore, useUiStore } from '@/stores';
 import GameHeader from '@/components/GameHeader.vue';
 import GameBoard from '@/components/GameBoard.vue';
 import PlayersPanel from '@/components/PlayersPanel.vue';
@@ -20,11 +20,14 @@ import TradeOfferModal from '@/components/modals/TradeOfferModal.vue';
 import GameOverModal from '@/components/modals/GameOverModal.vue';
 import DifficultyModal from '@/components/modals/DifficultyModal.vue';
 
-const difficulty = computed(() => store.state.ui.difficulty);
-const modal = computed(() => store.state.ui.modal);
-const human = computed(() => store.state.game.state.players[0]);
+const ui = useUiStore();
+const game = useGameStore();
 
-onMounted(() => void store.dispatch('ui/start'));
+const difficulty = computed(() => ui.difficulty);
+const modal = computed(() => ui.modal);
+const human = computed(() => game.state.players[0]);
+
+onMounted(() => ui.start());
 </script>
 
 <template>

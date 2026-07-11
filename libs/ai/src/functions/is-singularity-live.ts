@@ -1,8 +1,4 @@
-import {
-  ADVANCED_FROM_TURN,
-  BUILD_ORDER,
-  maxLevel,
-} from '@seven-planets/game';
+import { ADVANCED_FROM_TURN, BUILD_ORDER, maxLevel } from '@seven-planets/game';
 import { isSingularityLabOk } from '@seven-planets/game';
 
 import { alive } from './alive';

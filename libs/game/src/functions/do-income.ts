@@ -1,4 +1,10 @@
-import { BUILD_ORDER, BUILDINGS, fmtCards, incomeAmount, PACIFIST_INFLUENCE } from '../config/constants';
+import {
+  BUILD_ORDER,
+  BUILDINGS,
+  fmtCards,
+  incomeAmount,
+  PACIFIST_INFLUENCE,
+} from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 
 import { log } from './log';
@@ -58,7 +64,11 @@ export function doIncome(state: GameState): GameState {
     return { ...p, hand, influence: p.influence + (ia || 0) };
   });
   for (const id in gains) {
-    s = log(s, `⚙️ ${s.players[id].name} produces ${fmtCards(gains[id])}`, 'draft');
+    s = log(
+      s,
+      `⚙️ ${s.players[id].name} produces ${fmtCards(gains[id])}`,
+      'draft',
+    );
   }
   for (const id in moveGains) {
     s = log(

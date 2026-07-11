@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { store } from '@/stores';
+import { useGameStore } from '@/stores';
 import {
   CARD_TYPES,
   CARDS,
@@ -9,7 +9,9 @@ import {
 } from '@seven-planets/game';
 import type { InfluenceType } from '@seven-planets/game';
 
-const human = computed(() => store.state.game.state.players[0]);
+const game = useGameStore();
+
+const human = computed(() => game.state.players[0]);
 
 const regular = computed(() =>
   CARD_TYPES.map((t) => {

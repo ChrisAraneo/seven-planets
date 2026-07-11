@@ -1,4 +1,8 @@
-import { PACIFIST_DEF_BONUS, PACIFIST_INFLUENCE, PACIFIST_TURNS } from '../config/constants';
+import {
+  PACIFIST_DEF_BONUS,
+  PACIFIST_INFLUENCE,
+  PACIFIST_TURNS,
+} from '../config/constants';
 import { floatText } from '../hooks';
 import type { GameState } from '../interfaces/game-state';
 

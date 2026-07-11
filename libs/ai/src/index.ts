@@ -1,4 +1,4 @@
-export * from './ai-module';
+export * from './install-ai';
 export * from './functions/action-draw-prob';
 export * from './functions/activate-weights-for';
 export * from './functions/afford-eta';

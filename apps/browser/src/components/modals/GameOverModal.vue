@@ -2,13 +2,16 @@
 import { getOver } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { computed } from 'vue';
-import { store } from '@/stores';
+import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { buildingCount } from '@seven-planets/game';
 import { totalTroops } from '@seven-planets/game';
 
+const game = useGameStore();
+const ui = useUiStore();
+
 const over = computed(() => getOver());
-const human = store.state.game.state.players[0];
+const human = game.state.players[0];
 const humanWon = computed(
   () => !!over.value?.winner && over.value.winner.isHuman,
 );
@@ -38,13 +41,11 @@ const sub = computed(() => {
     <div class="gostats">
       {{ sub }}<br /><br />
       Turns played: {{ getTurn() }} · Planets held: {{ human.planets.length }} ·
-      Buildings: {{ buildingCount(store.state.game.state, human) }} · Troops:
-      {{ totalTroops(store.state.game.state, human) }}
+      Buildings: {{ buildingCount(game.state, human) }} · Troops:
+      {{ totalTroops(game.state, human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
-      <button class="btn" @click="store.dispatch('ui/newGame')">
-        🔄 Play Again
-      </button>
+      <button class="btn" @click="ui.newGame()">🔄 Play Again</button>
     </div>
   </ModalShell>
 </template>

@@ -2,7 +2,12 @@ import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import { canAfford, CARDS, RESOURCE_TYPES } from '@seven-planets/game';
 import { buildingCost } from '@seven-planets/game';
-import type { InfluenceType, Planet, Player, PoolType } from '@seven-planets/game';
+import type {
+  InfluenceType,
+  Planet,
+  Player,
+  PoolType,
+} from '@seven-planets/game';
 
 import { buildingWorth } from './building-worth';
 import { handAfterCost } from './hand-after-cost';

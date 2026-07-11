@@ -2,7 +2,7 @@
 import { getPendingOffer } from '@seven-planets/game';
 import { getPlayers } from '@seven-planets/game';
 import { computed } from 'vue';
-import { store } from '@/stores';
+import { resolveOffer as resolveGameOffer } from '@seven-planets/game';
 import ModalShell from './ModalShell.vue';
 import { fmtCards } from '@seven-planets/game';
 
@@ -12,7 +12,7 @@ const from = computed(() =>
 );
 
 function resolveOffer(accept: boolean): void {
-  void store.dispatch('game/resolveOffer', { playerId: 0, accept });
+  resolveGameOffer({ playerId: 0, accept });
 }
 </script>
 

@@ -10,10 +10,7 @@
       "@/*": ["./apps/browser/src/*"],
       "@seven-planets/game": ["./libs/game/src/index.ts"],
       "@seven-planets/ai": ["./libs/ai/src/index.ts"],
-      "@seven-planets/effects": ["./libs/effects/src/index.ts"],
-      // vuex 4.1.0 ships no "types" in its package.json exports, invisible
-      // under moduleResolution "bundler".
-      "vuex": ["./node_modules/vuex/types/index.d.ts"]
+      "@seven-planets/effects": ["./libs/effects/src/index.ts"]
     }
   }
 }

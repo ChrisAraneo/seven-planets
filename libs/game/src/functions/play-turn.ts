@@ -1,7 +1,14 @@
 import { getOver } from '../getters/get-over';
 import { getSingularityAnnounced } from '../getters/get-singularity-announced';
 import { getTurn } from '../getters/get-turn';
-import { ACTION_CARDS_FROM_TURN, ADVANCED_FROM_TURN, BUILDINGS_FROM_TURN, choice, INFLUENCE_CARDS_FROM_TURN, MOVE_CARDS_FROM_TURN } from '../config/constants';
+import {
+  ACTION_CARDS_FROM_TURN,
+  ADVANCED_FROM_TURN,
+  BUILDINGS_FROM_TURN,
+  choice,
+  INFLUENCE_CARDS_FROM_TURN,
+  MOVE_CARDS_FROM_TURN,
+} from '../config/constants';
 import { getGameState } from '../game-state';
 
 import { filterAlivePlayers } from './filter-alive-players';
@@ -63,7 +70,11 @@ export async function playTurn(): Promise<void> {
         : '';
   Object.assign(
     state,
-    log(state, `— TURN ${getTurn()} — ${first.name} drafts first${flavor}`, 'sys'),
+    log(
+      state,
+      `— TURN ${getTurn()} — ${first.name} drafts first${flavor}`,
+      'sys',
+    ),
   );
   if (getTurn() === BUILDINGS_FROM_TURN) {
     Object.assign(

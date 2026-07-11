@@ -6,8 +6,8 @@ import { getPlayers } from '@seven-planets/game';
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@seven-planets/game';
 import { isUnderTruce } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
-import { useEffectsStore } from '@/ui/effects-store';
-import { store } from '@/stores';
+import { setPlanetLayout } from '@seven-planets/game';
+import { useEffectsStore } from '@/stores';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 // The engine pushes animations into the effects store; this render loop
@@ -59,7 +59,7 @@ function layoutBoard(): void {
     const a = Math.PI / 2 + i * ((Math.PI * 2) / 7);
     layout.push({ x: cx + rx * Math.cos(a), y: cy + ry * Math.sin(a), r });
   }
-  store.commit('game/setPlanetLayout', layout);
+  setPlanetLayout(layout);
   stars = [];
   const n = Math.floor((canvasW * canvasH) / 8000);
   for (let i = 0; i < n; i++) {

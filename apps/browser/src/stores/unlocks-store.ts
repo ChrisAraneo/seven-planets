@@ -1,8 +1,7 @@
-import type { Module } from 'vuex';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
-
-import type { RootState } from '@/stores';
 
 /* =====================================================================
    SEVEN PLANETS — difficulty unlocks.
@@ -55,39 +54,27 @@ function write(unlocked: Set<Difficulty>): void {
   }
 }
 
-export interface UnlocksModuleState {
-  unlocked: Set<Difficulty>;
-}
+export const useUnlocksStore = defineStore('unlocks', () => {
+  const unlocked = ref<Set<Difficulty>>(read());
 
-export const unlocks: Module<UnlocksModuleState, RootState> = {
-  namespaced: true,
+  function isUnlocked(id: Difficulty): boolean {
+    return unlocked.value.has(id);
+  }
 
-  state: () => ({ unlocked: read() }),
+  /** Record a human victory at `level`. If it unlocks a new difficulty,
+      persist it and return the newly unlocked id; otherwise return null. */
+  function recordWin(level: Difficulty): Difficulty | null {
+    const next = UNLOCKED_BY_WIN[level];
+    if (!next) {
+      return null;
+    }
+    if (unlocked.value.has(next)) {
+      return null; // Already earned in a previous game
+    }
+    unlocked.value.add(next);
+    write(unlocked.value);
+    return next;
+  }
 
-  getters: {
-    isUnlocked: (state) => (id: Difficulty) => state.unlocked.has(id),
-  },
-
-  mutations: {
-    unlock(state, id: Difficulty) {
-      state.unlocked.add(id);
-      write(state.unlocked);
-    },
-  },
-
-  actions: {
-    /** Record a human victory at `level`. If it unlocks a new difficulty,
-        persist it and return the newly unlocked id; otherwise return null. */
-    recordWin({ commit, state }, level: Difficulty): Difficulty | null {
-      const next = UNLOCKED_BY_WIN[level];
-      if (!next) {
-        return null;
-      }
-      if (state.unlocked.has(next)) {
-        return null; // Already earned in a previous game
-      }
-      commit('unlock', next);
-      return next;
-    },
-  },
-};
+  return { unlocked, isUnlocked, recordWin };
+});

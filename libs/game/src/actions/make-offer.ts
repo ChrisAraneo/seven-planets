@@ -1,15 +1,14 @@
-import type { Cost } from '../../interfaces/cost';
-import type { GameState } from '../../interfaces/game-state';
-import { getGameState } from '../../game-state';
+import type { Cost } from '../interfaces/cost';
+import type { GameState } from '../interfaces/game-state';
+import { getGameState } from '../game-state';
 
-import { fmtCards, RESOURCE_TYPES, CARDS } from '../../config/constants';
-import { setStatus } from '../../functions/set-status';
-import { AUTO_HUMAN } from '../../functions/auto-human';
-import { hasActionCard } from '../../functions/has-action-card';
-import { log } from '../../functions/log';
-import { setOfferResolve } from '../../functions/resolver-state';
-import { spendActionCard } from '../../functions/spend-action-card';
-import type { GameModuleState } from '../../game';
+import { fmtCards, RESOURCE_TYPES, CARDS } from '../config/constants';
+import { setStatus } from '../functions/set-status';
+import { AUTO_HUMAN } from '../functions/auto-human';
+import { hasActionCard } from '../functions/has-action-card';
+import { log } from '../functions/log';
+import { setOfferResolve } from '../functions/resolver-state';
+import { spendActionCard } from '../functions/spend-action-card';
 
 export interface MakeOfferPayload {
   playerId: number;
@@ -23,27 +22,25 @@ export interface MakeOfferPayload {
    TradeOfferModal or the `ai` module watching `pendingOffer`), this works on
    the LIVE game state rather than a clone-then-replace copy — otherwise the
    offer would only appear after the wait had already ended. Pure engine results
-   are applied in place via Object.assign so the live object identity is kept. */
-export async function makeOffer(
-  _moduleState: GameModuleState,
-  payload: MakeOfferPayload,
-): Promise<void> {
+   are applied in place via Object.assign so the live object identity is kept.
+   Resolves with whether the partner accepted the deal. */
+export async function makeOffer(payload: MakeOfferPayload): Promise<boolean> {
   const { playerId, partnerId, gives, gets } = payload;
   const state = getGameState();
 
   if (playerId !== state.activeId || state.over) {
-    return;
+    return false;
   }
 
   const player = state.players[playerId];
   const partner = state.players[partnerId];
 
   if (!partner || partner.id === player.id || !partner.alive) {
-    return;
+    return false;
   }
 
   if (!hasActionCard(player, 'TRADE')) {
-    return;
+    return false;
   }
 
   // Note the attempt; the AI plans at most one trade per turn off this flag
@@ -65,7 +62,10 @@ export async function makeOffer(
   if (humanControlled) {
     Object.assign(
       getGameState(),
-      setStatus(getGameState(), `${player.name} is hailing you with a trade offer…`),
+      setStatus(
+        getGameState(),
+        `${player.name} is hailing you with a trade offer…`,
+      ),
     );
   }
 
@@ -84,11 +84,11 @@ export async function makeOffer(
   // resolveOffer may have replaced the state object — re-read by id.
   const cur = getGameState();
   if (cur.over) {
-    return;
+    return accept;
   }
   if (accept) {
     execTrade(cur, playerId, partnerId, gives, gets);
-    return;
+    return true;
   }
   Object.assign(
     getGameState(),
@@ -98,6 +98,7 @@ export async function makeOffer(
       'trade',
     ),
   );
+  return false;
 }
 
 function execTrade(

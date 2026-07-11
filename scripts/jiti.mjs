@@ -6,7 +6,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 
 import { createJiti } from 'jiti';
 
-// Run with production builds of vue/vuex: their dev builds carry extra
+// Run with production builds of vue/pinia: their dev builds carry extra
 // checks and warnings that slow headless simulations noticeably.
 process.env.NODE_ENV ||= 'production';
 
@@ -21,7 +21,8 @@ process.argv.splice(2, 1);
 // Forward slashes, matching jiti's internal (pathe) resolution: with native
 // Windows separators here, "@/x" and a relative import of the same file get
 // DIFFERENT module-cache keys and singleton modules load twice.
-const p = (rel) => fileURLToPath(new URL(rel, import.meta.url)).replace(/\\/g, '/');
+const p = (rel) =>
+  fileURLToPath(new URL(rel, import.meta.url)).replace(/\\/g, '/');
 const jiti = createJiti(import.meta.url, {
   alias: {
     '@': p('../apps/browser/src'),

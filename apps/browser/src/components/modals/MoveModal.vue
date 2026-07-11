@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { getPlanets } from '@seven-planets/game';
 import { computed, ref, watch } from 'vue';
-import { store } from '@/stores';
+import { moveTroops } from '@seven-planets/game';
+import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { ownedPlanets } from '@seven-planets/game';
 import { rocketCap } from '@seven-planets/game';
 
-const human = store.state.game.state.players[0];
+const game = useGameStore();
+const ui = useUiStore();
+
+const human = game.state.players[0];
 
 const fromId = ref(
-  ownedPlanets(store.state.game.state, human).reduce((a, b) =>
+  ownedPlanets(game.state, human).reduce((a, b) =>
     a.troops >= b.troops ? a : b,
   ).id,
 );
@@ -17,7 +21,7 @@ const toId = ref(-1);
 const n = ref(1);
 
 const from = computed(() => getPlanets()[fromId.value]);
-const owned = computed(() => ownedPlanets(store.state.game.state, human));
+const owned = computed(() => ownedPlanets(game.state, human));
 const dests = computed(() =>
   owned.value.filter((pl) => pl.id !== fromId.value),
 );
@@ -47,8 +51,8 @@ function inc(): void {
 }
 function doMove(): void {
   if (cap.value < 1 || toId.value < 0) return;
-  store.commit('ui/closeModal');
-  void store.dispatch('game/moveTroops', {
+  ui.closeModal();
+  void moveTroops({
     playerId: 0,
     fromId: fromId.value,
     toId: toId.value,
@@ -58,7 +62,7 @@ function doMove(): void {
 </script>
 
 <template>
-  <ModalShell @close="store.commit('ui/closeModal')">
+  <ModalShell @close="ui.closeModal()">
     <h2>🛸 REDEPLOY TROOPS</h2>
     <p class="dimtx">
       Move an army between your planets. Uses the origin's rockets (capacity
@@ -96,7 +100,7 @@ function doMove(): void {
     </p>
     <div class="mbtns">
       <button class="btn" :disabled="cap < 1" @click="doMove">🛸 MOVE</button>
-      <button class="btn" @click="store.commit('ui/closeModal')">Cancel</button>
+      <button class="btn" @click="ui.closeModal()">Cancel</button>
     </div>
   </ModalShell>
 </template>

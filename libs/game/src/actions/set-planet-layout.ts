@@ -1,5 +1,4 @@
-import type { GameModuleState } from '../game';
-import { setState } from './set-state';
+import { getGameState, setGameState } from '../game-state';
 
 export interface PlanetLayout {
   x: number;
@@ -10,13 +9,11 @@ export interface PlanetLayout {
 // The board view computes planet positions (canvas geometry) and commits them
 // here; effects (rockets, booms, floating text) read the same coordinates off
 // the planets in state.
-export function setPlanetLayout(
-  moduleState: GameModuleState,
-  layout: readonly PlanetLayout[],
-): void {
-  setState(moduleState, {
-    ...moduleState.state,
-    planets: moduleState.state.planets.map((pl, i) =>
+export function setPlanetLayout(layout: readonly PlanetLayout[]): void {
+  const state = getGameState();
+  setGameState({
+    ...state,
+    planets: state.planets.map((pl, i) =>
       layout[i] ? { ...pl, ...layout[i] } : pl,
     ),
   });

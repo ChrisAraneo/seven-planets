@@ -9,7 +9,8 @@ import { getPlayers } from '@seven-planets/game';
 import { getPool } from '@seven-planets/game';
 import { getStatus } from '@seven-planets/game';
 import { computed } from 'vue';
-import { store } from '@/stores';
+import { pickCard } from '@seven-planets/game';
+import { useGameStore } from '@/stores';
 import {
   BUILDINGS,
   buildingCost,
@@ -20,7 +21,13 @@ import {
 } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
 import { homePlanet } from '@seven-planets/game';
-import type { BuildingType, InfluenceType, PoolType } from '@seven-planets/game';
+import type {
+  BuildingType,
+  InfluenceType,
+  PoolType,
+} from '@seven-planets/game';
+
+const game = useGameStore();
 
 // AwaitingPick is raised for every drafting seat, so scope the human's pool
 // clicks to the human's own draft turn (seat 0).
@@ -54,7 +61,7 @@ const hints: Partial<Record<PoolType, string>> = {
 
 const poolCards = computed<PoolCardVM[]>(() => {
   if (getPhase() !== 'draft' || getOver()) return [];
-  const state = store.state.game.state;
+  const state = game.state;
   const picking = isPicking.value;
   const human = getPlayers()[0];
   const draftPl = getPlanets()[getDraftPlanetId()] || homePlanet(state, human);
@@ -115,8 +122,7 @@ const poolCards = computed<PoolCardVM[]>(() => {
 });
 
 function pick(vm: PoolCardVM): void {
-  if (isPicking.value && vm.valid)
-    void store.dispatch('game/pickCard', { playerId: 0, idx: vm.i });
+  if (isPicking.value && vm.valid) void pickCard({ playerId: 0, idx: vm.i });
 }
 </script>
 

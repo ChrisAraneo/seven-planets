@@ -2,7 +2,7 @@
 import { getActiveId } from '@seven-planets/game';
 import { getOver } from '@seven-planets/game';
 import { getPlayers } from '@seven-planets/game';
-import { store } from '@/stores';
+import { useGameStore } from '@/stores';
 import {
   CARDS,
   RESOURCE_TYPES,
@@ -13,6 +13,8 @@ import { buildingCount } from '@seven-planets/game';
 import { getTechLevel } from '@seven-planets/game';
 import { totalTroops } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+
+const game = useGameStore();
 
 function resLine(p: Player): string {
   return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${p.hand[t]}`).join(' ');
@@ -43,13 +45,11 @@ function actLine(p: Player): string {
         >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
-        🪐{{ p.planets.length }} 🔬T{{
-          getTechLevel(store.state.game.state, p)
+        🪐{{ p.planets.length }} 🔬T{{ getTechLevel(game.state, p) }} 🦵{{
+          totalTroops(game.state, p)
         }}
-        🦵{{ totalTroops(store.state.game.state, p) }} 🏛️{{
-          buildingCount(store.state.game.state, p)
-        }}
-        ⭐{{ p.influence }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} ·
+        🏛️{{ buildingCount(game.state, p) }} ⭐{{ p.influence
+        }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} ·
         {{ resLine(p) }}
       </div>
       <div class="pstats">{{ actLine(p) }}</div>

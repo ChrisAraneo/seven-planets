@@ -1,10 +1,32 @@
-import type { ActionContext } from 'vuex';
-import type { GameModuleState } from '../game';
-import type { ResolveOfferPayload } from '../mutations/resolve-offer/resolve-offer';
+import { getOfferResolve, setOfferResolve } from '../functions/resolver-state';
+import { getGameState, setGameState } from '../game-state';
+import { cloneDeep } from 'lodash-es';
 
-export function resolveOffer(
-  context: ActionContext<GameModuleState, unknown>,
-  payload: ResolveOfferPayload,
-) {
-  return context.commit('resolveOffer', payload);
+export interface ResolveOfferPayload {
+  playerId: number;
+  accept: boolean;
+}
+
+/* The `resolveOffer` store action: the target seat of getPendingOffer()
+   accepts or declines it. The human's TradeOfferModal and the AI agent
+   both dispatch this; it answers the engine's parked waitOffer(). */
+export function resolveOffer(payload: ResolveOfferPayload): void {
+  const state = cloneDeep(getGameState());
+  const { playerId, accept } = payload;
+
+  const resolve = getOfferResolve();
+
+  const offer = state.pendingOffer;
+
+  if (!resolve || !offer || offer.toId !== playerId) {
+    return;
+  }
+
+  setOfferResolve(null);
+
+  state.pendingOffer = null;
+
+  resolve(accept);
+
+  setGameState(state);
 }

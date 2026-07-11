@@ -3,7 +3,10 @@ import { getOver } from '@seven-planets/game';
 import { getPhase } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { computed } from 'vue';
-import { store } from '@/stores';
+import { useEffectsStore, useUiStore } from '@/stores';
+
+const ui = useUiStore();
+const effects = useEffectsStore();
 
 const turnLabel = computed(() => {
   if (getTurn() === 0) return '—';
@@ -18,8 +21,7 @@ const turnLabel = computed(() => {
 });
 
 function newGame(): void {
-  if (window.confirm('Abandon this game and start over?'))
-    void store.dispatch('ui/newGame');
+  if (window.confirm('Abandon this game and start over?')) ui.newGame();
 }
 </script>
 
@@ -29,20 +31,10 @@ function newGame(): void {
     <div id="turn-ind">{{ turnLabel }}</div>
     <div class="spacer"></div>
     <label id="fast-label">
-      <input
-        type="checkbox"
-        :checked="store.state.effects.fastMode"
-        @change="
-          store.commit(
-            'effects/setFastMode',
-            ($event.target as HTMLInputElement).checked,
-          )
-        " />
+      <input type="checkbox" v-model="effects.fastMode" />
       ⏩ fast animations
     </label>
-    <button class="btn small" @click="store.commit('ui/openModal', 'help')">
-      ❓ Rules
-    </button>
+    <button class="btn small" @click="ui.openModal('help')">❓ Rules</button>
     <button class="btn small" @click="newGame">🆕 New Game</button>
   </header>
 </template>

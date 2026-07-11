@@ -1,17 +1,15 @@
-import type { EffectsModuleState } from './effects-module';
 import { setPresentationHooks } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
-import { getStore } from '@seven-planets/game';
 
 /* =====================================================================
    SEVEN PLANETS — graphical effects (canvas animations + pacing).
 
    Implements the game core's presentation hooks: the engine signals
    rockets / explosions / floating text and pacing pauses, and this
-   layer enqueues canvas animations into the store's effects module
-   (drained by the GameBoard render loop) and scales delays by the
-   fast-animations toggle. Headless runs never install this layer, so
-   they pay no delays and queue no animations.
+   layer hands canvas animations to the sink the app injected (the
+   browser's effects store, drained by the GameBoard render loop) and
+   scales delays by the fast-animations toggle. Headless runs never
+   install this layer, so they pay no delays and queue no animations.
    ===================================================================== */
 
 export interface Anim {
@@ -28,9 +26,18 @@ export interface Anim {
   txt?: string;
 }
 
+/** What the app must provide: somewhere to queue animations and the
+    fast-animations toggle. This lib knows nothing about any store. */
+export interface EffectsSink {
+  enqueue(anim: Anim): void;
+  isFastMode(): boolean;
+}
+
+let sink: EffectsSink | null = null;
+
 // Animation speed multiplier (the fast-animations toggle).
 function speedMult(): number {
-  return (getStore().state as unknown as { effects: EffectsModuleState }).effects.fastMode ? 0.3 : 1;
+  return sink?.isFastMode() ? 0.3 : 1;
 }
 
 function now(): number {
@@ -38,7 +45,7 @@ function now(): number {
 }
 
 function enqueue(anim: Anim): void {
-  getStore().commit('effects/enqueue', anim);
+  sink?.enqueue(anim);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -83,7 +90,8 @@ function floatText(planet: Planet, txt: string, color: string): void {
 }
 
 /** Install the graphical effects as the game core's presentation layer.
-    Called once at app startup (main.ts). */
-export function installEffects(): void {
+    Called once at app startup (main.ts) with the app's animation sink. */
+export function installEffects(effectsSink: EffectsSink): void {
+  sink = effectsSink;
   setPresentationHooks({ sleep, rocket, boom, floatText });
 }

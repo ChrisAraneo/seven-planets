@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { getPlayers } from '@seven-planets/game';
 import { computed, reactive, ref } from 'vue';
-import { store } from '@/stores';
+import { makeOffer } from '@seven-planets/game';
+import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { CARDS, RESOURCE_TYPES } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
 import { hasActionCard } from '@seven-planets/game';
 import type { Cost } from '@seven-planets/game';
 
-const human = store.state.game.state.players[0];
+const game = useGameStore();
+const ui = useUiStore();
 
-const partners = filterAlivePlayers(store.state.game.state).filter(
-  (p) => !p.isHuman,
-);
+const human = game.state.players[0];
+
+const partners = filterAlivePlayers(game.state).filter((p) => !p.isHuman);
 const partnerId = ref(partners[0].id);
 const partner = computed(() => getPlayers()[partnerId.value]);
 
@@ -56,7 +58,7 @@ async function propose(): Promise<void> {
     note.value = { msg: 'You have no 🔁 Trade cards left.', cls: 'warn' };
     return;
   }
-  const accept = await store.dispatch('game/tradeResources', {
+  const accept = await makeOffer({
     playerId: 0,
     partnerId: partnerId.value,
     gives,
@@ -78,7 +80,7 @@ async function propose(): Promise<void> {
 </script>
 
 <template>
-  <ModalShell @close="store.commit('ui/closeModal')">
+  <ModalShell @close="ui.closeModal()">
     <h2>🔁 TRADE NEGOTIATION</h2>
     <p>
       Partner:
@@ -125,7 +127,7 @@ async function propose(): Promise<void> {
     </div>
     <div class="mbtns">
       <button class="btn" @click="propose">📡 Transmit Offer</button>
-      <button class="btn" @click="store.commit('ui/closeModal')">Close</button>
+      <button class="btn" @click="ui.closeModal()">Close</button>
     </div>
   </ModalShell>
 </template>

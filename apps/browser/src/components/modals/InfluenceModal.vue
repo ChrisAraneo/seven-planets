@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { getPlayers } from '@seven-planets/game';
 import { computed, ref } from 'vue';
-import { store } from '@/stores';
+import { useInfluence } from '@seven-planets/game';
+import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_TYPES,
@@ -24,11 +25,14 @@ import type {
   Player,
 } from '@seven-planets/game';
 
-const human = store.state.game.state.players[0];
+const game = useGameStore();
+const ui = useUiStore();
+
+const human = game.state.players[0];
 
 function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
-  store.commit('ui/closeModal');
-  void store.dispatch('game/useInfluence', { playerId: 0, type, opts });
+  ui.closeModal();
+  void useInfluence({ playerId: 0, type, opts });
 }
 
 type View = 'main' | 'coup' | 'steal';
@@ -37,18 +41,16 @@ const view = ref<View>('main');
 const held = computed(() =>
   INFLUENCE_TYPES.filter((t) => (human.hand[t] || 0) > 0),
 );
-const coupList = computed(() => coupTargets(store.state.game.state, human));
+const coupList = computed(() => coupTargets(game.state, human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
 const rivals = computed(() =>
-  filterAlivePlayers(store.state.game.state).filter((x) => !x.isHuman),
+  filterAlivePlayers(game.state).filter((x) => !x.isHuman),
 );
 
 function skipTarget(t: InfluenceType): Player | null {
-  return t.startsWith('SKIP_')
-    ? influenceTarget(store.state.game.state, human, t)
-    : null;
+  return t.startsWith('SKIP_') ? influenceTarget(game.state, human, t) : null;
 }
 
 function chooseCard(t: InfluenceType): void {
@@ -84,7 +86,7 @@ function doSteal(
 </script>
 
 <template>
-  <ModalShell @close="store.commit('ui/closeModal')">
+  <ModalShell @close="ui.closeModal()">
     <!-- main view -->
     <template v-if="view === 'main'">
       <h2>⭐ PLAY INFLUENCE CARD</h2>
@@ -111,9 +113,7 @@ function doSteal(
         </div>
       </div>
       <div class="mbtns">
-        <button class="btn" @click="store.commit('ui/closeModal')">
-          Cancel
-        </button>
+        <button class="btn" @click="ui.closeModal()">Cancel</button>
       </div>
     </template>
 
@@ -157,9 +157,7 @@ function doSteal(
       </p>
       <div class="mbtns">
         <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="store.commit('ui/closeModal')">
-          Cancel
-        </button>
+        <button class="btn" @click="ui.closeModal()">Cancel</button>
       </div>
     </template>
 
@@ -185,9 +183,7 @@ function doSteal(
       </div>
       <div class="mbtns">
         <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="store.commit('ui/closeModal')">
-          Cancel
-        </button>
+        <button class="btn" @click="ui.closeModal()">Cancel</button>
       </div>
     </template>
   </ModalShell>
