@@ -32,18 +32,27 @@ export function makeOffer(payload: MakeOfferPayload): void {
     .thru(({ state, player, partner }) =>
       match({ state, player, partner })
         .when(
-          ({ state: s }) => payload.playerId !== s.activeId || Boolean(s.over),
+          ({ state: eachState }) =>
+            payload.playerId !== eachState.activeId || Boolean(eachState.over),
           noop,
         )
         .when(
-          ({ player: pl, partner: pa }) =>
-            !pa || pa.id === pl.id || !pa.isAlive,
+          ({ player: eachPlayer, partner: innerPlayer }) =>
+            !innerPlayer ||
+            innerPlayer.id === eachPlayer.id ||
+            !innerPlayer.isAlive,
           noop,
         )
-        .when(({ player: pl }) => !hasActionCard(pl, 'TRADE'), noop)
+        .when(
+          ({ player: eachPlayer }) => !hasActionCard(eachPlayer, 'TRADE'),
+          noop,
+        )
         .otherwise(
-          ({ state: s, player: pl, partner: pa }) =>
-            void (pa && sendOffer(s, pl, pa, payload)),
+          ({ state: eachState, player: eachPlayer, partner: innerPlayer }) =>
+            void (
+              innerPlayer &&
+              sendOffer(eachState, eachPlayer, innerPlayer, payload)
+            ),
         ),
     )
     .value();
@@ -59,14 +68,14 @@ function sendOffer(
     // Note the attempt; the AI plans at most one trade per turn off this flag
     // (nothing restricts the human's seat, matching the original behavior).
     .tap(() => Object.assign(player, { hasTradedCurrentTurn: true }))
-    .thru((s) => logSeeking(s, player, gets))
-    .thru((s) => statusIfHuman(s, player, partner))
-    .thru((s) =>
-      Object.assign(s, {
+    .thru((state) => logSeeking(state, player, gets))
+    .thru((state) => statusIfHuman(state, player, partner))
+    .thru((state) =>
+      Object.assign(state, {
         pendingOffer: { fromId: playerId, toId: partnerId, gives, gets },
       }),
     )
-    .tap((s) => setGameState(s))
+    .tap((state) => setGameState(state))
     // Notify synchronously so AI seats can respond without relying on async
     // Vue watchers, which may not fire reliably across full state replacements.
     .tap(() => getPendingOfferCallback()?.(partnerId))

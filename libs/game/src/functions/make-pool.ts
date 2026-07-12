@@ -57,8 +57,8 @@ function makeMidGamePool(state: GameState): PoolType[] {
 }
 
 function eligibleBuildings(state: GameState): BuildingType[] {
-  return BUILD_ORDER.filter((b) =>
-    match(b)
+  return BUILD_ORDER.filter((buildingType) =>
+    match(buildingType)
       .with('LAB', () => state.turn >= ADVANCED_FROM_TURN)
       .with('SINGULARITY', () => isSingularityInPlay(state))
       .otherwise(() => true),
@@ -83,7 +83,7 @@ function singularityBonusSlots(state: GameState): PoolType[] {
   return Array.from(
     {
       length: filterAlivePlayers(state).reduce(
-        (s, p) => s + singularityTotal(state, p),
+        (sum, player) => sum + singularityTotal(state, player),
         0,
       ),
     },

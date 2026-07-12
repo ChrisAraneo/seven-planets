@@ -15,42 +15,52 @@ import { playerStrength } from './player-strength';
 import { rivalGoalBuilding } from './rival-goal-building';
 import { isSingularityReadyFor } from './is-singularity-ready-for';
 
-export function denialValue(p: Player, t: PoolType): number {
+export function denialValue(player: Player, poolType: PoolType): number {
   const aiState = getAiState();
   const avg = avgStrength();
   let worst = 0;
-  const def = CARDS[t];
-  for (const r of alive()) {
-    if (r.id === p.id) {
+  const def = CARDS[poolType];
+  for (const eachPlayer of alive()) {
+    if (eachPlayer.id === player.id) {
       continue;
     }
-    const w = Math.min(2, Math.max(0.3, playerStrength(r) / Math.max(1, avg)));
+    const winner = Math.min(
+      2,
+      Math.max(0.3, playerStrength(eachPlayer) / Math.max(1, avg)),
+    );
     let gain = 0;
     if (def.building) {
-      if (t === 'SINGULARITY' && isSingularityReadyFor(r)) {
+      if (poolType === 'SINGULARITY' && isSingularityReadyFor(eachPlayer)) {
         gain = 5;
-      } else if (rivalGoalBuilding(r)?.id === (t as BuildingType)) {
+      } else if (
+        rivalGoalBuilding(eachPlayer)?.id === (poolType as BuildingType)
+      ) {
         gain = 2.5;
       }
     } else if (def.influenceCard) {
-      if (r.influence >= INFLUENCE_CARDS[t as InfluenceType]?.cost) {
-        gain = t === 'COUP' ? 6 : 1.5;
-      }
-    } else if (t === 'ATTACK') {
       if (
-        !r.hasPacifistStatus &&
-        hasB(r, 'SILO') &&
-        aggression(r) >= aiState.W.willNeutral
+        eachPlayer.influence >= INFLUENCE_CARDS[poolType as InfluenceType]?.cost
+      ) {
+        gain = poolType === 'COUP' ? 6 : 1.5;
+      }
+    } else if (poolType === 'ATTACK') {
+      if (
+        !eachPlayer.hasPacifistStatus &&
+        hasB(eachPlayer, 'SILO') &&
+        aggression(eachPlayer) >= aiState.W.willNeutral
       ) {
         gain = 1.4;
       }
-    } else if (RESOURCE_TYPES.includes(t as never)) {
-      const goal = rivalGoalBuilding(r);
-      if (goal && (goal.cost[t] || 0) > (r.hand[t] || 0)) {
+    } else if (RESOURCE_TYPES.includes(poolType as never)) {
+      const goal = rivalGoalBuilding(eachPlayer);
+      if (
+        goal &&
+        (goal.cost[poolType] || 0) > (eachPlayer.hand[poolType] || 0)
+      ) {
         gain = 0.7;
       }
     }
-    worst = Math.max(worst, gain * w);
+    worst = Math.max(worst, gain * winner);
   }
   return worst;
 }

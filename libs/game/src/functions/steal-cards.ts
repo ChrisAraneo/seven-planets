@@ -28,9 +28,12 @@ export function stealCards(
     })
     .thru(({ fromHand, toHand, taken }) => ({
       state: updatePlayer(
-        updatePlayer(state, fromId, (p) => ({ ...p, hand: fromHand })),
+        updatePlayer(state, fromId, (player) => ({
+          ...player,
+          hand: fromHand,
+        })),
         toId,
-        (p) => ({ ...p, hand: toHand }),
+        (player) => ({ ...player, hand: toHand }),
       ),
       taken,
     }))
@@ -38,7 +41,7 @@ export function stealCards(
 }
 
 function stealOne(loot: LootProgress): LootProgress {
-  return match(CARD_TYPES.filter((t) => loot.fromHand[t] > 0))
+  return match(CARD_TYPES.filter((cardType) => loot.fromHand[cardType] > 0))
     .when(
       (avail) => avail.length === 0,
       () => loot,
@@ -47,15 +50,18 @@ function stealOne(loot: LootProgress): LootProgress {
       // Weight by count so the loot reflects the victim's stash
       chain(
         choice(
-          avail.flatMap((t) =>
-            Array.from({ length: loot.fromHand[t] }, () => t),
+          avail.flatMap((cardType) =>
+            Array.from({ length: loot.fromHand[cardType] }, () => cardType),
           ),
         ),
       )
-        .thru((t) => ({
-          fromHand: { ...loot.fromHand, [t]: loot.fromHand[t] - 1 },
-          toHand: { ...loot.toHand, [t]: loot.toHand[t] + 1 },
-          taken: { ...loot.taken, [t]: (loot.taken[t] || 0) + 1 },
+        .thru((cardType) => ({
+          fromHand: {
+            ...loot.fromHand,
+            [cardType]: loot.fromHand[cardType] - 1,
+          },
+          toHand: { ...loot.toHand, [cardType]: loot.toHand[cardType] + 1 },
+          taken: { ...loot.taken, [cardType]: (loot.taken[cardType] || 0) + 1 },
         }))
         .value(),
     );

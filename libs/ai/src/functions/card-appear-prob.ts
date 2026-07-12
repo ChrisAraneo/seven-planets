@@ -5,10 +5,10 @@ import type { BuildingType } from '@seven-planets/game';
 import { isSingularityLive } from './is-singularity-live';
 
 export function cardAppearProb(id: BuildingType, withinTurns: number): number {
-  const eligible = BUILD_ORDER.filter((b) =>
-    b === 'LAB'
+  const eligible = BUILD_ORDER.filter((buildingType) =>
+    buildingType === 'LAB'
       ? getTurn() >= ADVANCED_FROM_TURN
-      : b === 'SINGULARITY'
+      : buildingType === 'SINGULARITY'
         ? isSingularityLive()
         : true,
   );

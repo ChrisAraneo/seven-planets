@@ -7,27 +7,32 @@ import { planetValue } from './planet-value';
 import { isUnderTruce } from './is-under-truce';
 
 export function bestCoupTarget(
-  p: Player,
+  player: Player,
 ): { planet: Planet; value: number } | null {
-  if (p.isKamikaze) {
+  if (player.isKamikaze) {
     return null;
   }
-  const mayTakeLast = p.hasPacifistStatus;
+  const mayTakeLast = player.hasPacifistStatus;
   let best: { planet: Planet; value: number } | null = null;
-  for (const pl of getGameState().planets) {
-    const owner = getGameState().players[pl.ownerId];
-    if (pl.ownerId === p.id || !owner.isAlive || isUnderTruce(pl)) {
+  for (const eachPlanet of getGameState().planets) {
+    const owner = getGameState().players[eachPlanet.ownerId];
+    if (
+      eachPlanet.ownerId === player.id ||
+      !owner.isAlive ||
+      isUnderTruce(eachPlanet)
+    ) {
       continue;
     }
-    if (!mayTarget(p, owner)) {
+    if (!mayTarget(player, owner)) {
       continue;
     }
     if (!mayTakeLast && owned(owner).length === 1) {
       continue;
     }
-    const value = planetValue(pl) + (owned(owner).length === 1 ? 10 : 0);
+    const value =
+      planetValue(eachPlanet) + (owned(owner).length === 1 ? 10 : 0);
     if (!best || value > best.value) {
-      best = { planet: pl, value };
+      best = { planet: eachPlanet, value };
     }
   }
   return best;

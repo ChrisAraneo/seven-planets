@@ -5,15 +5,16 @@ import { actionDrawProb } from './action-draw-prob';
 import { incomePerTurn } from './income-per-turn';
 import { owned } from './owned';
 
-export function recruitRate(p: Player): number {
+export function recruitRate(player: Player): number {
   let bestYield = 0;
-  for (const pl of owned(p)) {
-    bestYield = Math.max(bestYield, recruitYield(pl));
+  for (const planet of owned(player)) {
+    bestYield = Math.max(bestYield, recruitYield(planet));
   }
   if (!bestYield) {
     return 0;
   }
-  const oreFlow = (incomePerTurn(p).ORE || 0) + (p.hand.ORE || 0) / 4;
-  const cardFlow = (p.hand.RECRUIT || 0) > 0 ? 0.9 : actionDrawProb('RECRUIT');
+  const oreFlow = (incomePerTurn(player).ORE || 0) + (player.hand.ORE || 0) / 4;
+  const cardFlow =
+    (player.hand.RECRUIT || 0) > 0 ? 0.9 : actionDrawProb('RECRUIT');
   return Math.min(bestYield, Math.max(0, oreFlow)) * cardFlow;
 }

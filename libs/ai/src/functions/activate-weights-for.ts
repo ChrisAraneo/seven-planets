@@ -1,10 +1,10 @@
 import { getAiState } from '../state';
 import type { Player } from '@seven-planets/game';
 
-export function activateWeightsFor(p: Player): void {
+export function activateWeightsFor(player: Player): void {
   const aiState = getAiState();
   const { difficulty, tuned } = aiState;
-  if (difficulty && !p.isHuman) {
+  if (difficulty && !player.isHuman) {
     aiState.W = {
       ...tuned,
       planHorizon: Math.max(

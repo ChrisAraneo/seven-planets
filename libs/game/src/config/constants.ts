@@ -238,33 +238,35 @@ export function maxLevel(id: BuildingType): number {
 export function buildingCost(id: BuildingType, level: number): Cost {
   return match(level)
     .when(
-      (l) => l <= 1,
+      (level) => level <= 1,
       () => BUILDINGS[id].cost,
     )
-    .otherwise((l) => mapValues(BUILDINGS[id].cost, (amount) => amount * l));
+    .otherwise((level) =>
+      mapValues(BUILDINGS[id].cost, (amount) => amount * level),
+    );
 }
 
 // Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
 export function incomeAmount(id: BuildingType, lvl: number): number {
   return match({ id, lvl })
     .when(
-      (x) => x.id === 'MINE' && x.lvl >= 2,
+      (candidate) => candidate.id === 'MINE' && candidate.lvl >= 2,
       (): number => 3,
     )
-    .otherwise((x) => x.lvl);
+    .otherwise((candidate) => candidate.lvl);
 }
 
 // Building cards live in the pool alongside resources & actions.
 Object.assign(
   CARDS,
   fromPairs(
-    BUILD_ORDER.map((b) => [
-      b,
+    BUILD_ORDER.map((buildingType) => [
+      buildingType,
       {
-        name: BUILDINGS[b].name,
-        icon: BUILDINGS[b].icon,
-        color: BUILDINGS[b].cardColor,
-        weight: BUILDINGS[b].cardWeight,
+        name: BUILDINGS[buildingType].name,
+        icon: BUILDINGS[buildingType].icon,
+        color: BUILDINGS[buildingType].cardColor,
+        weight: BUILDINGS[buildingType].cardWeight,
         value: 0,
         building: true,
       },
@@ -321,11 +323,11 @@ export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[];
 Object.assign(
   CARDS,
   fromPairs(
-    INFLUENCE_TYPES.map((k) => [
-      k,
+    INFLUENCE_TYPES.map((influenceType) => [
+      influenceType,
       {
-        name: INFLUENCE_CARDS[k].name,
-        icon: INFLUENCE_CARDS[k].icon,
+        name: INFLUENCE_CARDS[influenceType].name,
+        icon: INFLUENCE_CARDS[influenceType].icon,
         color: '#ffb0d8',
         weight: 1,
         value: 0,
@@ -518,8 +520,8 @@ export const TAUNTS: string[] = [
 
 /* ---------------- pure numeric / formatting helpers ---------------- */
 
-export function randInt(a: number, b: number): number {
-  return a + Math.floor(Math.random() * (b - a + 1));
+export function randInt(first: number, building: number): number {
+  return first + Math.floor(Math.random() * (building - first + 1));
 }
 export function choice<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -534,15 +536,18 @@ export function shuffleArray<T>(arr: T[]): T[] {
 }
 
 export function handValue(map: Hand | Cost): number {
-  return CARD_TYPES.reduce((s, t) => s + (map[t] || 0) * CARDS[t].value, 0);
+  return CARD_TYPES.reduce(
+    (sum, cardType) => sum + (map[cardType] || 0) * CARDS[cardType].value,
+    0,
+  );
 }
 
 // Relics are wildcards: they can stand in for any missing resource.
 export function canAfford(hand: Hand, cost: Cost): boolean {
   return (
     Object.entries(cost).reduce(
-      (shortfall, [t, amount]) =>
-        shortfall + Math.max(0, amount - (hand[t] || 0)),
+      (shortfall, [type, amount]) =>
+        shortfall + Math.max(0, amount - (hand[type] || 0)),
       0,
     ) <=
     (hand.RELIC || 0) - (cost.RELIC || 0)
@@ -551,14 +556,14 @@ export function canAfford(hand: Hand, cost: Cost): boolean {
 
 export function costLabel(cost: Cost): string {
   return Object.keys(cost)
-    .map((t) => `${cost[t]}${CARDS[t].icon}`)
+    .map((type) => `${cost[type]}${CARDS[type].icon}`)
     .join(' ');
 }
 
 export function fmtCards(map: Hand | Cost): string {
   return match(
-    CARD_TYPES.filter((t) => (map[t] || 0) > 0).map(
-      (t) => `${map[t]}${CARDS[t].icon}`,
+    CARD_TYPES.filter((cardType) => (map[cardType] || 0) > 0).map(
+      (cardType) => `${map[cardType]}${CARDS[cardType].icon}`,
     ),
   )
     .when(

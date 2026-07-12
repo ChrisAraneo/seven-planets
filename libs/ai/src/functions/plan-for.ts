@@ -6,20 +6,20 @@ import { getGameState } from '@seven-planets/game';
 import { computePlan } from './compute-plan';
 import type { Plan } from './plan-types';
 
-export function planFor(p: Player): Plan {
+export function planFor(player: Player): Plan {
   const aiState = getAiState();
-  const s = getGameState();
-  let per = aiState.planCache.get(s);
+  const state = getGameState();
+  let per = aiState.planCache.get(state);
   if (!per) {
     per = new Map();
-    aiState.planCache.set(s, per);
+    aiState.planCache.set(state, per);
   }
-  const prev = per.get(p.id);
+  const prev = per.get(player.id);
   if (prev && prev.computedTurn === getTurn()) {
     return prev;
   }
-  const plan = computePlan(p, prev?.kind ?? null);
-  per.set(p.id, plan);
+  const plan = computePlan(player, prev?.kind ?? null);
+  per.set(player.id, plan);
   return plan;
 }
 

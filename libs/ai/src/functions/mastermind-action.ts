@@ -29,20 +29,20 @@ export type MastermindDecision =
   | { kind: 'move'; from: Planet; to: Planet; n: number }
   | { kind: 'trade'; partner: Player; gives: Cost; gets: Cost };
 
-export function mastermindAction(p: Player): MastermindDecision | null {
-  activateWeightsFor(p);
-  const plan = planFor(p);
-  const pls = owned(p);
+export function mastermindAction(player: Player): MastermindDecision | null {
+  activateWeightsFor(player);
+  const plan = planFor(player);
+  const pls = owned(player);
 
   // 1. Influence cards
-  const inf = influencePlay(p);
+  const inf = influencePlay(player);
   if (inf) {
     return { kind: 'influence', type: inf.type, opts: inf.opts };
   }
 
   // 2. Strike
-  if ((p.hand.ATTACK || 0) > 0) {
-    const atk = bestAttackNow(p);
+  if ((player.hand.ATTACK || 0) > 0) {
+    const atk = bestAttackNow(player);
     if (atk) {
       return {
         kind: 'attack',
@@ -54,27 +54,35 @@ export function mastermindAction(p: Player): MastermindDecision | null {
   }
 
   // 3. Recruit
-  if ((p.hand.RECRUIT || 0) > 0) {
-    const affordable = (pl: Planet) =>
-      (pl.buildings.BARRACKS || 0) > 0 &&
-      canAfford(p.hand, { ORE: recruitYield(pl) });
+  if ((player.hand.RECRUIT || 0) > 0) {
+    const affordable = (planet: Planet) =>
+      (planet.buildings.BARRACKS || 0) > 0 &&
+      canAfford(player.hand, { ORE: recruitYield(planet) });
     const danger = pls
-      .filter((pl) => affordable(pl) && immediateFallProb(p, pl) >= 0.2)
-      .sort((a, b) => immediateFallProb(p, b) - immediateFallProb(p, a));
+      .filter(
+        (planet) =>
+          affordable(planet) && immediateFallProb(player, planet) >= 0.2,
+      )
+      .sort(
+        (planet, eachPlanet) =>
+          immediateFallProb(player, eachPlanet) -
+          immediateFallProb(player, planet),
+      );
     if (danger.length > 0) {
       return { kind: 'recruit', planet: danger[0] };
     }
     const stacking =
       plan.kind === 'MILITARIZE' ||
       plan.kind === 'STRIKE' ||
-      ((p.hand.ATTACK || 0) > 0 && plan.stagingId != null);
+      ((player.hand.ATTACK || 0) > 0 && plan.stagingId != null);
     const staging =
       plan.stagingId == null ? null : getGameState().planets[plan.stagingId];
     if (
       stacking &&
       staging &&
-      staging.ownerId === p.id &&
-      staging.troops < Math.max(plan.troopsNeeded, desiredGarrison(p, staging))
+      staging.ownerId === player.id &&
+      staging.troops <
+        Math.max(plan.troopsNeeded, desiredGarrison(player, staging))
     ) {
       if (affordable(staging)) {
         return { kind: 'recruit', planet: staging };
@@ -82,17 +90,24 @@ export function mastermindAction(p: Player): MastermindDecision | null {
       const any = pls
         .filter(affordable)
         .sort(
-          (a, b) => (b.buildings.BARRACKS || 0) - (a.buildings.BARRACKS || 0),
+          (planet, eachPlanet) =>
+            (eachPlanet.buildings.BARRACKS || 0) -
+            (planet.buildings.BARRACKS || 0),
         )[0];
       if (any) {
         return { kind: 'recruit', planet: any };
       }
     }
     const thin = pls
-      .filter((pl) => affordable(pl) && pl.troops < desiredGarrison(p, pl))
+      .filter(
+        (planet) =>
+          affordable(planet) && planet.troops < desiredGarrison(player, planet),
+      )
       .sort(
-        (a, b) =>
-          a.troops - desiredGarrison(p, a) - (b.troops - desiredGarrison(p, b)),
+        (planet, eachPlanet) =>
+          planet.troops -
+          desiredGarrison(player, planet) -
+          (eachPlanet.troops - desiredGarrison(player, eachPlanet)),
       )[0];
     if (thin) {
       return { kind: 'recruit', planet: thin };
@@ -100,24 +115,32 @@ export function mastermindAction(p: Player): MastermindDecision | null {
   }
 
   // 4. Move
-  if ((p.hand.MOVE || 0) > 0 && hasB(p, 'SPACEPORT') && owned(p).length >= 2) {
+  if (
+    (player.hand.MOVE || 0) > 0 &&
+    hasB(player, 'SPACEPORT') &&
+    owned(player).length >= 2
+  ) {
     const floor = garrisonFloor();
     const inDanger = pls
-      .filter((pl) => immediateFallProb(p, pl) >= 0.3)
-      .sort((a, b) => immediateFallProb(p, b) - immediateFallProb(p, a));
+      .filter((planet) => immediateFallProb(player, planet) >= 0.3)
+      .sort(
+        (planet, eachPlanet) =>
+          immediateFallProb(player, eachPlanet) -
+          immediateFallProb(player, planet),
+      );
     for (const dest of inDanger) {
       const donor = pls
         .filter(
-          (pl) =>
-            pl !== dest &&
-            pl.troops > floor + 2 &&
-            immediateFallProb(p, pl) < 0.2,
+          (planet) =>
+            planet !== dest &&
+            planet.troops > floor + 2 &&
+            immediateFallProb(player, planet) < 0.2,
         )
-        .sort((a, b) => b.troops - a.troops)[0];
+        .sort((planet, eachPlanet) => eachPlanet.troops - planet.troops)[0];
       if (donor) {
-        const n = Math.min(rocketCap(donor), donor.troops - floor);
-        if (n >= 1) {
-          return { kind: 'move', from: donor, to: dest, n };
+        const count = Math.min(rocketCap(donor), donor.troops - floor);
+        if (count >= 1) {
+          return { kind: 'move', from: donor, to: dest, n: count };
         }
       }
     }
@@ -125,16 +148,16 @@ export function mastermindAction(p: Player): MastermindDecision | null {
       plan.stagingId == null ? null : getGameState().planets[plan.stagingId];
     if (
       staging &&
-      staging.ownerId === p.id &&
+      staging.ownerId === player.id &&
       staging.troops < Math.max(plan.troopsNeeded, floor + 4)
     ) {
       const donor = pls
-        .filter((pl) => pl !== staging && pl.troops > floor + 2)
-        .sort((a, b) => b.troops - a.troops)[0];
+        .filter((planet) => planet !== staging && planet.troops > floor + 2)
+        .sort((planet, eachPlanet) => eachPlanet.troops - planet.troops)[0];
       if (donor) {
-        const n = Math.min(rocketCap(donor), donor.troops - floor);
-        if (n >= 2) {
-          return { kind: 'move', from: donor, to: staging, n };
+        const eachCount = Math.min(rocketCap(donor), donor.troops - floor);
+        if (eachCount >= 2) {
+          return { kind: 'move', from: donor, to: staging, n: eachCount };
         }
       }
     }
@@ -142,11 +165,11 @@ export function mastermindAction(p: Player): MastermindDecision | null {
 
   // 5. Trade
   if (
-    !p.hasTradedCurrentTurn &&
-    (p.hand.TRADE || 0) > 0 &&
-    hasB(p, 'EMBASSY')
+    !player.hasTradedCurrentTurn &&
+    (player.hand.TRADE || 0) > 0 &&
+    hasB(player, 'EMBASSY')
   ) {
-    const offer = planTradeOffer(p, plan);
+    const offer = planTradeOffer(player, plan);
     if (offer) {
       return { kind: 'trade', ...offer };
     }

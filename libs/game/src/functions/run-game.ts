@@ -10,17 +10,17 @@ export async function runGame(
   hooks: PresentationHooks = NO_PRESENTATION,
 ): Promise<void> {
   return chain(getGameState())
-    .tap((s) =>
+    .tap((state) =>
       Object.assign(
-        s,
-        log(s, 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
+        state,
+        log(state, 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
       ),
     )
-    .tap((s) =>
+    .tap((state) =>
       Object.assign(
-        s,
+        state,
         log(
-          s,
+          state,
           'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
           'sys',
         ),

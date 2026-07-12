@@ -12,28 +12,35 @@ import { totalTroops } from './total-troops';
 // Whom would this skip card hit? Always a RIVAL — the caster is never a target.
 export function influenceTarget(
   state: GameState,
-  p: Player,
-  t: InfluenceType,
+  player: Player,
+  influenceType: InfluenceType,
 ): Player | null {
-  return match(filterAlivePlayers(state).filter((x) => x.id !== p.id))
+  return match(
+    filterAlivePlayers(state).filter((player) => player.id !== player.id),
+  )
     .when(
       (rivals) => rivals.length === 0,
       (): Player | null => null,
     )
     .otherwise((rivals) =>
-      match(t)
+      match(influenceType)
         .with(
           'SKIP_ARMY',
-          () => maxBy(rivals, (x) => totalTroops(state, x)) ?? null,
+          () => maxBy(rivals, (player) => totalTroops(state, player)) ?? null,
         )
         .with(
           'SKIP_PLANETS',
-          () => maxBy(rivals, (x) => ownedPlanets(state, x).length) ?? null,
+          () =>
+            maxBy(rivals, (player) => ownedPlanets(state, player).length) ??
+            null,
         )
-        .with('SKIP_INFLUENCE', () => minBy(rivals, (x) => x.influence) ?? null)
+        .with(
+          'SKIP_INFLUENCE',
+          () => minBy(rivals, (player) => player.influence) ?? null,
+        )
         .with(
           'SKIP_TECH',
-          () => maxBy(rivals, (x) => getTechLevel(state, x)) ?? null,
+          () => maxBy(rivals, (player) => getTechLevel(state, player)) ?? null,
         )
         .otherwise((): Player | null => null),
     );

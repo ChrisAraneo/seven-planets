@@ -7,17 +7,17 @@ import type { GameState } from '../interfaces/game-state';
 export function checkWin(state: GameState): GameState {
   return match({ state, alivePlayers: filterAlivePlayers(state) })
     .when(
-      ({ state: s }) => s.over,
-      ({ state: s }) => s,
+      ({ state: eachState }) => eachState.over,
+      ({ state: eachState }) => eachState,
     )
     .when(
       ({ alivePlayers }) => alivePlayers.length === 1,
-      ({ state: s, alivePlayers }) =>
-        triggerGameOver(s, alivePlayers[0].id, 'conquest'),
+      ({ state: eachState, alivePlayers }) =>
+        triggerGameOver(eachState, alivePlayers[0].id, 'conquest'),
     )
     .when(
-      ({ state: s }) => !AUTO_HUMAN && !s.players[0].isAlive,
-      ({ state: s }) => triggerGameOver(s, null, 'eliminated'),
+      ({ state: eachState }) => !AUTO_HUMAN && !eachState.players[0].isAlive,
+      ({ state: eachState }) => triggerGameOver(eachState, null, 'eliminated'),
     )
-    .otherwise(({ state: s }) => s);
+    .otherwise(({ state: eachState }) => eachState);
 }

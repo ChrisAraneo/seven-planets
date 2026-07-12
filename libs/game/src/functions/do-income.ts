@@ -29,14 +29,17 @@ interface IncomeTally {
 // hand/influence deltas, apply them in one structural-sharing pass, then log.
 export function doIncome(state: GameState): GameState {
   return chain(
-    state.planets.reduce((tally, pl) => addPlanetIncome(tally, state, pl), {
-      handAdd: {},
-      infAdd: {},
-      gains: {},
-      moveGains: {},
-      infGains: {},
-      pacGains: {},
-    } as IncomeTally),
+    state.planets.reduce(
+      (tally, planet) => addPlanetIncome(tally, state, planet),
+      {
+        handAdd: {},
+        infAdd: {},
+        gains: {},
+        moveGains: {},
+        infGains: {},
+        pacGains: {},
+      } as IncomeTally,
+    ),
   )
     .thru((tally) => logIncome(applyIncome(state, tally), tally))
     .value();
@@ -45,19 +48,19 @@ export function doIncome(state: GameState): GameState {
 function addPlanetIncome(
   tally: IncomeTally,
   state: GameState,
-  pl: Planet,
+  planet: Planet,
 ): IncomeTally {
-  return match(state.players[pl.ownerId])
+  return match(state.players[planet.ownerId])
     .when(
       (owner) => !owner.isAlive,
       () => tally,
     )
     .otherwise((owner) =>
       chain(tally)
-        .thru((t) => addBuildingIncome(t, owner.id, pl))
-        .thru((t) => addSpaceportPerk(t, state.turn, owner.id, pl))
-        .thru((t) => addEmbassyPerk(t, owner.id, pl))
-        .thru((t) => addPacifistPerk(t, owner))
+        .thru((tally) => addBuildingIncome(tally, owner.id, planet))
+        .thru((tally) => addSpaceportPerk(tally, state.turn, owner.id, planet))
+        .thru((tally) => addEmbassyPerk(tally, owner.id, planet))
+        .thru((tally) => addPacifistPerk(tally, owner))
         .value(),
     );
 }
@@ -65,24 +68,27 @@ function addPlanetIncome(
 function addBuildingIncome(
   tally: IncomeTally,
   ownerId: number,
-  pl: Planet,
+  planet: Planet,
 ): IncomeTally {
   return BUILD_ORDER.reduce(
-    (t, b) =>
-      match({ level: pl.buildings[b], income: BUILDINGS[b].income })
+    (tally, buildingType) =>
+      match({
+        level: planet.buildings[buildingType],
+        income: BUILDINGS[buildingType].income,
+      })
         .with(
           { level: number.positive(), income: string },
           ({ level, income }) =>
             // Scales with level (Mine L2: 3)
-            chain(incomeAmount(b, level))
+            chain(incomeAmount(buildingType, level))
               .thru((amount) => ({
-                ...t,
-                handAdd: bumpNested(t.handAdd, ownerId, income, amount),
-                gains: bumpNested(t.gains, ownerId, income, amount),
+                ...tally,
+                handAdd: bumpNested(tally.handAdd, ownerId, income, amount),
+                gains: bumpNested(tally.gains, ownerId, income, amount),
               }))
               .value(),
         )
-        .otherwise(() => t),
+        .otherwise(() => tally),
     tally,
   );
 }
@@ -92,9 +98,9 @@ function addSpaceportPerk(
   tally: IncomeTally,
   turn: number,
   ownerId: number,
-  pl: Planet,
+  planet: Planet,
 ): IncomeTally {
-  return match(pl.buildings.SPACEPORT || 0)
+  return match(planet.buildings.SPACEPORT || 0)
     .when(
       (level) => level >= 2 && turn % 3 === 0,
       () => ({
@@ -110,9 +116,9 @@ function addSpaceportPerk(
 function addEmbassyPerk(
   tally: IncomeTally,
   ownerId: number,
-  pl: Planet,
+  planet: Planet,
 ): IncomeTally {
-  return match(pl.buildings.EMBASSY || 0)
+  return match(planet.buildings.EMBASSY || 0)
     .when(
       (level) => level >= 2,
       () => ({
@@ -136,26 +142,29 @@ function addPacifistPerk(tally: IncomeTally, owner: Player): IncomeTally {
 }
 
 function applyIncome(state: GameState, tally: IncomeTally): GameState {
-  return updatePlayers(state, (p) =>
-    match({ ha: tally.handAdd[p.id], ia: tally.infAdd[p.id] })
+  return updatePlayers(state, (player) =>
+    match({ ha: tally.handAdd[player.id], ia: tally.infAdd[player.id] })
       .when(
-        ({ ha, ia }) => !ha && !ia,
-        () => p,
+        ({ ha: handAdd, ia: influenceAdd }) => !handAdd && !influenceAdd,
+        () => player,
       )
-      .otherwise(({ ha, ia }) => ({
-        ...p,
-        hand: Object.entries(ha ?? {}).reduce(
-          (hand, [k, v]) => ({ ...hand, [k]: (hand[k] || 0) + v }),
-          { ...p.hand },
+      .otherwise(({ ha: handAdd, ia: influenceAdd }) => ({
+        ...player,
+        hand: Object.entries(handAdd ?? {}).reduce(
+          (hand, [key, value]) => ({
+            ...hand,
+            [key]: (hand[key] || 0) + value,
+          }),
+          { ...player.hand },
         ),
-        influence: p.influence + (ia || 0),
+        influence: player.influence + (influenceAdd || 0),
       })),
   );
 }
 
 function logIncome(state: GameState, tally: IncomeTally): GameState {
   return chain(state)
-    .thru((s) =>
+    .thru((state) =>
       Object.entries(tally.gains).reduce(
         (acc, [id, produced]) =>
           log(
@@ -163,40 +172,40 @@ function logIncome(state: GameState, tally: IncomeTally): GameState {
             `⚙️ ${acc.players[Number(id)].name} produces ${fmtCards(produced)}`,
             'draft',
           ),
-        s,
+        state,
       ),
     )
-    .thru((s) =>
+    .thru((state) =>
       Object.entries(tally.moveGains).reduce(
-        (acc, [id, n]) =>
+        (acc, [id, count]) =>
           log(
             acc,
-            `🛰️ ${acc.players[Number(id)].name} receives +${n}🛸 Move (L2 Spaceport)`,
+            `🛰️ ${acc.players[Number(id)].name} receives +${count}🛸 Move (L2 Spaceport)`,
             'draft',
           ),
-        s,
+        state,
       ),
     )
-    .thru((s) =>
+    .thru((state) =>
       Object.entries(tally.infGains).reduce(
-        (acc, [id, n]) =>
+        (acc, [id, count]) =>
           log(
             acc,
-            `⭐ ${acc.players[Number(id)].name} gains +${n} Influence (L2 Embassy)`,
+            `⭐ ${acc.players[Number(id)].name} gains +${count} Influence (L2 Embassy)`,
             'draft',
           ),
-        s,
+        state,
       ),
     )
-    .thru((s) =>
+    .thru((state) =>
       Object.entries(tally.pacGains).reduce(
-        (acc, [id, n]) =>
+        (acc, [id, count]) =>
           log(
             acc,
-            `☮️ ${acc.players[Number(id)].name} gains +${n} Influence (Pacifist)`,
+            `☮️ ${acc.players[Number(id)].name} gains +${count} Influence (Pacifist)`,
             'draft',
           ),
-        s,
+        state,
       ),
     )
     .value();

@@ -25,27 +25,27 @@ export async function pickCard(payload: PickCardPayload): Promise<void> {
       ({ state, resolve }) =>
         void chain(state)
           .tap(() => setPoolResolve(null))
-          .thru((s) => Object.assign(s, { awaitingPick: false }))
+          .thru((state) => Object.assign(state, { awaitingPick: false }))
           .tap(() => resolve?.(payload.idx))
-          .tap((s) => setGameState(s))
+          .tap((state) => setGameState(state))
           .value(),
     );
 }
 
 function isValidPick(
   state: GameState,
-  { playerId, idx }: PickCardPayload,
+  { playerId, idx: index }: PickCardPayload,
 ): boolean {
   return chain(state.players[playerId])
-    .thru((p) => ({
-      p,
-      planet: state.planets[state.draftPlanetId] || homePlanet(state, p),
+    .thru((player) => ({
+      p: player,
+      planet: state.planets[state.draftPlanetId] || homePlanet(state, player),
     }))
     .thru(
-      ({ p, planet }) =>
-        idx >= 0 &&
-        idx < state.pool.length &&
-        canPickCard(state, p, state.pool[idx], planet),
+      ({ p: player, planet }) =>
+        index >= 0 &&
+        index < state.pool.length &&
+        canPickCard(state, player, state.pool[index], planet),
     )
     .value();
 }

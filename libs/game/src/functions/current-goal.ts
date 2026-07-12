@@ -20,8 +20,11 @@ interface BuildGoal {
 }
 
 // The next thing this player is saving for (used for drafting, trading, refusals).
-export function currentGoal(state: GameState, p: Player): BuildGoal | null {
-  return match(singularityReadyPlanet(state, p))
+export function currentGoal(
+  state: GameState,
+  player: Player,
+): BuildGoal | null {
+  return match(singularityReadyPlanet(state, player))
     .with(
       nonNullable,
       (readyPl): BuildGoal => ({
@@ -33,17 +36,17 @@ export function currentGoal(state: GameState, p: Player): BuildGoal | null {
         ),
       }),
     )
-    .otherwise(() => nextBuildGoal(state, p));
+    .otherwise(() => nextBuildGoal(state, player));
 }
 
-function nextBuildGoal(state: GameState, p: Player): BuildGoal | null {
-  return chain(getTechLevel(state, p))
+function nextBuildGoal(state: GameState, player: Player): BuildGoal | null {
+  return chain(getTechLevel(state, player))
     .thru(
       (tech) =>
         PRIORITIES
           // SINGULARITY handled above — needs a Lab of the same level
           .filter((id) => id !== 'SINGULARITY')
-          .map((id) => buildGoalFor(state, p, id, tech))
+          .map((id) => buildGoalFor(state, player, id, tech))
           .find((goal) => goal !== undefined) ?? null,
     )
     .value();
@@ -51,21 +54,23 @@ function nextBuildGoal(state: GameState, p: Player): BuildGoal | null {
 
 function buildGoalFor(
   state: GameState,
-  p: Player,
+  player: Player,
   id: BuildingType,
   tech: number,
 ): BuildGoal | undefined {
   return chain(Math.min(maxLevel(id), tech))
     .thru((cap) =>
-      ownedPlanets(state, p).find((x) => (x.buildings[id] || 0) < cap),
+      ownedPlanets(state, player).find(
+        (planet) => (planet.buildings[id] || 0) < cap,
+      ),
     )
     .thru((planet) =>
       match(planet)
         .with(nullish, (): BuildGoal | undefined => undefined)
-        .otherwise((pl) => ({
+        .otherwise((eachPlanet) => ({
           id,
-          planet: pl,
-          cost: buildingCost(id, (pl.buildings[id] || 0) + 1),
+          planet: eachPlanet,
+          cost: buildingCost(id, (eachPlanet.buildings[id] || 0) + 1),
         })),
     )
     .value();

@@ -15,7 +15,8 @@ const barracksPls = computed(() => {
   const state = game.state;
   const human = state.players[0];
   return ownedPlanets(state, human).filter(
-    (pl) => pl.buildings.BARRACKS && canAfford(human.hand, recruitCost(pl)),
+    (planet) =>
+      planet.buildings.BARRACKS && canAfford(human.hand, recruitCost(planet)),
   );
 });
 
@@ -33,20 +34,20 @@ function recruit(planetId: number): void {
       its yield (1/2/4) and costs 1⛏️ per troop, plus one 🪖 card.
     </p>
     <div
-      v-for="pl in barracksPls"
-      :key="pl.id"
+      v-for="planet in barracksPls"
+      :key="planet.id"
       class="trow"
-      @click="recruit(pl.id)">
+      @click="recruit(planet.id)">
       <div class="tinfo">
-        <b>{{ pl.name }}</b>
+        <b>{{ planet.name }}</b>
         <span class="dimtx"
-          >🎖️ Barracks L{{ pl.buildings.BARRACKS }} → +{{
-            recruitYield(pl)
+          >🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
+            recruitYield(planet)
           }}
-          troops for {{ costLabel(recruitCost(pl)) }}</span
+          troops for {{ costLabel(recruitCost(planet)) }}</span
         >
       </div>
-      <div>🪖{{ pl.troops }}</div>
+      <div>🪖{{ planet.troops }}</div>
     </div>
     <div class="mbtns">
       <button class="btn" @click="ui.closeModal()">Cancel</button>

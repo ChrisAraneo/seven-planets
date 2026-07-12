@@ -12,7 +12,7 @@ import { simulateGame } from '@seven-planets/game';
 
 describe('headless game simulation', () => {
   it('plays full AI-vs-AI games to a resolution without throwing', async () => {
-    for (let g = 0; g < 20; g++) {
+    for (let game = 0; game < 20; game++) {
       const result = await simulateGame();
       expect(result.turns).toBeGreaterThan(0);
       // Either someone conquered the galaxy, or the 400-turn cap was hit.

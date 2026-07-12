@@ -5,22 +5,33 @@ import { owned } from './owned';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
 
-export function skipTarget(p: Player, t: InfluenceType): Player | null {
-  const rivals = alive().filter((x) => x.id !== p.id);
+export function skipTarget(
+  player: Player,
+  influenceType: InfluenceType,
+): Player | null {
+  const rivals = alive().filter((player) => player.id !== player.id);
   if (rivals.length === 0) {
     return null;
   }
-  if (t === 'SKIP_ARMY') {
-    return rivals.reduce((a, b) => (totalTroops(b) > totalTroops(a) ? b : a));
+  if (influenceType === 'SKIP_ARMY') {
+    return rivals.reduce((player, eachPlayer) =>
+      totalTroops(eachPlayer) > totalTroops(player) ? eachPlayer : player,
+    );
   }
-  if (t === 'SKIP_PLANETS') {
-    return rivals.reduce((a, b) => (owned(b).length > owned(a).length ? b : a));
+  if (influenceType === 'SKIP_PLANETS') {
+    return rivals.reduce((player, eachPlayer) =>
+      owned(eachPlayer).length > owned(player).length ? eachPlayer : player,
+    );
   }
-  if (t === 'SKIP_INFLUENCE') {
-    return rivals.reduce((a, b) => (b.influence < a.influence ? b : a));
+  if (influenceType === 'SKIP_INFLUENCE') {
+    return rivals.reduce((player, eachPlayer) =>
+      eachPlayer.influence < player.influence ? eachPlayer : player,
+    );
   }
-  if (t === 'SKIP_TECH') {
-    return rivals.reduce((a, b) => (techLevel(b) > techLevel(a) ? b : a));
+  if (influenceType === 'SKIP_TECH') {
+    return rivals.reduce((player, eachPlayer) =>
+      techLevel(eachPlayer) > techLevel(player) ? eachPlayer : player,
+    );
   }
   return null;
 }

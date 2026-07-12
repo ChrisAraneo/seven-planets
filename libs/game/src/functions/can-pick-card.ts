@@ -24,59 +24,63 @@ const { nullish } = P;
 // Can this player take pool card `t` during `planet`'s draft turn?
 export function canPickCard(
   state: GameState,
-  p: Player,
-  t: PoolType,
+  player: Player,
+  poolType: PoolType,
   planet: Planet | undefined,
 ): boolean {
-  return match(t)
+  return match(poolType)
     .when(
       (type) => Boolean(CARDS[type].building),
-      (type) => canPickBuilding(state, p, type as BuildingType, planet),
+      (type) => canPickBuilding(state, player, type as BuildingType, planet),
     )
     .when(
       // Influence cards cost ⭐ at pick time and go to hand; targets resolved later.
       (type) => Boolean(CARDS[type].influenceCard),
-      (type) => p.influence >= INFLUENCE_CARDS[type as InfluenceType].cost,
+      (type) => player.influence >= INFLUENCE_CARDS[type as InfluenceType].cost,
     )
     .with(
       'ATTACK',
-      () => hasBuilding(state, p, 'SILO') && totalTroops(state, p) >= 1,
+      () =>
+        hasBuilding(state, player, 'SILO') && totalTroops(state, player) >= 1,
     )
     .with(
       'MOVE',
       () =>
-        hasBuilding(state, p, 'SPACEPORT') &&
-        ownedPlanets(state, p).length >= 2 &&
-        totalTroops(state, p) >= 1,
+        hasBuilding(state, player, 'SPACEPORT') &&
+        ownedPlanets(state, player).length >= 2 &&
+        totalTroops(state, player) >= 1,
     )
-    .with('RECRUIT', () => hasBuilding(state, p, 'BARRACKS'))
-    .with('TRADE', () => hasBuilding(state, p, 'EMBASSY'))
+    .with('RECRUIT', () => hasBuilding(state, player, 'BARRACKS'))
+    .with('TRADE', () => hasBuilding(state, player, 'EMBASSY'))
     .otherwise(() => true);
 }
 
 function canPickBuilding(
   state: GameState,
-  p: Player,
-  bt: BuildingType,
+  player: Player,
+  buildingType: BuildingType,
   planet: Planet | undefined,
 ): boolean {
   return match(planet)
     .with(nullish, () => false)
-    .otherwise((pl) =>
-      match((pl.buildings[bt] || 0) + 1)
+    .otherwise((planet) =>
+      match((planet.buildings[buildingType] || 0) + 1)
         .when(
-          (next) => next > maxLevel(bt),
+          (next) => next > maxLevel(buildingType),
           () => false,
         )
         .when(
           // Upgrades are gated by technology
-          (next) => next > getTechLevel(state, p),
+          (next) => next > getTechLevel(state, player),
           () => false,
         )
         .when(
-          (next) => bt === 'SINGULARITY' && !isSingularityLabOk(pl, next),
+          (next) =>
+            buildingType === 'SINGULARITY' && !isSingularityLabOk(planet, next),
           () => false,
         )
-        .otherwise((next) => canAfford(p.hand, buildingCost(bt, next))),
+        .otherwise((next) =>
+          canAfford(player.hand, buildingCost(buildingType, next)),
+        ),
     );
 }

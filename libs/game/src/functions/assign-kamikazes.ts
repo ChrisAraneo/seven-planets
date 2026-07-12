@@ -15,10 +15,10 @@ export function assignKamikazes(state: GameState, count: number): GameState {
     .thru((cleared) =>
       match(count)
         .when(
-          (n) => n <= 0,
+          (count) => count <= 0,
           () => cleared,
         )
-        .otherwise((n) => markRandomAiAsKamikaze(cleared, n)),
+        .otherwise((count) => markRandomAiAsKamikaze(cleared, count)),
     )
     .value();
 }
@@ -37,10 +37,10 @@ function markRandomAiAsKamikaze(state: GameState, count: number): GameState {
       updatePlayers(state, (player) =>
         match(player)
           .when(
-            (p) => chosen.has(p.id),
-            (p) => ({ ...p, isKamikaze: true }),
+            (player) => chosen.has(player.id),
+            (player) => ({ ...player, isKamikaze: true }),
           )
-          .otherwise((p) => p),
+          .otherwise((player) => player),
       ),
     )
     .value();

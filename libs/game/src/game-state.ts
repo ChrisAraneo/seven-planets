@@ -33,8 +33,8 @@ let raw = false;
 
 /** Called once by the composition root (browser app or headless script)
     before any engine/AI call. */
-export function installGameState(a: GameStateAccess): void {
-  access = a;
+export function installGameState(gameStateAccess: GameStateAccess): void {
+  access = gameStateAccess;
 }
 
 /** The current game state, for engine/AI functions running outside components. */
@@ -64,8 +64,10 @@ export function resetGameState(opts: { raw?: boolean } = {}): void {
 
 // The one place the lib fails fast: engine/AI calls are meaningless without an
 // installed accessor, so absence must escalate rather than fall back.
-function requireAccess(a: GameStateAccess | null): GameStateAccess {
-  return match(a)
+function requireAccess(
+  gameStateAccess: GameStateAccess | null,
+): GameStateAccess {
+  return match(gameStateAccess)
     .with(nonNullable, (installed) => installed)
     .otherwise(() => {
       throw new Error(

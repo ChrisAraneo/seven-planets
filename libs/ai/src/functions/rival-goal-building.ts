@@ -5,17 +5,19 @@ import { owned } from './owned';
 import { techLevel } from './tech-level';
 
 export function rivalGoalBuilding(
-  r: Player,
+  player: Player,
 ): { id: BuildingType; cost: Cost } | null {
-  const tech = techLevel(r);
+  const tech = techLevel(player);
   for (const id of PRIORITIES) {
     if (id === 'SINGULARITY') {
       continue;
     }
     const cap = Math.min(maxLevel(id), tech);
-    const pl = owned(r).find((x) => (x.buildings[id] || 0) < cap);
-    if (pl) {
-      return { id, cost: buildingCost(id, (pl.buildings[id] || 0) + 1) };
+    const planet = owned(player).find(
+      (planet) => (planet.buildings[id] || 0) < cap,
+    );
+    if (planet) {
+      return { id, cost: buildingCost(id, (planet.buildings[id] || 0) + 1) };
     }
   }
   return null;

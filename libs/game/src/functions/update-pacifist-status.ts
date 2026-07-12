@@ -21,37 +21,44 @@ export function updatePacifistStatus(
   hooks: PresentationHooks = NO_PRESENTATION,
 ): GameState {
   return state.players.reduce(
-    (s, p) => promoteIfVowKept(s, p, state.turn, hooks),
+    (eachState, player) =>
+      promoteIfVowKept(eachState, player, state.turn, hooks),
     state,
   );
 }
 
 function promoteIfVowKept(
-  s: GameState,
-  p: Player,
+  state: GameState,
+  player: Player,
   turn: number,
   hooks: PresentationHooks,
 ): GameState {
-  return match(p)
+  return match(player)
     .when(
-      (pl) => !pl.isAlive || pl.hasPacifistStatus || pl.pacifismForfeited,
-      () => s,
+      (player) =>
+        !player.isAlive || player.hasPacifistStatus || player.pacifismForfeited,
+      () => state,
     )
     .when(
-      (pl) => turn - pl.lastAttackTurn < PACIFIST_TURNS,
-      () => s,
+      (player) => turn - player.lastAttackTurn < PACIFIST_TURNS,
+      () => state,
     )
-    .otherwise((pl) =>
-      chain(updatePlayer(s, pl.id, (x) => ({ ...x, hasPacifistStatus: true })))
+    .otherwise((player) =>
+      chain(
+        updatePlayer(state, player.id, (player) => ({
+          ...player,
+          hasPacifistStatus: true,
+        })),
+      )
         .thru((promoted) =>
           log(
             promoted,
-            `☮️ ${pl.name} has forsworn war for ${PACIFIST_TURNS} turns and becomes a PACIFIST — every planet gains +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per turn. Attacking would break the vow for good.`,
+            `☮️ ${player.name} has forsworn war for ${PACIFIST_TURNS} turns and becomes a PACIFIST — every planet gains +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per turn. Attacking would break the vow for good.`,
             'sys',
           ),
         )
         .tap((logged) =>
-          ownedPlanets(logged, pl).forEach((planet) =>
+          ownedPlanets(logged, player).forEach((planet) =>
             hooks.floatText(planet, '☮️ PACIFIST', '#8affc0'),
           ),
         )

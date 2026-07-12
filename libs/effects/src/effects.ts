@@ -49,8 +49,10 @@ function enqueue(anim: Anim): void {
   sink?.enqueue(anim);
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms * speedMult()));
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((result) =>
+    setTimeout(result, milliseconds * speedMult()),
+  );
 }
 
 function rocket(from: Planet, to: Planet, color: string): Promise<void> {
@@ -65,7 +67,7 @@ function rocket(from: Planet, to: Planet, color: string): Promise<void> {
     t0: now(),
     dur,
   });
-  return new Promise((r) => setTimeout(r, dur + 60));
+  return new Promise((result) => setTimeout(result, dur + 60));
 }
 
 function boom(planet: Planet): void {

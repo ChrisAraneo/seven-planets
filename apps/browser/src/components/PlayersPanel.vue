@@ -16,15 +16,17 @@ import type { Player } from '@seven-planets/game';
 
 const game = useGameStore();
 
-function resLine(p: Player): string {
-  return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${p.hand[t]}`).join(' ');
+function resLine(player: Player): string {
+  return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(
+    ' ',
+  );
 }
-function actLine(p: Player): string {
-  const heldInf = INFLUENCE_TYPES.filter((t) => p.hand[t] > 0)
-    .map((t) => `${CARDS[t].icon}${p.hand[t]}`)
+function actLine(player: Player): string {
+  const heldInf = INFLUENCE_TYPES.filter((t) => player.hand[t] > 0)
+    .map((t) => `${CARDS[t].icon}${player.hand[t]}`)
     .join(' ');
   return (
-    ACTION_TYPES.map((t) => `${CARDS[t].icon}${p.hand[t]}`).join(' ') +
+    ACTION_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(' ') +
     (heldInf ? ` · ${heldInf}` : '')
   );
 }
@@ -33,29 +35,30 @@ function actLine(p: Player): string {
 <template>
   <div id="players-panel">
     <div
-      v-for="p in getPlayers()"
-      :key="p.id"
+      v-for="player in getPlayers()"
+      :key="player.id"
       class="prow"
       :class="{
-        active: p.id === getActiveId() && !getOver(),
-        dead: !p.isAlive,
+        active: player.id === getActiveId() && !getOver(),
+        dead: !player.isAlive,
       }"
-      :style="{ borderLeftColor: p.color }">
-      <span class="pname" :style="{ color: p.color }"
-        >{{ p.name }}{{ p.isHuman ? ' ★' : '' }}</span
+      :style="{ borderLeftColor: player.color }">
+      <span class="pname" :style="{ color: player.color }"
+        >{{ player.name }}{{ player.isHuman ? ' ★' : '' }}</span
       >
       <div class="pstats">
         🪐{{
-          game.state.planets.filter((pl) => pl.ownerId === p.id).length
+          game.state.planets.filter((planet) => planet.ownerId === player.id)
+            .length
         }}
-        🔬T{{ getTechLevel(game.state, p) }} 🦵{{
-          totalTroops(game.state, p)
+        🔬T{{ getTechLevel(game.state, player) }} 🦵{{
+          totalTroops(game.state, player)
         }}
-        🏛️{{ buildingCount(game.state, p) }} ⭐{{ p.influence
-        }}{{ p.skipTurns > 0 || p.skippedNow ? ' ⏭️' : '' }} ·
-        {{ resLine(p) }}
+        🏛️{{ buildingCount(game.state, player) }} ⭐{{ player.influence
+        }}{{ player.skipTurns > 0 || player.skippedNow ? ' ⏭️' : '' }} ·
+        {{ resLine(player) }}
       </div>
-      <div class="pstats">{{ actLine(p) }}</div>
+      <div class="pstats">{{ actLine(player) }}</div>
     </div>
   </div>
 </template>

@@ -32,24 +32,25 @@ export function holdProbability(
     (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE +
     singularityDefBonus(planet);
   const pacBonus = owner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0;
-  for (const r of alive()) {
-    if (r.id === owner.id || r.hasPacifistStatus) {
+  for (const player of alive()) {
+    if (player.id === owner.id || player.hasPacifistStatus) {
       continue;
     }
-    if (!mayTarget(r, owner)) {
+    if (!mayTarget(player, owner)) {
       continue;
     }
     let peak = 0;
-    for (let t = 1; t <= horizon; t++) {
-      if (getTurn() + t <= protectedUntil) {
+    for (let total = 1; total <= horizon; total++) {
+      if (getTurn() + total <= protectedUntil) {
         continue;
       }
-      const g = Math.round(garrison + reinforce * t);
-      const strike = projectedStrike(r, t, planet.id);
-      if (strike.n < 2 || strike.n < minTroopsToConquer(g)) {
+      const game = Math.round(garrison + reinforce * total);
+      const strike = projectedStrike(player, total, planet.id);
+      if (strike.n < 2 || strike.n < minTroopsToConquer(game)) {
         continue;
       }
-      const def = COMBAT.defensePerTroop * g + shield + pacBonus + HOME_FIELD;
+      const def =
+        COMBAT.defensePerTroop * game + shield + pacBonus + HOME_FIELD;
       const atk = COMBAT.attackPerTroop * strike.n + strike.bonus;
       peak = Math.max(peak, battleWinProb(atk, def));
     }
@@ -61,10 +62,10 @@ export function holdProbability(
       horizon - Math.max(0, protectedUntil - getTurn()),
     );
     const pCard =
-      (r.hand.ATTACK || 0) > 0
+      (player.hand.ATTACK || 0) > 0
         ? 0.95
         : 1 - (1 - actionDrawProb('ATTACK')) ** window;
-    pHold *= 1 - peak * pCard * aggression(r);
+    pHold *= 1 - peak * pCard * aggression(player);
   }
   return pHold;
 }

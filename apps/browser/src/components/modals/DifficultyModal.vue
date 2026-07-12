@@ -24,18 +24,22 @@ function choose(level: Difficulty): void {
     </p>
     <div class="difficulty-grid">
       <button
-        v-for="d in DIFFICULTIES"
-        :key="d.id"
+        v-for="difficulty in DIFFICULTIES"
+        :key="difficulty.id"
         class="difficulty-card"
-        :class="{ locked: !unlocked.has(d.id) }"
-        :disabled="!unlocked.has(d.id)"
-        @click="choose(d.id)">
+        :class="{ locked: !unlocked.has(difficulty.id) }"
+        :disabled="!unlocked.has(difficulty.id)"
+        @click="choose(difficulty.id)">
         <span class="difficulty-icon">{{
-          unlocked.has(d.id) ? d.icon : '🔒'
+          unlocked.has(difficulty.id) ? difficulty.icon : '🔒'
         }}</span>
-        <span class="difficulty-name">{{ d.name }}</span>
+        <span class="difficulty-name">{{ difficulty.name }}</span>
         <span class="difficulty-blurb">
-          {{ unlocked.has(d.id) ? d.blurb : 'Win the level below to unlock.' }}
+          {{
+            unlocked.has(difficulty.id)
+              ? difficulty.blurb
+              : 'Win the level below to unlock.'
+          }}
         </span>
       </button>
     </div>

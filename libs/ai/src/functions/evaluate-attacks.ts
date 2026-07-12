@@ -39,30 +39,30 @@ export interface AttackPlan {
   score: number;
 }
 
-export function evaluateAttacks(p: Player): AttackPlan[] {
+export function evaluateAttacks(player: Player): AttackPlan[] {
   const aiState = getAiState();
-  if (p.hasPacifistStatus) {
+  if (player.hasPacifistStatus) {
     return [];
   }
   const avgStr = avgStrength();
-  const minWin = effMinConquerProb(p);
+  const minWin = effMinConquerProb(player);
   // A kamikaze does not fear losing troops — expected losses barely register
   // when it scores a strike, so even long-shot attacks stay on the table.
-  const lossWeight = aiState.W.troopValue * (p.isKamikaze ? 0.25 : 1);
+  const lossWeight = aiState.W.troopValue * (player.isKamikaze ? 0.25 : 1);
   const plans: AttackPlan[] = [];
   for (const target of getGameState().planets) {
-    if (target.ownerId === p.id) {
+    if (target.ownerId === player.id) {
       continue;
     }
     const defOwner = getGameState().players[target.ownerId];
     if (!defOwner.isAlive || isUnderTruce(target)) {
       continue;
     }
-    if (!mayTarget(p, defOwner)) {
+    if (!mayTarget(player, defOwner)) {
       continue;
     }
     const def = defenseBaseOf(target);
-    for (const source of owned(p)) {
+    for (const source of owned(player)) {
       if (!source.buildings.SILO) {
         continue;
       }
@@ -87,20 +87,25 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
           lean++;
         }
         let best: AttackPlan | null = null;
-        for (const n of new Set([lean, Math.ceil((lean + maxN) / 2), maxN])) {
-          const pWin = battleWinProb(attackBaseOf(n, source), def);
-          const surv = survivorsAfterWin(n);
+        for (const count of new Set([
+          lean,
+          Math.ceil((lean + maxN) / 2),
+          maxN,
+        ])) {
+          const pWin = battleWinProb(attackBaseOf(count, source), def);
+          const surv = survivorsAfterWin(count);
           const hold = holdProbability(
-            p,
+            player,
             target,
             surv,
             getTurn() + CONQUEST_TRUCE,
           );
-          const eLoss = pWin * (n - surv) + (1 - pWin) * lossesOnDefeat(n);
+          const eLoss =
+            pWin * (count - surv) + (1 - pWin) * lossesOnDefeat(count);
           const plan: AttackPlan = {
             source,
             target,
-            n,
+            n: count,
             pWin,
             conquers: true,
             survivors: surv,
@@ -114,15 +119,18 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
         }
         plans.push(best!);
       } else {
-        const n = maxN;
-        const pWin = battleWinProb(attackBaseOf(n, source), def);
+        const eachCount = maxN;
+        const pWin = battleWinProb(attackBaseOf(eachCount, source), def);
         const defLoss = Math.min(
           target.troops,
-          Math.ceil((n * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
+          Math.ceil(
+            (eachCount * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den,
+          ),
         );
         const eLoss =
-          pWin * (n - survivorsAfterWin(n)) + (1 - pWin) * lossesOnDefeat(n);
-        const zeal = p.isKamikaze
+          pWin * (eachCount - survivorsAfterWin(eachCount)) +
+          (1 - pWin) * lossesOnDefeat(eachCount);
+        const zeal = player.isKamikaze
           ? 3
           : playerStrength(defOwner) > 1.3 * avgStr
             ? 1.4
@@ -130,10 +138,10 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
         plans.push({
           source,
           target,
-          n,
+          n: eachCount,
           pWin,
           conquers: false,
-          survivors: survivorsAfterWin(n),
+          survivors: survivorsAfterWin(eachCount),
           holdProb: 0,
           value: defLoss,
           score:
@@ -142,5 +150,7 @@ export function evaluateAttacks(p: Player): AttackPlan[] {
       }
     }
   }
-  return plans.sort((a, b) => b.score - a.score);
+  return plans.sort(
+    (attackPlan, eachAttackPlan) => eachAttackPlan.score - attackPlan.score,
+  );
 }

@@ -17,32 +17,38 @@ export interface BuildCandidate {
   pComplete: number;
 }
 
-export function buildCandidates(p: Player): BuildCandidate[] {
+export function buildCandidates(player: Player): BuildCandidate[] {
   const aiState = getAiState();
   const all: BuildCandidate[] = [];
-  for (const planet of owned(p)) {
+  for (const planet of owned(player)) {
     for (const id of BUILD_ORDER) {
-      const level = nextLevelAllowed(p, planet, id);
+      const level = nextLevelAllowed(player, planet, id);
       if (!level) {
         continue;
       }
       const cost = buildingCost(id, level);
-      const worth = buildingWorth(p, id, planet, level);
+      const worth = buildingWorth(player, id, planet, level);
       if (worth <= 0) {
         continue;
       }
-      const eta = affordEta(p, cost);
+      const eta = affordEta(player, cost);
       const pComplete =
         cardAppearProb(id, aiState.W.planHorizon) *
         Math.max(0.1, Math.min(1, 1.2 - eta / aiState.W.planHorizon));
       all.push({ id, planet, level, cost, worth, pComplete });
     }
   }
-  all.sort((a, b) => b.worth * b.pComplete - a.worth * a.pComplete);
+  all.sort(
+    (buildCandidate, eachBuildCandidate) =>
+      eachBuildCandidate.worth * eachBuildCandidate.pComplete -
+      buildCandidate.worth * buildCandidate.pComplete,
+  );
   const queue: BuildCandidate[] = [];
-  for (const c of all) {
-    if (!queue.some((q) => q.id === c.id)) {
-      queue.push(c);
+  for (const buildCandidate of all) {
+    if (
+      !queue.some((buildCandidate) => buildCandidate.id === buildCandidate.id)
+    ) {
+      queue.push(buildCandidate);
     }
     if (queue.length >= 5) {
       break;

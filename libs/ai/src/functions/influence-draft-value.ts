@@ -9,51 +9,53 @@ import { playerStrength } from './player-strength';
 import { skipTarget } from './skip-target';
 
 export function influenceDraftValue(
-  p: Player,
-  t: InfluenceType,
+  player: Player,
+  influenceType: InfluenceType,
   plan: Plan,
 ): number {
   const aiState = getAiState();
-  const { cost } = INFLUENCE_CARDS[t];
+  const { cost } = INFLUENCE_CARDS[influenceType];
   const starCost =
-    cost * (plan.kind === 'COUP_BANK' && t !== 'COUP' ? 1.2 : 0.35);
-  let v = 0;
-  switch (t) {
+    cost * (plan.kind === 'COUP_BANK' && influenceType !== 'COUP' ? 1.2 : 0.35);
+  let eachValue = 0;
+  switch (influenceType) {
     case 'COUP': {
-      const tgt = bestCoupTarget(p);
+      const tgt = bestCoupTarget(player);
       if (tgt && tgt.value >= aiState.W.coupValueFloor) {
-        return 12 - ((p.hand.COUP || 0) > 0 ? 6 : 0);
+        return 12 - ((player.hand.COUP || 0) > 0 ? 6 : 0);
       }
-      v = -2;
+      eachValue = -2;
       break;
     }
     case 'STEAL_ACTION': {
       const loot = alive().some(
-        (x) =>
-          x.id !== p.id &&
+        (player) =>
+          player.id !== player.id &&
           (['ATTACK', 'RECRUIT', 'MOVE', 'TRADE'] as const).some(
-            (a) => (x.hand[a] || 0) > 0,
+            (first) => (player.hand[first] || 0) > 0,
           ),
       );
-      v = loot ? 1.5 : -2;
+      eachValue = loot ? 1.5 : -2;
       break;
     }
     case 'PEACE': {
-      v = 1 + plan.threat * 0.4;
+      eachValue = 1 + plan.threat * 0.4;
       break;
     }
     default: {
-      const target = skipTarget(p, t);
+      const target = skipTarget(player, influenceType);
       if (!target) {
         return -2;
       }
-      const allStr = alive().map((x) => playerStrength(x));
-      const avgStr = allStr.reduce((a, b) => a + b, 0) / (allStr.length || 1);
-      v = 1 + (playerStrength(target) / Math.max(1, avgStr)) * 1.5;
+      const allStr = alive().map((player) => playerStrength(player));
+      const avgStr =
+        allStr.reduce((first, building) => first + building, 0) /
+        (allStr.length || 1);
+      eachValue = 1 + (playerStrength(target) / Math.max(1, avgStr)) * 1.5;
     }
   }
-  if ((p.hand[t] || 0) > 0) {
-    v -= 1.5;
+  if ((player.hand[influenceType] || 0) > 0) {
+    eachValue -= 1.5;
   }
-  return v - starCost;
+  return eachValue - starCost;
 }

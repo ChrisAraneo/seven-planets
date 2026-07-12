@@ -15,10 +15,10 @@ export interface PlanetLayout {
 export function setPlanetLayout(layout: readonly PlanetLayout[]): void {
   return setGameState({
     ...getGameState(),
-    planets: getGameState().planets.map((pl, i) =>
-      match(layout[i])
-        .with(nullish, () => pl)
-        .otherwise((coords) => ({ ...pl, ...coords })),
+    planets: getGameState().planets.map((planet, index) =>
+      match(layout[index])
+        .with(nullish, () => planet)
+        .otherwise((coords) => ({ ...planet, ...coords })),
     ),
   });
 }

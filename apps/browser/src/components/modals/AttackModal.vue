@@ -30,80 +30,105 @@ const human = game.state.players[0];
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPls = ownedPlanets(game.state, human).filter(
-  (pl) => pl.buildings.SILO && pl.troops >= 1,
+const siloPlanets = ownedPlanets(game.state, human).filter(
+  (planet) => planet.buildings.SILO && planet.troops >= 1,
 );
-const srcId = ref(siloPls.reduce((a, b) => (a.troops >= b.troops ? a : b)).id);
-const sel = ref(-1);
-const n = ref(1);
+const sourceId = ref(
+  siloPlanets.reduce((strongest, planet) =>
+    strongest.troops >= planet.troops ? strongest : planet,
+  ).id,
+);
+const selectedId = ref(-1);
+const troopCount = ref(1);
 
-const source = computed(() => getPlanets()[srcId.value]);
+const source = computed(() => getPlanets()[sourceId.value]);
 const sources = computed(() =>
-  ownedPlanets(game.state, human).filter((pl) => pl.buildings.SILO),
+  ownedPlanets(game.state, human).filter((planet) => planet.buildings.SILO),
 );
 const targets = computed(() =>
-  getPlanets().filter((pl: Planet) => pl.ownerId !== 0),
+  getPlanets().filter((planet: Planet) => planet.ownerId !== 0),
 );
 const openTargets = computed(() =>
-  targets.value.filter((pl: Planet) => !isUnderTruce(pl)),
+  targets.value.filter((planet: Planet) => !isUnderTruce(planet)),
 );
-const cap = computed(() =>
+const capacity = computed(() =>
   Math.min(rocketCap(source.value), source.value.troops),
 );
 
 // Keep the selected target valid and the troop count within capacity.
 watch(
-  [openTargets, srcId],
+  [openTargets, sourceId],
   () => {
-    if (!openTargets.value.some((pl: Planet) => pl.id === sel.value))
-      sel.value = openTargets.value.length ? openTargets.value[0].id : -1;
-    n.value = Math.max(1, Math.min(n.value, cap.value));
+    if (
+      !openTargets.value.some(
+        (planet: Planet) => planet.id === selectedId.value,
+      )
+    )
+      selectedId.value = openTargets.value.length
+        ? openTargets.value[0].id
+        : -1;
+    troopCount.value = Math.max(1, Math.min(troopCount.value, capacity.value));
   },
   { immediate: true },
 );
 
 const target = computed(() =>
-  sel.value >= 0 ? getPlanets()[sel.value] : null,
+  selectedId.value >= 0 ? getPlanets()[selectedId.value] : null,
 );
-const canLaunch = computed(() => sel.value >= 0 && source.value.troops >= 1);
+const canLaunch = computed(
+  () => selectedId.value >= 0 && source.value.troops >= 1,
+);
 
 const preview = computed(() => {
   if (!target.value) return null;
-  const ap = 2 * n.value + siloBonus(source.value);
-  const dp =
+  const attackPower = 2 * troopCount.value + siloBonus(source.value);
+  const defensePower =
     2 * target.value.troops +
     (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
     pacifistDefBonus(game.state, target.value) +
     singularityDefBonus(target.value) +
     HOME_FIELD;
-  const pWin = battleWinProb(ap, dp); // exact P(win), same math the dice roll
-  const winPct = Math.round(pWin * 100);
-  const note = pWin >= 0.6 ? 'good' : pWin >= 0.35 ? 'close' : 'suicide';
-  const sendingAll = n.value >= source.value.troops;
-  return { ap, dp, pWin, winPct, note, sendingAll };
+  // exact P(win), same math the dice roll
+  const winProbability = battleWinProb(attackPower, defensePower);
+  const winPercent = Math.round(winProbability * 100);
+  const note =
+    winProbability >= 0.6
+      ? 'good'
+      : winProbability >= 0.35
+        ? 'close'
+        : 'suicide';
+  const sendingAll = troopCount.value >= source.value.troops;
+  return {
+    attackPower,
+    defensePower,
+    winProbability,
+    winPercent,
+    note,
+    sendingAll,
+  };
 });
 
-function capFmt(pl = source.value): string {
-  const c = rocketCap(pl);
-  return c === Infinity ? '∞ (all troops)' : String(c);
+function capacityLabel(planet = source.value): string {
+  const cap = rocketCap(planet);
+  return cap === Infinity ? '∞ (all troops)' : String(cap);
 }
-function selectTarget(pl: { id: number; truce: boolean }): void {
-  if (!pl.truce) sel.value = pl.id;
+function selectTarget(planet: { id: number; truce: boolean }): void {
+  if (!planet.truce) selectedId.value = planet.id;
 }
-function dec(): void {
-  if (n.value > 1) n.value--;
+function decrease(): void {
+  if (troopCount.value > 1) troopCount.value--;
 }
-function inc(): void {
-  if (n.value < cap.value) n.value++;
+function increase(): void {
+  if (troopCount.value < capacity.value) troopCount.value++;
 }
 function launch(): void {
   if (!canLaunch.value) return;
   ui.closeModal();
   void attackPlanet({
     playerId: 0,
-    sourceId: srcId.value,
-    targetId: sel.value,
-    n: n.value,
+    sourceId: sourceId.value,
+    targetId: selectedId.value,
+    troops: troopCount.value,
   });
 }
 </script>
@@ -126,56 +151,60 @@ function launch(): void {
     <p v-if="sources.length > 1">
       Launch from:
       <button
-        v-for="pl in sources"
-        :key="pl.id"
+        v-for="planet in sources"
+        :key="planet.id"
         class="tab"
-        :class="{ active: pl.id === srcId }"
-        @click="srcId = pl.id">
-        {{ pl.name }} 🪖{{ pl.troops }}
+        :class="{ active: planet.id === sourceId }"
+        @click="sourceId = planet.id">
+        {{ planet.name }} 🪖{{ planet.troops }}
       </button>
     </p>
     <div
-      v-for="pl in targets"
-      :key="pl.id"
+      v-for="planet in targets"
+      :key="planet.id"
       class="trow"
-      :class="{ sel: pl.id === sel, truce: isUnderTruce(pl) }"
-      @click="selectTarget({ id: pl.id, truce: isUnderTruce(pl) })">
+      :class="{ sel: planet.id === selectedId, truce: isUnderTruce(planet) }"
+      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })">
       <div class="tinfo">
-        <b :style="{ color: getPlayers()[pl.ownerId].color }">{{ pl.name }}</b>
-        — {{ getPlayers()[pl.ownerId].name }}
-        <span v-if="isUnderTruce(pl)" class="dimtx">
-          🕊️ truce ({{ pl.protectedUntil - getTurn() + 1 }} turn{{
-            pl.protectedUntil - getTurn() ? 's' : ''
+        <b :style="{ color: getPlayers()[planet.ownerId].color }">{{
+          planet.name
+        }}</b>
+        — {{ getPlayers()[planet.ownerId].name }}
+        <span v-if="isUnderTruce(planet)" class="dimtx">
+          🕊️ truce ({{ planet.protectedUntil - getTurn() + 1 }} turn{{
+            planet.protectedUntil - getTurn() ? 's' : ''
           }})
         </span>
       </div>
       <div>
-        🪖{{ pl.troops }} {{ '🛡️'.repeat(pl.buildings.SHIELD || 0) }}
+        🪖{{ planet.troops }} {{ '🛡️'.repeat(planet.buildings.SHIELD || 0) }}
         <span
-          v-if="getPlayers()[pl.ownerId].hasPacifistStatus"
+          v-if="getPlayers()[planet.ownerId].hasPacifistStatus"
           title="Pacifist — +6 defense"
           >☮️</span
         >
-        🃏{{ handSize(getPlayers()[pl.ownerId]) }}
+        🃏{{ handSize(getPlayers()[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">
       Troops aboard:
       <span class="stepper">
-        <button @click="dec">−</button><span class="sval">{{ n }}</span
-        ><button @click="inc">+</button>
+        <button @click="decrease">−</button
+        ><span class="sval">{{ troopCount }}</span
+        ><button @click="increase">+</button>
       </span>
       <span class="dimtx"
         >({{ source.name }} garrisons {{ source.troops }}, rocket capacity
-        {{ capFmt() }})</span
+        {{ capacityLabel() }})</span
       >
     </p>
     <p>
       <template v-if="preview">
-        Your strike {{ preview.ap }} + 🎲0-{{
+        Your strike {{ preview.attackPower }} + 🎲0-{{
           COMBAT.attackRoll
         }}
-        &nbsp;vs&nbsp; defense {{ preview.dp }} + 🎲0-{{ COMBAT.defenseRoll
+        &nbsp;vs&nbsp; defense {{ preview.defensePower }} + 🎲0-{{
+          COMBAT.defenseRoll
         }}<br />
         <b
           :style="{
@@ -186,7 +215,7 @@ function launch(): void {
                   ? '#ffd23d'
                   : '#ff6b6b',
           }"
-          >Win chance: {{ preview.winPct }}%</b
+          >Win chance: {{ preview.winPercent }}%</b
         >
         —
         <span v-if="preview.note === 'good'" style="color: #7dff8a"

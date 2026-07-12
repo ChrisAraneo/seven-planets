@@ -58,9 +58,9 @@ export function buildBuilding(
 function buildVerb(buildingType: BuildingType, level: number): string {
   return match(level)
     .when(
-      (l) => l > 1,
-      (l) =>
-        `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${l}`,
+      (level) => level > 1,
+      (level) =>
+        `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${level}`,
     )
     .otherwise(
       () =>
@@ -71,8 +71,8 @@ function buildVerb(buildingType: BuildingType, level: number): string {
 function levelSuffix(level: number): string {
   return match(level)
     .when(
-      (l) => l > 1,
-      (l) => ` L${l}`,
+      (level) => level > 1,
+      (level) => ` L${level}`,
     )
     .otherwise(() => '');
 }

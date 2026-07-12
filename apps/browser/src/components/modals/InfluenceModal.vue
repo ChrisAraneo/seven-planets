@@ -39,43 +39,48 @@ type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
 
 const held = computed(() =>
-  INFLUENCE_TYPES.filter((t) => (human.hand[t] || 0) > 0),
+  INFLUENCE_TYPES.filter(
+    (influenceType) => (human.hand[influenceType] || 0) > 0,
+  ),
 );
 const coupList = computed(() => coupTargets(game.state, human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
 const rivals = computed(() =>
-  filterAlivePlayers(game.state).filter((x) => !x.isHuman),
+  filterAlivePlayers(game.state).filter((player) => !player.isHuman),
 );
 
-function skipTarget(t: InfluenceType): Player | null {
-  return t.startsWith('SKIP_') ? influenceTarget(game.state, human, t) : null;
+function skipTarget(influenceType: InfluenceType): Player | null {
+  return influenceType.startsWith('SKIP_')
+    ? influenceTarget(game.state, human, influenceType)
+    : null;
 }
 
-function chooseCard(t: InfluenceType): void {
-  if (t === 'STEAL_ACTION') {
+function chooseCard(influenceType: InfluenceType): void {
+  if (influenceType === 'STEAL_ACTION') {
     view.value = 'steal';
     return;
   }
-  if (t === 'COUP') {
+  if (influenceType === 'COUP') {
     view.value = 'coup';
     return;
   }
-  playInfluence(t);
+  playInfluence(influenceType);
 }
 
-function coupIcons(pl: Planet): string {
-  return BUILD_ORDER.filter((b) => pl.buildings[b])
+function coupIcons(planet: Planet): string {
+  return BUILD_ORDER.filter((b) => planet.buildings[b])
     .map(
       (b: BuildingType) =>
-        BUILDINGS[b].icon + (pl.buildings[b] > 1 ? pl.buildings[b] : ''),
+        BUILDINGS[b].icon +
+        (planet.buildings[b] > 1 ? planet.buildings[b] : ''),
     )
     .join(' ');
 }
 
-function doCoup(pl: Planet): void {
-  playInfluence('COUP', { planet: pl });
+function doCoup(planet: Planet): void {
+  playInfluence('COUP', { planet });
 }
 function doSteal(
   target: Player,
@@ -94,18 +99,24 @@ function doSteal(
         These cards were paid for at draft time — playing one is free. Click a
         card to play it.
       </p>
-      <div v-for="t in held" :key="t" class="trow" @click="chooseCard(t)">
+      <div
+        v-for="influenceType in held"
+        :key="influenceType"
+        class="trow"
+        @click="chooseCard(influenceType)">
         <div class="tinfo">
-          <b>{{ INFLUENCE_CARDS[t].icon }} {{ INFLUENCE_CARDS[t].name }}</b> ×{{
-            human.hand[t]
-          }}
+          <b
+            >{{ INFLUENCE_CARDS[influenceType].icon }}
+            {{ INFLUENCE_CARDS[influenceType].name }}</b
+          >
+          ×{{ human.hand[influenceType] }}
           —
-          <span class="dimtx">{{ INFLUENCE_CARDS[t].desc }}</span>
-          <template v-if="t.startsWith('SKIP_')">
-            <span v-if="skipTarget(t)" class="dimtx">
+          <span class="dimtx">{{ INFLUENCE_CARDS[influenceType].desc }}</span>
+          <template v-if="influenceType.startsWith('SKIP_')">
+            <span v-if="skipTarget(influenceType)" class="dimtx">
               → would hit
-              <b :style="{ color: skipTarget(t)!.color }">{{
-                skipTarget(t)!.name
+              <b :style="{ color: skipTarget(influenceType)!.color }">{{
+                skipTarget(influenceType)!.name
               }}</b></span
             >
             <span v-else class="warn"> (no rival to target)</span>
@@ -135,17 +146,17 @@ function doSteal(
       </p>
       <template v-if="coupList.length">
         <div
-          v-for="pl in coupList"
-          :key="pl.id"
+          v-for="planet in coupList"
+          :key="planet.id"
           class="trow"
-          @click="doCoup(pl)">
+          @click="doCoup(planet)">
           <div class="tinfo">
-            <b :style="{ color: getPlayers()[pl.ownerId].color }">{{
-              pl.name
+            <b :style="{ color: getPlayers()[planet.ownerId].color }">{{
+              planet.name
             }}</b>
-            — {{ getPlayers()[pl.ownerId].name }}
+            — {{ getPlayers()[planet.ownerId].name }}
           </div>
-          <div>🪖{{ pl.troops }} {{ coupIcons(pl) }}</div>
+          <div>🪖{{ planet.troops }} {{ coupIcons(planet) }}</div>
         </div>
       </template>
       <p v-else class="warn">
@@ -168,13 +179,21 @@ function doSteal(
         Take one action card of your choice from a chosen rival (influence cards
         cannot be taken).
       </p>
-      <div v-for="r in rivals" :key="r.id" class="trow">
+      <div v-for="rival in rivals" :key="rival.id" class="trow">
         <div class="tinfo">
-          <b :style="{ color: r.color }">{{ r.name }}</b> —
-          <template v-if="ACTION_TYPES.some((a) => r.hand[a] > 0)">
-            <template v-for="a in ACTION_TYPES" :key="a">
-              <button v-if="r.hand[a] > 0" class="tab" @click="doSteal(r, a)">
-                {{ CARDS[a].icon }} {{ CARDS[a].name }} ×{{ r.hand[a] }}
+          <b :style="{ color: rival.color }">{{ rival.name }}</b> —
+          <template
+            v-if="
+              ACTION_TYPES.some((actionType) => rival.hand[actionType] > 0)
+            ">
+            <template v-for="actionType in ACTION_TYPES" :key="actionType">
+              <button
+                v-if="rival.hand[actionType] > 0"
+                class="tab"
+                @click="doSteal(rival, actionType)">
+                {{ CARDS[actionType].icon }} {{ CARDS[actionType].name }} ×{{
+                  rival.hand[actionType]
+                }}
               </button>
             </template>
           </template>

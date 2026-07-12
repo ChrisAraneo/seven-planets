@@ -3,9 +3,14 @@ import type { Player } from '../interfaces/player';
 
 import { ownedPlanets } from './owned-planets';
 
-export function buildingCount(state: GameState, p: Player): number {
-  return ownedPlanets(state, p).reduce(
-    (s, pl) => s + Object.values(pl.buildings).reduce((a, b) => a + b, 0),
+export function buildingCount(state: GameState, player: Player): number {
+  return ownedPlanets(state, player).reduce(
+    (sum, planet) =>
+      sum +
+      Object.values(planet.buildings).reduce(
+        (first, building) => first + building,
+        0,
+      ),
     0,
   );
 }

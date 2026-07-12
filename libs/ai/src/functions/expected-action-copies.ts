@@ -6,7 +6,7 @@ import {
 } from '@seven-planets/game';
 import type { ActionType } from '@seven-planets/game';
 
-export function expectedActionCopies(t: ActionType): number {
+export function expectedActionCopies(actionType: ActionType): number {
   if (getTurn() < ACTION_CARDS_FROM_TURN) {
     return 0;
   }
@@ -14,9 +14,12 @@ export function expectedActionCopies(t: ActionType): number {
   if (getTurn() >= MOVE_CARDS_FROM_TURN) {
     types.push('MOVE');
   }
-  if (!types.includes(t)) {
+  if (!types.includes(actionType)) {
     return 0;
   }
-  const total = types.reduce((x, a) => x + CARDS[a].weight, 0);
-  return (6 * CARDS[t].weight) / total;
+  const total = types.reduce(
+    (candidate, actionType) => candidate + CARDS[actionType].weight,
+    0,
+  );
+  return (6 * CARDS[actionType].weight) / total;
 }

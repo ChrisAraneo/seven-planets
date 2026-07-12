@@ -49,16 +49,16 @@ export async function useInfluence(
     .otherwise(
       (state) =>
         void chain(state)
-          .tap((s) =>
+          .tap((state) =>
             playInfluence(
-              s,
+              state,
               payload.playerId,
               payload.type,
               payload.opts ?? {},
               hooks,
             ),
           )
-          .tap((s) => setGameState(s))
+          .tap((state) => setGameState(state))
           .value(),
     );
 }
@@ -81,14 +81,14 @@ function playInfluence(
     .otherwise(() =>
       match(influenceType)
         .when(
-          (t) => t.startsWith('SKIP_'),
-          (t) => playSkip(state, playerId, t, hooks),
+          (influenceType) => influenceType.startsWith('SKIP_'),
+          (influenceType) => playSkip(state, playerId, influenceType, hooks),
         )
-        .with('STEAL_ACTION', (t) =>
-          playStealAction(state, playerId, t, opts, hooks),
+        .with('STEAL_ACTION', (type) =>
+          playStealAction(state, playerId, type, opts, hooks),
         )
-        .with('COUP', (t) => playCoup(state, playerId, t, opts, hooks))
-        .with('PEACE', (t) => playPeace(state, playerId, t))
+        .with('COUP', (type) => playCoup(state, playerId, type, opts, hooks))
+        .with('PEACE', (type) => playPeace(state, playerId, type))
         .otherwise(() => false),
     );
 }
@@ -103,19 +103,19 @@ function playSkip(
     .with(nullish, () => false)
     .otherwise((target) =>
       chain(state)
-        .tap((s) => spendInfluenceCard(s, playerId, influenceType))
-        .tap((s) => logPlay(s, playerId, influenceType, 'sys'))
-        .tap((s) =>
-          Object.assign(s.players[target.id], {
-            skipTurns: s.players[target.id].skipTurns + SKIP_TURNS,
+        .tap((state) => spendInfluenceCard(state, playerId, influenceType))
+        .tap((state) => logPlay(state, playerId, influenceType, 'sys'))
+        .tap((state) =>
+          Object.assign(state.players[target.id], {
+            skipTurns: state.players[target.id].skipTurns + SKIP_TURNS,
           }),
         )
-        .tap((s) =>
+        .tap((state) =>
           Object.assign(
-            s,
+            state,
             log(
-              s,
-              `⏭️ ${s.players[target.id].name} is paralysed — they skip their next ${SKIP_TURNS} turn${match(
+              state,
+              `⏭️ ${state.players[target.id].name} is paralysed — they skip their next ${SKIP_TURNS} turn${match(
                 SKIP_TURNS,
               )
                 .with(1, () => '')
@@ -124,9 +124,9 @@ function playSkip(
             ),
           ),
         )
-        .tap((s) =>
+        .tap((state) =>
           hooks.floatText(
-            homePlanet(s, s.players[target.id]),
+            homePlanet(state, state.players[target.id]),
             '⏭️ SKIPPED',
             '#ffb0d8',
           ),
@@ -147,30 +147,30 @@ function playStealAction(
     .with(nullish, () => false)
     .otherwise(({ cardType, target }) =>
       chain(state)
-        .tap((s) => spendInfluenceCard(s, playerId, influenceType))
-        .tap((s) =>
-          Object.assign(s.players[target.id].hand, {
-            [cardType]: s.players[target.id].hand[cardType] - 1,
+        .tap((state) => spendInfluenceCard(state, playerId, influenceType))
+        .tap((state) =>
+          Object.assign(state.players[target.id].hand, {
+            [cardType]: state.players[target.id].hand[cardType] - 1,
           }),
         )
-        .tap((s) =>
-          Object.assign(s.players[playerId].hand, {
-            [cardType]: s.players[playerId].hand[cardType] + 1,
+        .tap((state) =>
+          Object.assign(state.players[playerId].hand, {
+            [cardType]: state.players[playerId].hand[cardType] + 1,
           }),
         )
-        .tap((s) =>
+        .tap((state) =>
           Object.assign(
-            s,
+            state,
             log(
-              s,
-              `⭐ ${s.players[playerId].name} plays ${CARDS[influenceType].icon} ${INFLUENCE_CARDS[influenceType].name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${s.players[target.id].name}!`,
+              state,
+              `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${INFLUENCE_CARDS[influenceType].name} — takes 1 ${CARDS[cardType].icon} ${CARDS[cardType].name} card from ${state.players[target.id].name}!`,
               'war',
             ),
           ),
         )
-        .tap((s) =>
+        .tap((state) =>
           hooks.floatText(
-            homePlanet(s, s.players[target.id]),
+            homePlanet(state, state.players[target.id]),
             `−1${CARDS[cardType].icon}`,
             '#ffb0d8',
           ),
@@ -217,28 +217,28 @@ function playCoup(
   return match(opts.planet && state.planets[opts.planet.id])
     .with(nullish, () => false)
     .when(
-      (pl) => !coupTargets(state, state.players[playerId]).includes(pl),
+      (planet) => !coupTargets(state, state.players[playerId]).includes(planet),
       () => false,
     )
-    .otherwise((pl) =>
-      chain({ defId: pl.ownerId })
+    .otherwise((planet) =>
+      chain({ defId: planet.ownerId })
         .tap(() => spendInfluenceCard(state, playerId, influenceType))
         .tap(() => logPlay(state, playerId, influenceType, 'sys'))
         .tap(() =>
-          Object.assign(pl, {
+          Object.assign(planet, {
             ownerId: playerId,
-            troops: Math.max(1, Math.floor(pl.troops / 2)), // Half disbands, the rest defect
+            troops: Math.max(1, Math.floor(planet.troops / 2)), // Half disbands, the rest defect
             protectedUntil: state.turn + CONQUEST_TRUCE,
           }),
         )
-        .tap(() => hooks.boom(pl))
-        .tap(() => hooks.floatText(pl, '👑 COUP!', '#ffb0d8'))
+        .tap(() => hooks.boom(planet))
+        .tap(() => hooks.floatText(planet, '👑 COUP!', '#ffb0d8'))
         .tap(({ defId }) =>
           Object.assign(
             state,
             log(
               state,
-              `👑 ${pl.name} defects to ${state.players[playerId].name} — half of ${state.players[defId].name}'s garrison disbands, ${pl.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
+              `👑 ${planet.name} defects to ${state.players[playerId].name} — half of ${state.players[defId].name}'s garrison disbands, ${planet.troops}🪖 defect! Under truce for ${CONQUEST_TRUCE} turns.`,
               'war',
             ),
           ),
@@ -259,29 +259,32 @@ function maybeToppleRegime(
     .otherwise(
       () =>
         void chain(state)
-          .tap((s) => lootToppledRegime(s, playerId, defId))
-          .tap((s) =>
-            Object.assign(s.players[defId], {
+          .tap((state) => lootToppledRegime(state, playerId, defId))
+          .tap((state) =>
+            Object.assign(state.players[defId], {
               hand: {
-                ...s.players[defId].hand,
+                ...state.players[defId].hand,
                 ...Object.fromEntries(
-                  [...CARD_TYPES, ...INFLUENCE_TYPES].map((t) => [t, 0]),
+                  [...CARD_TYPES, ...INFLUENCE_TYPES].map((cardType) => [
+                    cardType,
+                    0,
+                  ]),
                 ),
               },
               isAlive: false,
             }),
           )
-          .tap((s) =>
+          .tap((state) =>
             Object.assign(
-              s,
+              state,
               log(
-                s,
-                `☠️ ${s.players[defId].name} has been wiped from the galaxy — overthrown without a shot!`,
+                state,
+                `☠️ ${state.players[defId].name} has been wiped from the galaxy — overthrown without a shot!`,
                 'war',
               ),
             ),
           )
-          .tap((s) => Object.assign(s, checkWin(s)))
+          .tap((state) => Object.assign(state, checkWin(state)))
           .value(),
     );
 }
@@ -317,21 +320,24 @@ function playPeace(
   influenceType: InfluenceType,
 ): boolean {
   return chain(state)
-    .tap((s) => spendInfluenceCard(s, playerId, influenceType))
-    .tap((s) => logPlay(s, playerId, influenceType, 'sys'))
-    .tap((s) =>
-      ownedPlanets(s, s.players[playerId]).forEach((pl) =>
-        Object.assign(pl, {
-          protectedUntil: Math.max(pl.protectedUntil, s.turn + PEACE_TRUCE),
+    .tap((state) => spendInfluenceCard(state, playerId, influenceType))
+    .tap((state) => logPlay(state, playerId, influenceType, 'sys'))
+    .tap((state) =>
+      ownedPlanets(state, state.players[playerId]).forEach((planet) =>
+        Object.assign(planet, {
+          protectedUntil: Math.max(
+            planet.protectedUntil,
+            state.turn + PEACE_TRUCE,
+          ),
         }),
       ),
     )
-    .tap((s) =>
+    .tap((state) =>
       Object.assign(
-        s,
+        state,
         log(
-          s,
-          `🕊️ ${s.players[playerId].name}'s planets are under truce for ${PEACE_TRUCE} turn${match(
+          state,
+          `🕊️ ${state.players[playerId].name}'s planets are under truce for ${PEACE_TRUCE} turn${match(
             PEACE_TRUCE,
           )
             .with(1, () => '')

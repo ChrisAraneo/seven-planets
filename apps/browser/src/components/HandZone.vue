@@ -14,35 +14,35 @@ const game = useGameStore();
 const human = computed(() => game.state.players[0]);
 
 const regular = computed(() =>
-  CARD_TYPES.map((t) => {
-    const n = human.value.hand[t];
+  CARD_TYPES.map((cardType) => {
+    const count = human.value.hand[cardType];
     const hint =
-      t === 'RELIC'
+      cardType === 'RELIC'
         ? ' (wildcard — substitutes any resource)'
-        : CARDS[t].action
-          ? ` (action card — spent to ${CARDS[t].name.toLowerCase()})`
+        : CARDS[cardType].action
+          ? ` (action card — spent to ${CARDS[cardType].name.toLowerCase()})`
           : '';
     return {
-      t,
-      n,
-      icon: CARDS[t].icon,
-      name: CARDS[t].name,
-      color: CARDS[t].color,
-      action: !!CARDS[t].action,
-      title: `${CARDS[t].name}${hint}`,
+      cardType,
+      count,
+      icon: CARDS[cardType].icon,
+      name: CARDS[cardType].name,
+      color: CARDS[cardType].color,
+      action: !!CARDS[cardType].action,
+      title: `${CARDS[cardType].name}${hint}`,
     };
   }),
 );
 
 const influence = computed(() =>
-  INFLUENCE_TYPES.filter((t) => human.value.hand[t] > 0).map(
-    (t: InfluenceType) => ({
-      t,
-      n: human.value.hand[t],
-      icon: CARDS[t].icon,
-      name: CARDS[t].name,
-      color: CARDS[t].color,
-      title: `${INFLUENCE_CARDS[t].name}: ${INFLUENCE_CARDS[t].desc} (play it via the ⭐ Influence button on your action turn)`,
+  INFLUENCE_TYPES.filter((cardType) => human.value.hand[cardType] > 0).map(
+    (cardType: InfluenceType) => ({
+      cardType,
+      count: human.value.hand[cardType],
+      icon: CARDS[cardType].icon,
+      name: CARDS[cardType].name,
+      color: CARDS[cardType].color,
+      title: `${INFLUENCE_CARDS[cardType].name}: ${INFLUENCE_CARDS[cardType].desc} (play it via the ⭐ Influence button on your action turn)`,
     }),
   ),
 );
@@ -53,25 +53,25 @@ const influence = computed(() =>
     <div class="zone-label">YOUR HAND</div>
     <div id="hand">
       <div
-        v-for="c in regular"
-        :key="c.t"
+        v-for="card in regular"
+        :key="card.cardType"
         class="card"
-        :class="{ dim: c.n === 0, action: c.action }"
-        :style="{ borderColor: c.color }"
-        :title="c.title">
-        <div class="ic">{{ c.icon }}</div>
-        <div class="nm">{{ c.name }}</div>
-        <div class="ct">{{ c.n }}</div>
+        :class="{ dim: card.count === 0, action: card.action }"
+        :style="{ borderColor: card.color }"
+        :title="card.title">
+        <div class="ic">{{ card.icon }}</div>
+        <div class="nm">{{ card.name }}</div>
+        <div class="ct">{{ card.count }}</div>
       </div>
       <div
-        v-for="c in influence"
-        :key="c.t"
+        v-for="card in influence"
+        :key="card.cardType"
         class="card action"
-        :style="{ borderColor: c.color }"
-        :title="c.title">
-        <div class="ic">{{ c.icon }}</div>
-        <div class="nm">{{ c.name }}</div>
-        <div class="ct">{{ c.n }}</div>
+        :style="{ borderColor: card.color }"
+        :title="card.title">
+        <div class="ic">{{ card.icon }}</div>
+        <div class="nm">{{ card.name }}</div>
+        <div class="ct">{{ card.count }}</div>
       </div>
     </div>
   </div>

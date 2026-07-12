@@ -32,7 +32,9 @@ export async function playTurn(
   // object here — so one reference is safe until the first `await`.
   return chain(getGameState())
     .tap((state) => Object.assign(state, { turn: state.turn + 1 }))
-    .tap((state) => state.players.forEach((p) => beginPlayerTurn(state, p)))
+    .tap((state) =>
+      state.players.forEach((player) => beginPlayerTurn(state, player)),
+    )
     .tap((state) => Object.assign(state, updatePacifistStatus(state, hooks)))
     .tap((state) => Object.assign(state, doIncome(state)))
     .tap((state) => announceSingularity(state))
@@ -58,38 +60,38 @@ export async function playTurn(
     .then(() => afterDraft());
 }
 
-function beginPlayerTurn(state: GameState, p: Player): void {
+function beginPlayerTurn(state: GameState, player: Player): void {
   return chain(
-    Object.assign(p, {
+    Object.assign(player, {
       hasTradedCurrentTurn: false,
       // Influence skip cards: paralysed players sit out draft AND action phases.
-      skippedNow: p.isAlive && p.skipTurns > 0,
+      skippedNow: player.isAlive && player.skipTurns > 0,
     }),
   )
-    .thru((pl) => tickSkipTurns(state, pl))
+    .thru((player) => tickSkipTurns(state, player))
     .value();
 }
 
-function tickSkipTurns(state: GameState, p: Player): void {
-  return match(p)
-    .when((pl) => pl.skipTurns <= 0, noop)
-    .otherwise((pl) =>
-      chain(Object.assign(pl, { skipTurns: pl.skipTurns - 1 }))
+function tickSkipTurns(state: GameState, player: Player): void {
+  return match(player)
+    .when((player) => player.skipTurns <= 0, noop)
+    .otherwise((player) =>
+      chain(Object.assign(player, { skipTurns: player.skipTurns - 1 }))
         .thru((ticked) => logParalysis(state, ticked))
         .value(),
     );
 }
 
-function logParalysis(state: GameState, p: Player): void {
-  return match(p)
-    .when((pl) => !pl.isAlive, noop)
+function logParalysis(state: GameState, player: Player): void {
+  return match(player)
+    .when((player) => !player.isAlive, noop)
     .otherwise(
-      (pl) =>
+      (player) =>
         void Object.assign(
           state,
           log(
             state,
-            `⏭️ ${pl.name} is paralysed and sits this turn out${remainingSkipsSuffix(pl.skipTurns)}`,
+            `⏭️ ${player.name} is paralysed and sits this turn out${remainingSkipsSuffix(player.skipTurns)}`,
             'sys',
           ),
         ),
@@ -99,8 +101,8 @@ function logParalysis(state: GameState, p: Player): void {
 function remainingSkipsSuffix(skipTurns: number): string {
   return match(skipTurns)
     .when(
-      (n) => n > 0,
-      (n) => ` (${n} more)`,
+      (count) => count > 0,
+      (count) => ` (${count} more)`,
     )
     .otherwise(() => '');
 }
@@ -125,11 +127,11 @@ function announceSingularity(state: GameState): void {
 function turnFlavor(turn: number): string {
   return match(turn)
     .when(
-      (t) => t >= ACTION_CARDS_FROM_TURN,
+      (total) => total >= ACTION_CARDS_FROM_TURN,
       () => ' · 🃏 5 buildings · 5 resources · 6 actions',
     )
     .when(
-      (t) => t >= BUILDINGS_FROM_TURN,
+      (total) => total >= BUILDINGS_FROM_TURN,
       () => ' · 🃏 5 buildings · 11 resources',
     )
     .otherwise(() => '');
@@ -137,30 +139,30 @@ function turnFlavor(turn: number): string {
 
 function milestoneLogs(state: GameState): GameState {
   return chain(state)
-    .thru((s) =>
+    .thru((state) =>
       logWhenTurnIs(
-        s,
+        state,
         BUILDINGS_FROM_TURN,
         '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
       ),
     )
-    .thru((s) =>
+    .thru((state) =>
       logWhenTurnIs(
-        s,
+        state,
         ACTION_CARDS_FROM_TURN,
         '⚡ Action cards have entered the pool — ⚔️ Attack, 🪖 Recruit and 🔁 Trade can now be drafted!',
       ),
     )
-    .thru((s) =>
+    .thru((state) =>
       logWhenTurnIs(
-        s,
+        state,
         MOVE_CARDS_FROM_TURN,
         '🛸 Move cards have entered the pool — troops can now be redeployed (Spaceport required)!',
       ),
     )
-    .thru((s) =>
+    .thru((state) =>
       logWhenTurnIs(
-        s,
+        state,
         ADVANCED_FROM_TURN,
         '🔬 Advanced blueprints unlocked — the 🔬 Research Lab can now appear in the pool!',
       ),
@@ -168,10 +170,10 @@ function milestoneLogs(state: GameState): GameState {
     .value();
 }
 
-function logWhenTurnIs(s: GameState, turn: number, msg: string): GameState {
-  return match(s.turn)
-    .with(turn, () => log(s, msg, 'sys'))
-    .otherwise(() => s);
+function logWhenTurnIs(state: GameState, turn: number, msg: string): GameState {
+  return match(state.turn)
+    .with(turn, () => log(state, msg, 'sys'))
+    .otherwise(() => state);
 }
 
 // The pick mutations replaced the state object during the draft — re-read it.
@@ -183,12 +185,12 @@ async function afterDraft(): Promise<void> {
     )
     .when(
       // Nobody can hold an action card before they exist, so skip the action phase.
-      (s) => s.turn < ACTION_CARDS_FROM_TURN,
-      async (s): Promise<void> =>
+      (state) => state.turn < ACTION_CARDS_FROM_TURN,
+      async (state): Promise<void> =>
         void Object.assign(
-          s,
+          state,
           log(
-            s,
+            state,
             `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
             'sys',
           ),

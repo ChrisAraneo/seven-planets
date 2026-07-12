@@ -156,10 +156,14 @@ const ui = useUiStore();
         cost and puts the card <b>in your hand</b>; play it for free on
         <b>any of your action turns</b> (⭐ Influence button):
         <ul class="rules">
-          <li v-for="k in INFLUENCE_TYPES" :key="k">
-            {{ INFLUENCE_CARDS[k].icon }} <b>{{ INFLUENCE_CARDS[k].name }}</b>
-            <span class="dimtx">({{ INFLUENCE_CARDS[k].cost }}⭐)</span> —
-            {{ INFLUENCE_CARDS[k].desc }}
+          <li v-for="influenceType in INFLUENCE_TYPES" :key="influenceType">
+            {{ INFLUENCE_CARDS[influenceType].icon }}
+            <b>{{ INFLUENCE_CARDS[influenceType].name }}</b>
+            <span class="dimtx"
+              >({{ INFLUENCE_CARDS[influenceType].cost }}⭐)</span
+            >
+            —
+            {{ INFLUENCE_CARDS[influenceType].desc }}
           </li>
         </ul>
         Skip cards never target you — they hit the qualifying <b>rival</b>,

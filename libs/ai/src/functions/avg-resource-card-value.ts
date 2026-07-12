@@ -1,12 +1,14 @@
 import { CARDS, RESOURCE_TYPES } from '@seven-planets/game';
 
 export function avgResourceCardValue(): number {
-  const types = RESOURCE_TYPES.filter((t) => t !== 'SPICE');
-  let w = 0;
-  let v = 0;
-  for (const t of types) {
-    w += CARDS[t].weight;
-    v += CARDS[t].weight * CARDS[t].value;
+  const types = RESOURCE_TYPES.filter(
+    (resourceType) => resourceType !== 'SPICE',
+  );
+  let winner = 0;
+  let eachValue = 0;
+  for (const type of types) {
+    winner += CARDS[type].weight;
+    eachValue += CARDS[type].weight * CARDS[type].value;
   }
-  return w ? v / w : 1;
+  return winner ? eachValue / winner : 1;
 }

@@ -36,7 +36,7 @@ const isPicking = computed(
 );
 
 interface PoolCardVM {
-  i: number;
+  poolIndex: number;
   type: PoolType;
   kind: 'building' | 'influence' | 'regular';
   cls: string;
@@ -64,65 +64,68 @@ const poolCards = computed<PoolCardVM[]>(() => {
   const state = game.state;
   const picking = isPicking.value;
   const human = getPlayers()[0];
-  const draftPl = getPlanets()[getDraftPlanetId()] || homePlanet(state, human);
-  return getPool().map((t: PoolType, i: number) => {
-    const c = CARDS[t];
-    const valid = picking && canPickCard(state, human, t, draftPl);
-    const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${c.action ? 'action' : ''}`;
-    if (c.building) {
-      const bt = t as BuildingType;
-      const B = BUILDINGS[bt];
-      const cur = picking ? draftPl.buildings[bt] || 0 : 0;
-      const next = Math.min(cur + 1, maxLevel(bt));
-      const badge = cur > 0 && cur < maxLevel(bt) ? ` ⬆L${cur + 1}` : '';
-      const cost = costLabel(buildingCost(bt, next));
+  const draftPlanet =
+    getPlanets()[getDraftPlanetId()] || homePlanet(state, human);
+  return getPool().map((poolType: PoolType, poolIndex: number) => {
+    const card = CARDS[poolType];
+    const valid = picking && canPickCard(state, human, poolType, draftPlanet);
+    const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${card.action ? 'action' : ''}`;
+    if (card.building) {
+      const buildingType = poolType as BuildingType;
+      const buildingDef = BUILDINGS[buildingType];
+      const cur = picking ? draftPlanet.buildings[buildingType] || 0 : 0;
+      const next = Math.min(cur + 1, maxLevel(buildingType));
+      const badge =
+        cur > 0 && cur < maxLevel(buildingType) ? ` ⬆L${cur + 1}` : '';
+      const cost = costLabel(buildingCost(buildingType, next));
       return {
-        i,
-        type: t,
+        poolIndex,
+        type: poolType,
         kind: 'building',
         cls: base + ' bcard',
-        color: c.color,
+        color: card.color,
         valid,
-        icon: B.icon,
-        name: B.name,
+        icon: buildingDef.icon,
+        name: buildingDef.name,
         cost,
-        bonus: B.short,
+        bonus: buildingDef.short,
         badge,
-        title: `${B.name}: ${B.desc} — cost ${cost} for level ${next} (level N costs N× base, max L${maxLevel(bt)}, capped by your tech). Picking builds or upgrades it instantly on the drafting planet.`,
+        title: `${buildingDef.name}: ${buildingDef.desc} — cost ${cost} for level ${next} (level N costs N× base, max L${maxLevel(buildingType)}, capped by your tech). Picking builds or upgrades it instantly on the drafting planet.`,
       };
     }
-    if (c.influenceCard) {
-      const IC = INFLUENCE_CARDS[t as InfluenceType];
+    if (card.influenceCard) {
+      const influenceCard = INFLUENCE_CARDS[poolType as InfluenceType];
       return {
-        i,
-        type: t,
+        poolIndex,
+        type: poolType,
         kind: 'influence',
         cls: base + ' bcard',
-        color: c.color,
+        color: card.color,
         valid,
-        icon: IC.icon,
-        name: IC.name,
-        cost: `${IC.cost}⭐`,
+        icon: influenceCard.icon,
+        name: influenceCard.name,
+        cost: `${influenceCard.cost}⭐`,
         bonus: 'influence',
-        title: `${IC.name}: ${IC.desc} — costs ${IC.cost}⭐ Influence now; goes to your hand and can be played on any of your action turns.`,
+        title: `${influenceCard.name}: ${influenceCard.desc} — costs ${influenceCard.cost}⭐ Influence now; goes to your hand and can be played on any of your action turns.`,
       };
     }
     return {
-      i,
-      type: t,
+      poolIndex,
+      type: poolType,
       kind: 'regular',
       cls: base,
-      color: c.color,
+      color: card.color,
       valid,
-      icon: c.icon,
-      name: c.name,
-      title: `${c.name}${hints[t] || ''}`,
+      icon: card.icon,
+      name: card.name,
+      title: `${card.name}${hints[poolType] || ''}`,
     };
   });
 });
 
-function pick(vm: PoolCardVM): void {
-  if (isPicking.value && vm.valid) void pickCard({ playerId: 0, idx: vm.i });
+function pick(poolCard: PoolCardVM): void {
+  if (isPicking.value && poolCard.valid)
+    void pickCard({ playerId: 0, idx: poolCard.poolIndex });
 }
 </script>
 
@@ -131,23 +134,23 @@ function pick(vm: PoolCardVM): void {
     <div id="status">{{ getStatus() }}</div>
     <div id="pool">
       <div
-        v-for="vm in poolCards"
-        :key="vm.i"
-        :class="vm.cls"
-        :style="{ borderColor: vm.color }"
-        :title="vm.title"
-        @click="pick(vm)">
-        <template v-if="vm.kind === 'regular'">
-          <div class="ic">{{ vm.icon }}</div>
-          <div class="nm">{{ vm.name }}</div>
+        v-for="poolCard in poolCards"
+        :key="poolCard.poolIndex"
+        :class="poolCard.cls"
+        :style="{ borderColor: poolCard.color }"
+        :title="poolCard.title"
+        @click="pick(poolCard)">
+        <template v-if="poolCard.kind === 'regular'">
+          <div class="ic">{{ poolCard.icon }}</div>
+          <div class="nm">{{ poolCard.name }}</div>
         </template>
         <template v-else>
           <div class="bhead">
-            <span class="bic2">{{ vm.icon }}</span
-            ><span class="bnm">{{ vm.name }}{{ vm.badge }}</span>
+            <span class="bic2">{{ poolCard.icon }}</span
+            ><span class="bnm">{{ poolCard.name }}{{ poolCard.badge }}</span>
           </div>
-          <div class="bcost2">{{ vm.cost }}</div>
-          <div class="bbonus">{{ vm.bonus }}</div>
+          <div class="bcost2">{{ poolCard.cost }}</div>
+          <div class="bbonus">{{ poolCard.bonus }}</div>
         </template>
       </div>
     </div>

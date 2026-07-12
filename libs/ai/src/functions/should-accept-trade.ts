@@ -13,18 +13,21 @@ export function shouldAcceptTrade(
   proposer: Player | null = null,
 ): boolean {
   // Only resource cards may be traded
-  for (const t in gives) {
-    if (!RESOURCE_TYPES.includes(t as never) && (gives[t] || 0) > 0) {
+  for (const type in gives) {
+    if (!RESOURCE_TYPES.includes(type as never) && (gives[type] || 0) > 0) {
       return false;
     }
   }
-  for (const t in gets) {
-    if (!RESOURCE_TYPES.includes(t as never) && (gets[t] || 0) > 0) {
+  for (const eachType in gets) {
+    if (
+      !RESOURCE_TYPES.includes(eachType as never) &&
+      (gets[eachType] || 0) > 0
+    ) {
       return false;
     }
   }
-  for (const t in gives) {
-    if ((ai.hand[t] || 0) < gives[t]) {
+  for (const innerType in gives) {
+    if ((ai.hand[innerType] || 0) < gives[innerType]) {
       return false;
     }
   }

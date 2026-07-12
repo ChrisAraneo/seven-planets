@@ -1,7 +1,7 @@
 import { watch } from 'vue';
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((result) => setTimeout(result, milliseconds));
 }
 import type { InfluenceOpts, InfluenceType, Cost } from '@seven-planets/game';
 import { AUTO_HUMAN } from '@seven-planets/game';
@@ -51,35 +51,43 @@ export function isAiSeat(seatId: number): boolean {
 
 type Decision = NonNullable<ReturnType<typeof mastermindAction>>;
 
-async function performDecision(playerId: number, d: Decision): Promise<void> {
-  switch (d.kind) {
+async function performDecision(
+  playerId: number,
+  decision: Decision,
+): Promise<void> {
+  switch (decision.kind) {
     case 'influence':
       await useInfluence({
         playerId,
-        type: d.type as InfluenceType,
-        opts: d.opts as InfluenceOpts,
+        type: decision.type as InfluenceType,
+        opts: decision.opts as InfluenceOpts,
       });
       return;
     case 'attack':
       await attackPlanet({
         playerId,
-        sourceId: d.source.id,
-        targetId: d.target.id,
-        n: d.n,
+        sourceId: decision.source.id,
+        targetId: decision.target.id,
+        n: decision.n,
       });
       return;
     case 'recruit':
-      await recruitTroops({ playerId, planetId: d.planet.id });
+      await recruitTroops({ playerId, planetId: decision.planet.id });
       return;
     case 'move':
-      await moveTroops({ playerId, fromId: d.from.id, toId: d.to.id, n: d.n });
+      await moveTroops({
+        playerId,
+        fromId: decision.from.id,
+        toId: decision.to.id,
+        n: decision.n,
+      });
       return;
     case 'trade':
       await makeOffer({
         playerId,
-        partnerId: d.partner.id,
-        gives: d.gives as Cost,
-        gets: d.gets as Cost,
+        partnerId: decision.partner.id,
+        gives: decision.gives as Cost,
+        gets: decision.gets as Cost,
       });
       return;
   }
@@ -89,32 +97,35 @@ async function performDecision(playerId: number, d: Decision): Promise<void> {
     card and answer with the shared pickCard action. */
 async function aiPickCard(playerId: number): Promise<void> {
   const state = getGameState();
-  const p = state.players[playerId];
-  const planet = state.planets[state.draftPlanetId] ?? homePlanet(state, p);
-  const pickable = state.pool.map((t) => canPickCard(state, p, t, planet));
-  let idx = mastermindDraftPick(p, planet, pickable);
-  if (idx < 0 || !pickable[idx]) {
+  const player = state.players[playerId];
+  const planet =
+    state.planets[state.draftPlanetId] ?? homePlanet(state, player);
+  const pickable = state.pool.map((poolType) =>
+    canPickCard(state, player, poolType, planet),
+  );
+  let index = mastermindDraftPick(player, planet, pickable);
+  if (index < 0 || !pickable[index]) {
     // The loop only parks when something is pickable — fall back to the
     // first legal card rather than leave the draft stuck.
-    idx = pickable.indexOf(true);
+    index = pickable.indexOf(true);
   }
-  await pickCard({ playerId, idx });
+  await pickCard({ playerId, idx: index });
 }
 
 /** The loop parked an action turn for AI seat `playerId`: decide and
     perform one action at a time, then end the turn to unpark the loop. */
 async function aiTakeTurn(playerId: number): Promise<void> {
   await sleep(350);
-  for (let i = 0; i < 12; i++) {
+  for (let index = 0; index < 12; index++) {
     if (getGameState().over) {
       break;
     }
-    const p = getGameState().players[playerId];
-    const d = mastermindAction(p);
-    if (!d) {
+    const player = getGameState().players[playerId];
+    const mastermindDecision = mastermindAction(player);
+    if (!mastermindDecision) {
       break;
     }
-    await performDecision(playerId, d);
+    await performDecision(playerId, mastermindDecision);
     await sleep(320);
   }
   await endTurn({ playerId });
@@ -128,10 +139,10 @@ function aiConsiderOffer(playerId: number): void {
   if (!offer || offer.toId !== playerId) {
     return;
   }
-  const p = state.players[playerId];
+  const player = state.players[playerId];
   const proposer = state.players[offer.fromId];
   // pendingOffer is from the proposer's perspective; flip it to `p`'s.
-  const accept = shouldAcceptTrade(p, offer.gets, offer.gives, proposer);
+  const accept = shouldAcceptTrade(player, offer.gets, offer.gives, proposer);
   resolveOffer({ playerId, accept });
 }
 
@@ -144,7 +155,7 @@ function aiConsiderOffer(playerId: number): void {
    root installs it that way); raw headless states are never watched.
    --------------------------------------------------------------------- */
 export function installAi(): void {
-  const gs = () => getGameState();
+  const getState = () => getGameState();
 
   // Trade offer directed at an AI seat: respond synchronously via the
   // registered callback (makeOffer calls it right after updating state).
@@ -156,7 +167,8 @@ export function installAi(): void {
 
   // Draft pick parked for the active seat.
   watch(
-    () => (gs().awaitingPick && !gs().over ? gs().activeId : -1),
+    () =>
+      getState().awaitingPick && !getState().over ? getState().activeId : -1,
     (seatId) => {
       if (isAiSeat(seatId)) {
         void aiPickCard(seatId);
@@ -166,7 +178,8 @@ export function installAi(): void {
 
   // Action turn parked for the active seat.
   watch(
-    () => (gs().awaitingAction && !gs().over ? gs().activeId : -1),
+    () =>
+      getState().awaitingAction && !getState().over ? getState().activeId : -1,
     (seatId) => {
       if (isAiSeat(seatId)) {
         void aiTakeTurn(seatId);

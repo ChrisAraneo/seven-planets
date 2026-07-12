@@ -3,6 +3,9 @@ import type { Player } from '../interfaces/player';
 
 import { ownedPlanets } from './owned-planets';
 
-export function totalTroops(state: GameState, p: Player): number {
-  return ownedPlanets(state, p).reduce((s, pl) => s + pl.troops, 0);
+export function totalTroops(state: GameState, player: Player): number {
+  return ownedPlanets(state, player).reduce(
+    (sum, planet) => sum + planet.troops,
+    0,
+  );
 }

@@ -39,14 +39,14 @@ function gameResult(over: GameOver | null, turns: number): SimulationResult {
   return {
     turns,
     winner: match(over?.winner)
-      .with(nonNullable, (w) => ({
-        id: w.id,
-        name: w.name,
-        isHuman: w.isHuman,
+      .with(nonNullable, (player) => ({
+        id: player.id,
+        name: player.name,
+        isHuman: player.isHuman,
       }))
       .otherwise(() => null),
     reason: match(over)
-      .with(nonNullable, (o) => o.reason || 'timeout')
+      .with(nonNullable, (gameOver) => gameOver.reason || 'timeout')
       .otherwise(() => 'timeout'),
   };
 }

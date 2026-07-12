@@ -3,7 +3,7 @@ import type { Player } from '../interfaces/player';
 
 export function updatePlayers(
   state: GameState,
-  fn: (player: Player) => Player,
+  callback: (player: Player) => Player,
 ): GameState {
-  return { ...state, players: state.players.map(fn) };
+  return { ...state, players: state.players.map(callback) };
 }

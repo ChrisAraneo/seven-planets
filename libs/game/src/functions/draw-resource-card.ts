@@ -7,7 +7,7 @@ import { weightedDraw } from './weighted-draw';
 // Draw one resource card weighted by card weight (Spice excluded — Harvester only).
 export function drawResourceCard(state: GameState): PoolType {
   return weightedDraw(
-    RESOURCE_TYPES.filter((t) => t !== 'SPICE'),
+    RESOURCE_TYPES.filter((resourceType) => resourceType !== 'SPICE'),
     'ORE',
   );
 }

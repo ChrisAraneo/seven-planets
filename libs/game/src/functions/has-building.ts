@@ -6,8 +6,8 @@ import { ownedPlanets } from './owned-planets';
 
 export function hasBuilding(
   state: GameState,
-  p: Player,
+  player: Player,
   id: BuildingType,
 ): boolean {
-  return ownedPlanets(state, p).some((pl) => pl.buildings[id]);
+  return ownedPlanets(state, player).some((planet) => planet.buildings[id]);
 }

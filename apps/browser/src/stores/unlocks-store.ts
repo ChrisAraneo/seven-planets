@@ -24,9 +24,9 @@ const UNLOCKED_BY_WIN: Partial<Record<Difficulty, Difficulty>> = {
 
 // Every level that is not the reward of some other win is free from the start.
 const rewarded = new Set<Difficulty>(Object.values(UNLOCKED_BY_WIN));
-const ALWAYS_UNLOCKED: Difficulty[] = DIFFICULTIES.map((d) => d.id).filter(
-  (id) => !rewarded.has(id),
-);
+const ALWAYS_UNLOCKED: Difficulty[] = DIFFICULTIES.map(
+  (difficultyDef) => difficultyDef.id,
+).filter((id) => !rewarded.has(id));
 
 /** Read the unlocked set (always-unlocked ∪ persisted earned levels). Tolerant
     of missing/corrupt storage and environments without localStorage. */

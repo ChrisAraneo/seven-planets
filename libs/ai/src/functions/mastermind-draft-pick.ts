@@ -8,42 +8,44 @@ import { ownDraftValue } from './own-draft-value';
 import { planFor } from './plan-for';
 
 export function mastermindDraftPick(
-  p: Player,
+  player: Player,
   draftPlanet: Planet,
   pickable: boolean[],
 ): number {
   const aiState = getAiState();
-  activateWeightsFor(p);
+  activateWeightsFor(player);
   if (
     aiState.randomPickChance > 0 &&
     Math.random() < aiState.randomPickChance
   ) {
     const options: number[] = [];
-    for (let i = 0; i < getGameState().pool.length; i++) {
-      if (pickable[i]) {
-        options.push(i);
+    for (let index = 0; index < getGameState().pool.length; index++) {
+      if (pickable[index]) {
+        options.push(index);
       }
     }
     if (options.length > 0) {
       return options[Math.floor(Math.random() * options.length)];
     }
   }
-  const plan = planFor(p);
+  const plan = planFor(player);
   let bestIdx = -1;
   let bestScore = -Infinity;
-  for (let i = 0; i < getGameState().pool.length; i++) {
-    if (!pickable[i]) {
+  for (let eachIndex = 0; eachIndex < getGameState().pool.length; eachIndex++) {
+    if (!pickable[eachIndex]) {
       continue;
     }
-    const t = getGameState().pool[i];
-    const copies = getGameState().pool.filter((x) => x === t).length;
+    const poolType = getGameState().pool[eachIndex];
+    const copies = getGameState().pool.filter(
+      (poolType) => poolType === poolType,
+    ).length;
     const score =
-      ownDraftValue(p, draftPlanet, t, plan) +
-      (denialValue(p, t) / copies) * aiState.W.denialWeight +
+      ownDraftValue(player, draftPlanet, poolType, plan) +
+      (denialValue(player, poolType) / copies) * aiState.W.denialWeight +
       Math.random() * 0.05;
     if (score > bestScore) {
       bestScore = score;
-      bestIdx = i;
+      bestIdx = eachIndex;
     }
   }
   return bestScore < -1 ? -1 : bestIdx;

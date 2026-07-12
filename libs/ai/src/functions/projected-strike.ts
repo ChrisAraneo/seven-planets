@@ -6,19 +6,22 @@ import { owned } from './owned';
 import { recruitRate } from './recruit-rate';
 
 export function projectedStrike(
-  r: Player,
+  player: Player,
   turnsAhead: number,
   excludePlanetId = -1,
 ): { n: number; bonus: number } {
   let best = { n: 0, bonus: 0 };
-  const growth = recruitRate(r) * turnsAhead;
-  for (const pl of owned(r)) {
-    if (pl.id === excludePlanetId || !pl.buildings.SILO) {
+  const growth = recruitRate(player) * turnsAhead;
+  for (const planet of owned(player)) {
+    if (planet.id === excludePlanetId || !planet.buildings.SILO) {
       continue;
     }
-    const n = Math.min(rocketCap(pl), Math.floor(pl.troops + growth) - 1);
-    if (n > best.n) {
-      best = { n, bonus: siloBonus(pl) };
+    const count = Math.min(
+      rocketCap(planet),
+      Math.floor(planet.troops + growth) - 1,
+    );
+    if (count > best.n) {
+      best = { n: count, bonus: siloBonus(planet) };
     }
   }
   return best;

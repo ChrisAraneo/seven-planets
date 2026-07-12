@@ -33,10 +33,10 @@ export async function recruitTroops(
     .otherwise(
       (state) =>
         void chain(state)
-          .tap((s) =>
-            executeRecruit(s, payload.playerId, payload.planetId, hooks),
+          .tap((state) =>
+            executeRecruit(state, payload.playerId, payload.planetId, hooks),
           )
-          .tap((s) => setGameState(s))
+          .tap((state) => setGameState(state))
           .value(),
     );
 }
@@ -60,27 +60,27 @@ function executeRecruit(
         void chain(
           Object.assign(state, spendActionCard(state, playerId, 'RECRUIT')),
         )
-          .thru((s) =>
-            Object.assign(s, payCost(s, playerId, recruitCost(planet))),
+          .thru((state) =>
+            Object.assign(state, payCost(state, playerId, recruitCost(planet))),
           )
-          .thru((s) => ({ s, n: recruitYield(planet) }))
-          .tap(({ s, n }) =>
-            Object.assign(s.planets[planetId], {
-              troops: s.planets[planetId].troops + n,
+          .thru((state) => ({ s: state, n: recruitYield(planet) }))
+          .tap(({ s: state, n: count }) =>
+            Object.assign(state.planets[planetId], {
+              troops: state.planets[planetId].troops + count,
             }),
           )
-          .tap(({ s, n }) =>
+          .tap(({ s: state, n: count }) =>
             Object.assign(
-              s,
+              state,
               log(
-                s,
-                `🪖 ${s.players[playerId].name} recruits ${n} troop${pluralSuffix(n)} on ${planet.name} (garrison now ${s.planets[planetId].troops})`,
+                state,
+                `🪖 ${state.players[playerId].name} recruits ${count} troop${pluralSuffix(count)} on ${planet.name} (garrison now ${state.planets[planetId].troops})`,
                 'build',
               ),
             ),
           )
-          .tap(({ s, n }) =>
-            hooks.floatText(s.planets[planetId], `+${n}🪖`, '#7fd9ff'),
+          .tap(({ s: state, n: count }) =>
+            hooks.floatText(state.planets[planetId], `+${count}🪖`, '#7fd9ff'),
           )
           .value(),
     );

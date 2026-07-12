@@ -15,7 +15,7 @@ export interface MoveTroopsPayload {
   playerId: number;
   fromId: number;
   toId: number;
-  n: number;
+  troops: number;
 }
 
 export async function moveTroops(
@@ -33,11 +33,11 @@ export async function moveTroops(
     )
     .otherwise((state) =>
       chain(Object.assign(state, setBusy(state, true)))
-        .thru((s) =>
-          executeMove(s, payload, hooks)
+        .thru((state) =>
+          executeMove(state, payload, hooks)
             // The busy flag must clear whether the move resolves or rejects.
-            .finally(() => Object.assign(s, setBusy(s, false)))
-            .then(() => setGameState(s)),
+            .finally(() => Object.assign(state, setBusy(state, false)))
+            .then(() => setGameState(state)),
         )
         .value(),
     );
@@ -47,41 +47,43 @@ export async function moveTroops(
 // object identity (and the caller's `state` reference) stays stable.
 async function executeMove(
   state: GameState,
-  { playerId, fromId, toId, n }: MoveTroopsPayload,
+  { playerId, fromId, toId, troops }: MoveTroopsPayload,
   hooks: PresentationHooks,
 ): Promise<void> {
   return match(hasBuilding(state, state.players[playerId], 'SPACEPORT'))
     .with(false, async (): Promise<void> => undefined)
     .otherwise(() =>
       chain(Object.assign(state, spendActionCard(state, playerId, 'MOVE')))
-        .tap((s) =>
-          Object.assign(s.planets[fromId], {
-            troops: s.planets[fromId].troops - n,
+        .tap((state) =>
+          Object.assign(state.planets[fromId], {
+            troops: state.planets[fromId].troops - troops,
           }),
         )
-        .tap((s) =>
+        .tap((state) =>
           Object.assign(
-            s,
+            state,
             log(
-              s,
-              `🛸 ${s.players[playerId].name} redeploys ${n} troop${pluralSuffix(n)} from ${s.planets[fromId].name} to ${s.planets[toId].name}`,
+              state,
+              `🛸 ${state.players[playerId].name} redeploys ${troops} troop${pluralSuffix(troops)} from ${state.planets[fromId].name} to ${state.planets[toId].name}`,
               'build',
             ),
           ),
         )
-        .thru((s) =>
+        .thru((state) =>
           hooks
             .rocket(
-              s.planets[fromId],
-              s.planets[toId],
-              s.players[playerId].color,
+              state.planets[fromId],
+              state.planets[toId],
+              state.players[playerId].color,
             )
             .then(() =>
-              Object.assign(s.planets[toId], {
-                troops: s.planets[toId].troops + n,
+              Object.assign(state.planets[toId], {
+                troops: state.planets[toId].troops + troops,
               }),
             )
-            .then(() => hooks.floatText(s.planets[toId], `+${n}🪖`, '#7fd9ff')),
+            .then(() =>
+              hooks.floatText(state.planets[toId], `+${troops}🪖`, '#7fd9ff'),
+            ),
         )
         .value(),
     );

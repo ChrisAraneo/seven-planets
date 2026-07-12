@@ -7,10 +7,12 @@ import type { Planet } from '../interfaces/planet';
 export function updatePlanet(
   state: GameState,
   id: number,
-  fn: (planet: Planet) => Planet,
+  callback: (planet: Planet) => Planet,
 ): GameState {
   return {
     ...state,
-    planets: state.planets.map((pl) => (pl.id === id && fn(pl)) || pl),
+    planets: state.planets.map(
+      (planet) => (planet.id === id && callback(planet)) || planet,
+    ),
   };
 }

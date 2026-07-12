@@ -7,10 +7,12 @@ import type { Player } from '../interfaces/player';
 export function updatePlayer(
   state: GameState,
   id: number,
-  fn: (player: Player) => Player,
+  callback: (player: Player) => Player,
 ): GameState {
   return {
     ...state,
-    players: state.players.map((p) => (p.id === id && fn(p)) || p),
+    players: state.players.map(
+      (player) => (player.id === id && callback(player)) || player,
+    ),
   };
 }

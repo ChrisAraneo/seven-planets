@@ -23,91 +23,100 @@ function garrisonFloor(): number {
 }
 
 export function ownDraftValue(
-  p: Player,
+  player: Player,
   draftPlanet: Planet,
-  t: PoolType,
+  poolType: PoolType,
   plan: Plan,
 ): number {
-  const def = CARDS[t];
+  const def = CARDS[poolType];
   if (def.building) {
-    const id = t as Parameters<typeof nextLevelAllowed>[2];
-    const level = nextLevelAllowed(p, draftPlanet, id);
+    const id = poolType as Parameters<typeof nextLevelAllowed>[2];
+    const level = nextLevelAllowed(player, draftPlanet, id);
     if (!level) {
       return -1;
     }
-    const worth = buildingWorth(p, id, draftPlanet, level);
-    let v = 1.5 + worth / 6;
+    const worth = buildingWorth(player, id, draftPlanet, level);
+    let eachValue = 1.5 + worth / 6;
     if (plan.buildQueue[0]?.id === id) {
-      v += 2;
-    } else if (plan.buildQueue.some((c) => c.id === id)) {
-      v += 1;
+      eachValue += 2;
+    } else if (
+      plan.buildQueue.some((buildCandidate) => buildCandidate.id === id)
+    ) {
+      eachValue += 1;
     }
     const head = plan.buildQueue[0];
-    if (head && head.id !== id && canAfford(p.hand, head.cost)) {
-      const after = handAfterCost(p.hand, buildingCost(id, level));
+    if (head && head.id !== id && canAfford(player.hand, head.cost)) {
+      const after = handAfterCost(player.hand, buildingCost(id, level));
       if (!canAfford(after, head.cost)) {
-        v -= 2;
+        eachValue -= 2;
       }
     }
-    return v;
+    return eachValue;
   }
   if (def.influenceCard) {
-    return influenceDraftValue(p, t as InfluenceType, plan);
+    return influenceDraftValue(player, poolType as InfluenceType, plan);
   }
-  if (t === 'ATTACK') {
-    if (p.hasPacifistStatus) {
+  if (poolType === 'ATTACK') {
+    if (player.hasPacifistStatus) {
       return -1;
     }
-    let v = 1.2;
+    let innerValue = 1.2;
     if (
       (plan.kind === 'STRIKE' || plan.kind === 'MILITARIZE') &&
-      hasB(p, 'SILO')
+      hasB(player, 'SILO')
     ) {
-      v += 1.6;
+      innerValue += 1.6;
     }
-    if ((p.hand.ATTACK || 0) === 0 && hasB(p, 'SILO') && totalTroops(p) >= 4) {
-      v += 1;
-    }
-    return v - (p.hand.ATTACK || 0) * 0.5;
-  }
-  if (t === 'RECRUIT') {
-    let v = 1.3;
     if (
-      hasB(p, 'BARRACKS') &&
-      owned(p).some((pl) => pl.troops < garrisonFloor())
+      (player.hand.ATTACK || 0) === 0 &&
+      hasB(player, 'SILO') &&
+      totalTroops(player) >= 4
     ) {
-      v += 1.5;
+      innerValue += 1;
     }
-    v += Math.min(2.5, plan.threat * 0.4);
+    return innerValue - (player.hand.ATTACK || 0) * 0.5;
+  }
+  if (poolType === 'RECRUIT') {
+    let valueValue = 1.3;
+    if (
+      hasB(player, 'BARRACKS') &&
+      owned(player).some((planet) => planet.troops < garrisonFloor())
+    ) {
+      valueValue += 1.5;
+    }
+    valueValue += Math.min(2.5, plan.threat * 0.4);
     if (plan.kind === 'MILITARIZE' || plan.kind === 'STRIKE') {
-      v += 1.6;
+      valueValue += 1.6;
     }
-    return v - (p.hand.RECRUIT || 0) * 0.4;
+    return valueValue - (player.hand.RECRUIT || 0) * 0.4;
   }
-  if (t === 'MOVE') {
-    let v = 0.8;
-    if (owned(p).length >= 2 && hasB(p, 'SPACEPORT')) {
-      v += 0.8;
+  if (poolType === 'MOVE') {
+    let moveValue = 0.8;
+    if (owned(player).length >= 2 && hasB(player, 'SPACEPORT')) {
+      moveValue += 0.8;
     }
-    return v - (p.hand.MOVE || 0) * 0.6;
+    return moveValue - (player.hand.MOVE || 0) * 0.6;
   }
-  if (t === 'TRADE') {
-    let v = 1;
-    if (hasB(p, 'EMBASSY')) {
-      v += 0.6;
+  if (poolType === 'TRADE') {
+    let tradeValue = 1;
+    if (hasB(player, 'EMBASSY')) {
+      tradeValue += 0.6;
     }
-    return v - (p.hand.TRADE || 0) * 0.5;
+    return tradeValue - (player.hand.TRADE || 0) * 0.5;
   }
-  let v = def.value;
+  let resourceValue = def.value;
   const head = plan.buildQueue[0];
-  if (head && (head.cost[t] || 0) > (p.hand[t] || 0)) {
-    v += 1.6;
+  if (head && (head.cost[poolType] || 0) > (player.hand[poolType] || 0)) {
+    resourceValue += 1.6;
   }
-  if ((plan.kind === 'MILITARIZE' || plan.kind === 'STRIKE') && t === 'ORE') {
-    v += 0.8;
+  if (
+    (plan.kind === 'MILITARIZE' || plan.kind === 'STRIKE') &&
+    poolType === 'ORE'
+  ) {
+    resourceValue += 0.8;
   }
-  if (t === 'RELIC') {
-    v += 0.3;
+  if (poolType === 'RELIC') {
+    resourceValue += 0.3;
   }
-  return v - Math.min(1.5, (p.hand[t] || 0) * 0.08);
+  return resourceValue - Math.min(1.5, (player.hand[poolType] || 0) * 0.08);
 }

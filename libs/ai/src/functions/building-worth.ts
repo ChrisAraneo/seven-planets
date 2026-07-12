@@ -27,7 +27,7 @@ import { totalTroops } from './total-troops';
 import { isUnderTruce } from './is-under-truce';
 
 export function buildingWorth(
-  p: Player,
+  player: Player,
   id: BuildingType,
   planet: Planet,
   level: number,
@@ -38,7 +38,7 @@ export function buildingWorth(
   let gross = 0;
   const inc = BUILDINGS[id].income;
   if (inc) {
-    const liquidity = inc === 'SPICE' ? (hasB(p, 'LAB') ? 0.6 : 0.3) : 1;
+    const liquidity = inc === 'SPICE' ? (hasB(player, 'LAB') ? 0.6 : 0.3) : 1;
     gross +=
       (incomeAmount(id, level) - incomeAmount(id, level - 1)) *
       CARDS[inc].value *
@@ -47,7 +47,7 @@ export function buildingWorth(
   }
   switch (id) {
     case 'BARRACKS': {
-      if (!hasB(p, 'BARRACKS')) {
+      if (!hasB(player, 'BARRACKS')) {
         gross += H + 6;
       } else if (level === 1) {
         gross += 3;
@@ -63,26 +63,26 @@ export function buildingWorth(
       break;
     }
     case 'SILO': {
-      if (p.hasPacifistStatus) {
+      if (player.hasPacifistStatus) {
         break;
       }
-      gross += hasB(p, 'SILO')
+      gross += hasB(player, 'SILO')
         ? 2 + SILO_HIT_BONUS * 0.8 + level
         : H * 0.7 + getTurn() / 10;
       if (planet.buildings.BARRACKS) {
         gross += 3;
       }
-      if (hasB(p, 'SILO')) {
+      if (hasB(player, 'SILO')) {
         let minNeed = Infinity;
-        for (const tp of getGameState().planets) {
+        for (const eachPlanet of getGameState().planets) {
           if (
-            tp.ownerId === p.id ||
-            !getGameState().players[tp.ownerId].isAlive ||
-            isUnderTruce(tp)
+            eachPlanet.ownerId === player.id ||
+            !getGameState().players[eachPlanet.ownerId].isAlive ||
+            isUnderTruce(eachPlanet)
           ) {
             continue;
           }
-          minNeed = Math.min(minNeed, minTroopsToConquer(tp.troops));
+          minNeed = Math.min(minNeed, minTroopsToConquer(eachPlanet.troops));
         }
         const newCap = level >= 3 ? Infinity : BASE_ROCKET_CAP * 2 ** level;
         if (
@@ -96,17 +96,20 @@ export function buildingWorth(
       break;
     }
     case 'SHIELD': {
-      const risk = 1 - holdProbability(p, planet, planet.troops);
+      const risk = 1 - holdProbability(player, planet, planet.troops);
       gross += SHIELD_DEFENSE * 0.35 + risk * planetValue(planet) * 0.6;
       break;
     }
     case 'SPACEPORT': {
-      gross += owned(p).length >= 2 ? (level === 1 ? 4 : 2.5) : 0.5;
-      if (!hasB(p, 'SPACEPORT') && owned(p).length >= 2) {
-        const silos = owned(p).filter((pl) => pl.buildings.SILO);
+      gross += owned(player).length >= 2 ? (level === 1 ? 4 : 2.5) : 0.5;
+      if (!hasB(player, 'SPACEPORT') && owned(player).length >= 2) {
+        const silos = owned(player).filter((planet) => planet.buildings.SILO);
         if (silos.length > 0) {
-          const staged = silos.reduce((x, pl) => Math.max(x, pl.troops), 0);
-          gross += Math.min(6, (totalTroops(p) - staged) * 0.4);
+          const staged = silos.reduce(
+            (candidate, planet) => Math.max(candidate, planet.troops),
+            0,
+          );
+          gross += Math.min(6, (totalTroops(player) - staged) * 0.4);
         }
       }
       break;

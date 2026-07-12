@@ -111,7 +111,9 @@ export const DEFAULT_DIFFICULTY: Difficulty = 'normal';
 /** Look up a difficulty by id (falls back to the default). */
 export function getDifficulty(id: Difficulty): DifficultyDef {
   return (
-    DIFFICULTIES.find((d) => d.id === id) ??
-    DIFFICULTIES.find((d) => d.id === DEFAULT_DIFFICULTY)!
+    DIFFICULTIES.find((difficultyDef) => difficultyDef.id === id) ??
+    DIFFICULTIES.find(
+      (difficultyDef) => difficultyDef.id === DEFAULT_DIFFICULTY,
+    )!
   );
 }

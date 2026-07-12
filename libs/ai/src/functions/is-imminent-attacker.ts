@@ -9,24 +9,27 @@ import { owned } from './owned';
 import { projectedStrike } from './projected-strike';
 import { isUnderTruce } from './is-under-truce';
 
-export function isImminentAttacker(us: Player, r: Player): boolean {
-  if (r.hasPacifistStatus || (r.hand.ATTACK || 0) < 1) {
+export function isImminentAttacker(
+  player: Player,
+  eachPlayer: Player,
+): boolean {
+  if (eachPlayer.hasPacifistStatus || (eachPlayer.hand.ATTACK || 0) < 1) {
     return false;
   }
-  if (!mayTarget(r, us)) {
+  if (!mayTarget(eachPlayer, player)) {
     return false;
   }
-  for (const pl of owned(us)) {
-    if (isUnderTruce(pl)) {
+  for (const planet of owned(player)) {
+    if (isUnderTruce(planet)) {
       continue;
     }
-    const strike = projectedStrike(r, 0, pl.id);
-    if (strike.n < minTroopsToConquer(pl.troops)) {
+    const strike = projectedStrike(eachPlayer, 0, planet.id);
+    if (strike.n < minTroopsToConquer(planet.troops)) {
       continue;
     }
     const pWin = battleWinProb(
       COMBAT.attackPerTroop * strike.n + strike.bonus,
-      defenseBaseOf(pl),
+      defenseBaseOf(planet),
     );
     if (pWin >= 0.35) {
       return true;

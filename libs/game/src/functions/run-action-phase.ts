@@ -15,7 +15,7 @@ import { turnOrder } from './turn-order';
    its actions and dispatches `endTurn` to unpark us. */
 export async function runActionPhase(): Promise<void> {
   return chain(Object.assign(getGameState(), { phase: 'action' }))
-    .thru((s) => runSeats(turnOrder(s).map((p) => p.id)))
+    .thru((state) => runSeats(turnOrder(state).map((player) => player.id)))
     .value();
 }
 
@@ -34,22 +34,24 @@ async function runSeats(seatIds: number[]): Promise<void> {
 async function runSeat(seatId: number): Promise<void> {
   return match(getGameState().players[seatId])
     .when(
-      (p) => !p.isAlive || p.skippedNow,
+      (player) => !player.isAlive || player.skippedNow,
       async (): Promise<void> => undefined,
     )
-    .otherwise((p) =>
+    .otherwise((player) =>
       chain(Object.assign(getGameState(), { activeId: seatId }))
-        .tap((s) => Object.assign(s, setStatus(s, seatStatus(p))))
-        .thru((s) => humanActionTurn(s))
+        .tap((state) =>
+          Object.assign(state, setStatus(state, seatStatus(player))),
+        )
+        .thru((state) => humanActionTurn(state))
         .value(),
     );
 }
 
-function seatStatus(p: Player): string {
-  return match(p)
+function seatStatus(player: Player): string {
+  return match(player)
     .when(
-      (x) => x.isHuman && !AUTO_HUMAN,
+      (player) => player.isHuman && !AUTO_HUMAN,
       () => 'YOUR TURN — recruit, attack or trade. End turn when done.',
     )
-    .otherwise((x) => `${x.name} is taking actions…`);
+    .otherwise((player) => `${player.name} is taking actions…`);
 }

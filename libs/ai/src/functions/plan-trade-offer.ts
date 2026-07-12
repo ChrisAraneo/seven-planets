@@ -9,7 +9,7 @@ import { planFor } from './plan-for';
 import { playerStrength } from './player-strength';
 
 export function planTradeOffer(
-  p: Player,
+  player: Player,
   plan: ReturnType<typeof planFor>,
 ): { partner: Player; gives: Cost; gets: Cost } | null {
   const head = plan.buildQueue[0];
@@ -17,13 +17,15 @@ export function planTradeOffer(
   if (head) {
     want =
       RESOURCE_TYPES.find(
-        (t) => t !== 'RELIC' && (head.cost[t] || 0) > (p.hand[t] || 0),
+        (resourceType) =>
+          resourceType !== 'RELIC' &&
+          (head.cost[resourceType] || 0) > (player.hand[resourceType] || 0),
       ) ?? null;
   }
   if (
     !want &&
     (plan.kind === 'MILITARIZE' || plan.kind === 'STRIKE') &&
-    (p.hand.ORE || 0) < 3
+    (player.hand.ORE || 0) < 3
   ) {
     want = 'ORE';
   }
@@ -32,40 +34,45 @@ export function planTradeOffer(
   }
   const reserved: Cost = {};
   if (head) {
-    for (const t in head.cost) {
-      reserved[t] = head.cost[t];
+    for (const type in head.cost) {
+      reserved[type] = head.cost[type];
     }
   }
   const surplus: string[] = [];
-  for (const t of RESOURCE_TYPES) {
-    if (t === 'RELIC' || t === want) {
+  for (const resourceType of RESOURCE_TYPES) {
+    if (resourceType === 'RELIC' || resourceType === want) {
       continue;
     }
-    const spare = (p.hand[t] || 0) - (reserved[t] || 0);
-    for (let i = 0; i < spare; i++) {
-      surplus.push(t);
+    const spare =
+      (player.hand[resourceType] || 0) - (reserved[resourceType] || 0);
+    for (let index = 0; index < spare; index++) {
+      surplus.push(resourceType);
     }
   }
-  surplus.sort((a, b) => CARDS[a].value - CARDS[b].value);
+  surplus.sort((first, building) => CARDS[first].value - CARDS[building].value);
   const gives: Cost = {};
-  let v = 0;
+  let eachValue = 0;
   const targetV = CARDS[want].value * 1.25;
-  for (const t of surplus) {
-    if (v >= targetV) {
+  for (const eachType of surplus) {
+    if (eachValue >= targetV) {
       break;
     }
-    gives[t] = (gives[t] || 0) + 1;
-    v += CARDS[t].value;
+    gives[eachType] = (gives[eachType] || 0) + 1;
+    eachValue += CARDS[eachType].value;
   }
-  if (v < targetV) {
+  if (eachValue < targetV) {
     return null;
   }
   const avg = avgStrength();
   const partners = alive()
-    .filter((x) => x.id !== p.id && (x.hand[want] || 0) > 0)
-    .sort((a, b) => playerStrength(a) - playerStrength(b));
+    .filter((player) => player.id !== player.id && (player.hand[want] || 0) > 0)
+    .sort(
+      (player, eachPlayer) =>
+        playerStrength(player) - playerStrength(eachPlayer),
+    );
   const partner =
-    partners.find((x) => playerStrength(x) < avg * 1.3) ?? partners[0];
+    partners.find((player) => playerStrength(player) < avg * 1.3) ??
+    partners[0];
   if (!partner) {
     return null;
   }

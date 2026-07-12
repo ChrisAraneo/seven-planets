@@ -35,9 +35,9 @@ export async function runDraft(
   hooks: PresentationHooks = NO_PRESENTATION,
 ): Promise<void> {
   return chain(Object.assign(getGameState(), { phase: 'draft' }))
-    .thru((s) =>
+    .thru((state) =>
       draftSeats(
-        draftOrder(s).map((pl) => pl.id),
+        draftOrder(state).map((player) => player.id),
         hooks,
       ),
     )
@@ -77,7 +77,7 @@ async function draftSeat(
   return match(getGameState().players[seatId])
     .when(
       // Paralysed by an influence card
-      (p) => p.skippedNow,
+      (player) => player.skippedNow,
       async (): Promise<DraftOutcome> => 'completed',
     )
     .otherwise(() => draftPlanetSlots(seatId, 0, hooks));
@@ -87,12 +87,12 @@ async function draftSeat(
 // during the draft can change what the seat owns.
 async function draftPlanetSlots(
   seatId: number,
-  s: number,
+  sum: number,
   hooks: PresentationHooks,
 ): Promise<DraftOutcome> {
   return match(getGameState())
     .when(
-      (st) => s >= ownedPlanets(st, st.players[seatId]).length,
+      (state) => sum >= ownedPlanets(state, state.players[seatId]).length,
       async (): Promise<DraftOutcome> => 'completed',
     )
     .when(
@@ -100,36 +100,36 @@ async function draftPlanetSlots(
       async (): Promise<DraftOutcome> => 'aborted',
     )
     .otherwise(() =>
-      draftSlot(seatId, s, hooks).then((outcome) =>
+      draftSlot(seatId, sum, hooks).then((outcome) =>
         match(outcome)
           .with('aborted', async (): Promise<DraftOutcome> => 'aborted')
-          .otherwise(() => draftPlanetSlots(seatId, s + 1, hooks)),
+          .otherwise(() => draftPlanetSlots(seatId, sum + 1, hooks)),
       ),
     );
 }
 
 async function draftSlot(
   seatId: number,
-  s: number,
+  sum: number,
   hooks: PresentationHooks,
 ): Promise<DraftOutcome> {
   return match(getGameState())
     .when(
-      (st) => !st.players[seatId].isAlive || st.pool.length === 0,
+      (state) => !state.players[seatId].isAlive || state.pool.length === 0,
       async (): Promise<DraftOutcome> => 'completed',
     )
-    .otherwise((st) =>
+    .otherwise((state) =>
       chain({
-        planetId: ownedPlanets(st, st.players[seatId])[s].id,
-        picks: match(s)
-          .with(0, () => mainPicks(st, st.players[seatId]))
+        planetId: ownedPlanets(state, state.players[seatId])[sum].id,
+        picks: match(sum)
+          .with(0, () => mainPicks(state, state.players[seatId]))
           .otherwise((): number => 1),
       })
         .tap(({ planetId }) =>
-          Object.assign(st, { activeId: seatId, draftPlanetId: planetId }),
+          Object.assign(state, { activeId: seatId, draftPlanetId: planetId }),
         )
         .thru(({ planetId, picks }) =>
-          draftPicks(seatId, s, planetId, picks, 0, hooks),
+          draftPicks(seatId, sum, planetId, picks, 0, hooks),
         )
         .value(),
     );
@@ -137,24 +137,25 @@ async function draftSlot(
 
 async function draftPicks(
   seatId: number,
-  s: number,
+  sum: number,
   planetId: number,
   picks: number,
-  k: number,
+  counter: number,
   hooks: PresentationHooks,
 ): Promise<DraftOutcome> {
   return match(getGameState())
     .when(
-      (st) => k >= picks || st.pool.length === 0,
+      (state) => counter >= picks || state.pool.length === 0,
       async (): Promise<DraftOutcome> => 'completed',
     )
-    .otherwise((st) =>
-      draftOnePick(st, seatId, s, planetId, picks, k, hooks).then((outcome) =>
-        match(outcome)
-          .with('aborted', async (): Promise<DraftOutcome> => 'aborted')
-          .otherwise(() =>
-            draftPicks(seatId, s, planetId, picks, k + 1, hooks),
-          ),
+    .otherwise((state) =>
+      draftOnePick(state, seatId, sum, planetId, picks, counter, hooks).then(
+        (outcome) =>
+          match(outcome)
+            .with('aborted', async (): Promise<DraftOutcome> => 'aborted')
+            .otherwise(() =>
+              draftPicks(seatId, sum, planetId, picks, counter + 1, hooks),
+            ),
       ),
     );
 }
@@ -162,10 +163,10 @@ async function draftPicks(
 async function draftOnePick(
   state: GameState,
   seatId: number,
-  s: number,
+  sum: number,
   planetId: number,
   picks: number,
-  k: number,
+  counter: number,
   hooks: PresentationHooks,
 ): Promise<DraftOutcome> {
   return chain({
@@ -173,17 +174,23 @@ async function draftOnePick(
     planet: state.planets[planetId],
     humanControlled: state.players[seatId].isHuman && !AUTO_HUMAN,
   })
-    .thru(({ p, planet, humanControlled }) =>
-      match(state.pool.some((t) => canPickCard(state, p, t, planet)))
-        .with(false, () => passSlot(state, p, planet, humanControlled, hooks))
+    .thru(({ p: player, planet, humanControlled }) =>
+      match(
+        state.pool.some((poolType) =>
+          canPickCard(state, player, poolType, planet),
+        ),
+      )
+        .with(false, () =>
+          passSlot(state, player, planet, humanControlled, hooks),
+        )
         .otherwise(() =>
           promptAndPick(
             state,
             seatId,
-            s,
+            sum,
             planetId,
             picks,
-            k,
+            counter,
             humanControlled,
             hooks,
           ),
@@ -194,30 +201,30 @@ async function draftOnePick(
 
 async function passSlot(
   state: GameState,
-  p: Player,
+  player: Player,
   planet: Planet,
   humanControlled: boolean,
   hooks: PresentationHooks,
 ): Promise<DraftOutcome> {
   return chain(state)
-    .tap((st) =>
+    .tap((state) =>
       match(humanControlled)
         .with(
           true,
           () =>
             void Object.assign(
-              st,
-              setStatus(st, `No card you can take — ${planet.name} passes.`),
+              state,
+              setStatus(state, `No card you can take — ${planet.name} passes.`),
             ),
         )
         .otherwise(noop),
     )
-    .tap((st) =>
+    .tap((state) =>
       Object.assign(
-        st,
+        state,
         log(
-          st,
-          `🃏 ${p.name} passes (nothing pickable for ${planet.name})`,
+          state,
+          `🃏 ${player.name} passes (nothing pickable for ${planet.name})`,
           'draft',
         ),
       ),
@@ -236,25 +243,33 @@ async function passSlot(
 async function promptAndPick(
   state: GameState,
   seatId: number,
-  s: number,
+  sum: number,
   planetId: number,
   picks: number,
-  k: number,
+  counter: number,
   humanControlled: boolean,
   hooks: PresentationHooks,
 ): Promise<DraftOutcome> {
   return (
     chain(state)
-      .tap((st) =>
+      .tap((state) =>
         Object.assign(
-          st,
+          state,
           setStatus(
-            st,
-            pickStatus(st, seatId, planetId, picks, k, s, humanControlled),
+            state,
+            pickStatus(
+              state,
+              seatId,
+              planetId,
+              picks,
+              counter,
+              sum,
+              humanControlled,
+            ),
           ),
         ),
       )
-      .thru((st) =>
+      .thru((state) =>
         match(humanControlled)
           .with(false, () => hooks.sleep(300)) // Let the AI's draft read at a human pace.
           .otherwise(async (): Promise<void> => undefined),
@@ -262,10 +277,10 @@ async function promptAndPick(
       .value()
       // Raise awaitingPick and wait for the pick (human click or AI module).
       .then(() => waitPoolPick(getGameState()))
-      .then((idx) =>
+      .then((index) =>
         match(Boolean(getOver()))
           .with(true, (): DraftOutcome => 'aborted')
-          .otherwise(() => applyPick(idx, seatId, s, planetId, hooks)),
+          .otherwise(() => applyPick(index, seatId, sum, planetId, hooks)),
       )
   );
 }
@@ -275,15 +290,15 @@ function pickStatus(
   seatId: number,
   planetId: number,
   picks: number,
-  k: number,
-  s: number,
+  counter: number,
+  sum: number,
   humanControlled: boolean,
 ): string {
   return match(humanControlled)
     .with(
       true,
       () =>
-        `YOUR PICK — ${state.planets[planetId].name} drafts card ${k + 1} of ${picks}${extraTurnSuffix(s)}`,
+        `YOUR PICK — ${state.planets[planetId].name} drafts card ${counter + 1} of ${picks}${extraTurnSuffix(sum)}`,
     )
     .otherwise(
       () =>
@@ -291,10 +306,10 @@ function pickStatus(
     );
 }
 
-function extraTurnSuffix(s: number): string {
-  return match(s)
+function extraTurnSuffix(sum: number): string {
+  return match(sum)
     .when(
-      (n) => n > 0,
+      (count) => count > 0,
       () => ' (extra planet turn)',
     )
     .otherwise(() => '');
@@ -302,44 +317,57 @@ function extraTurnSuffix(s: number): string {
 
 // The pick mutation replaced the state object — re-read by id.
 function applyPick(
-  idx: number,
+  index: number,
   seatId: number,
-  s: number,
+  sum: number,
   planetId: number,
   hooks: PresentationHooks,
 ): DraftOutcome {
   return chain(getGameState())
-    .thru((st) => ({
-      st,
-      p: st.players[seatId],
-      pl: st.planets[planetId],
-      type: st.pool.splice(idx, 1)[0],
+    .thru((state) => ({
+      st: state,
+      p: state.players[seatId],
+      pl: state.planets[planetId],
+      type: state.pool.splice(index, 1)[0],
     }))
-    .thru(({ st, p, pl, type }) =>
+    .thru(({ st: state, p: player, pl: planet, type }) =>
       match(type)
         .when(
-          (t) => Boolean(CARDS[t].building),
-          (t) => applyBuildingPick(st, p, pl, t as BuildingType, hooks),
+          (poolType) => Boolean(CARDS[poolType].building),
+          (poolType) =>
+            applyBuildingPick(
+              state,
+              player,
+              planet,
+              poolType as BuildingType,
+              hooks,
+            ),
         )
         .when(
-          (t) => Boolean(CARDS[t].influenceCard),
-          (t) => applyInfluencePick(st, p, t as InfluenceType),
+          (poolType) => Boolean(CARDS[poolType].influenceCard),
+          (poolType) =>
+            applyInfluencePick(state, player, poolType as InfluenceType),
         )
-        .otherwise((t) => applyCardPick(st, p, pl, t, s)),
+        .otherwise((poolType) =>
+          applyCardPick(state, player, planet, poolType, sum),
+        ),
     )
     .value();
 }
 
 // Pays cost from hand, may win the game
 function applyBuildingPick(
-  st: GameState,
-  p: Player,
-  pl: Planet,
+  state: GameState,
+  player: Player,
+  planet: Planet,
   buildingType: BuildingType,
   hooks: PresentationHooks,
 ): DraftOutcome {
   return chain(
-    Object.assign(st, buildBuilding(st, p.id, pl.id, buildingType, hooks)),
+    Object.assign(
+      state,
+      buildBuilding(state, player.id, planet.id, buildingType, hooks),
+    ),
   )
     .thru(() =>
       match(Boolean(getOver()))
@@ -350,22 +378,22 @@ function applyBuildingPick(
 }
 
 function applyInfluencePick(
-  st: GameState,
-  p: Player,
+  state: GameState,
+  player: Player,
   influenceType: InfluenceType,
 ): DraftOutcome {
   return chain(
-    Object.assign(p, {
-      influence: p.influence - INFLUENCE_CARDS[influenceType].cost,
-      hand: { ...p.hand, [influenceType]: p.hand[influenceType] + 1 },
+    Object.assign(player, {
+      influence: player.influence - INFLUENCE_CARDS[influenceType].cost,
+      hand: { ...player.hand, [influenceType]: player.hand[influenceType] + 1 },
     }),
   )
     .tap(() =>
       Object.assign(
-        st,
+        state,
         log(
-          st,
-          `⭐ ${p.name} drafts ${CARDS[influenceType].icon} ${CARDS[influenceType].name} (−${INFLUENCE_CARDS[influenceType].cost}⭐) — holds it for a later action turn`,
+          state,
+          `⭐ ${player.name} drafts ${CARDS[influenceType].icon} ${CARDS[influenceType].name} (−${INFLUENCE_CARDS[influenceType].cost}⭐) — holds it for a later action turn`,
           'draft',
         ),
       ),
@@ -375,21 +403,23 @@ function applyInfluencePick(
 }
 
 function applyCardPick(
-  st: GameState,
-  p: Player,
-  pl: Planet,
+  state: GameState,
+  player: Player,
+  planet: Planet,
   type: PoolType,
-  s: number,
+  sum: number,
 ): DraftOutcome {
   return chain(
-    Object.assign(p, { hand: { ...p.hand, [type]: p.hand[type] + 1 } }),
+    Object.assign(player, {
+      hand: { ...player.hand, [type]: player.hand[type] + 1 },
+    }),
   )
     .tap(() =>
       Object.assign(
-        st,
+        state,
         log(
-          st,
-          `🃏 ${p.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${planetTurnSuffix(pl, s)}`,
+          state,
+          `🃏 ${player.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${planetTurnSuffix(planet, sum)}`,
           'draft',
         ),
       ),
@@ -398,11 +428,11 @@ function applyCardPick(
     .value();
 }
 
-function planetTurnSuffix(pl: Planet, s: number): string {
-  return match(s)
+function planetTurnSuffix(planet: Planet, sum: number): string {
+  return match(sum)
     .when(
-      (n) => n > 0,
-      () => ` (${pl.name}'s turn)`,
+      (count) => count > 0,
+      () => ` (${planet.name}'s turn)`,
     )
     .otherwise(() => '');
 }

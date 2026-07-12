@@ -6,19 +6,20 @@ import {
 } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 
-export function planetValue(pl: Planet): number {
-  let v = 6;
-  for (const b of BUILD_ORDER) {
-    const lvl = pl.buildings[b] || 0;
+export function planetValue(planet: Planet): number {
+  let eachValue = 6;
+  for (const buildingType of BUILD_ORDER) {
+    const lvl = planet.buildings[buildingType] || 0;
     if (!lvl) {
       continue;
     }
-    v += lvl * 1.5;
-    const inc = BUILDINGS[b].income;
+    eachValue += lvl * 1.5;
+    const inc = BUILDINGS[buildingType].income;
     if (inc) {
-      v += incomeAmount(b, lvl) * CARDS[inc].value * 3;
+      eachValue += incomeAmount(buildingType, lvl) * CARDS[inc].value * 3;
     }
   }
-  v += (pl.buildings.SINGULARITY || 0) * 4 + (pl.buildings.LAB ? 2 : 0);
-  return v;
+  eachValue +=
+    (planet.buildings.SINGULARITY || 0) * 4 + (planet.buildings.LAB ? 2 : 0);
+  return eachValue;
 }

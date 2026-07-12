@@ -20,20 +20,20 @@ export function shouldMastermindAcceptTrade(
   const head = plan.buildQueue[0];
   let vIn = 0;
   let vOut = 0;
-  for (const t in gets) {
+  for (const type in gets) {
     vIn +=
-      gets[t] *
-      CARDS[t].value *
-      (head && (head.cost[t] || 0) > (ai.hand[t] || 0) ? 1.35 : 1);
+      gets[type] *
+      CARDS[type].value *
+      (head && (head.cost[type] || 0) > (ai.hand[type] || 0) ? 1.35 : 1);
   }
-  for (const t in gives) {
-    vOut += gives[t] * CARDS[t].value;
+  for (const eachType in gives) {
+    vOut += gives[eachType] * CARDS[eachType].value;
   }
   if (head && canAfford(ai.hand, head.cost)) {
     const after = handAfterCost(ai.hand, gives);
     const afterGets: Cost = { ...after };
-    for (const t in gets) {
-      afterGets[t] = (afterGets[t] || 0) + gets[t];
+    for (const innerType in gets) {
+      afterGets[innerType] = (afterGets[innerType] || 0) + gets[innerType];
     }
     if (!canAfford(afterGets, head.cost)) {
       vOut *= 1.6;

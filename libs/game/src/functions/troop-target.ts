@@ -4,6 +4,6 @@ import { getTurn } from '../getters/get-turn';
 import type { Player } from '../interfaces/player';
 
 // Desired garrison per planet for the mastermind AI.
-export function troopTarget(p: Player): number {
+export function troopTarget(player: Player): number {
   return 2 + Math.min(8, Math.floor(getTurn() / 3)) + 2;
 }

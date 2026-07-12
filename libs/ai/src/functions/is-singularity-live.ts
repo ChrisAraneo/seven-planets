@@ -6,13 +6,13 @@ import { owned } from './owned';
 import { techLevel } from './tech-level';
 
 export function isSingularityLive(): boolean {
-  return alive().some((p) =>
-    owned(p).some((pl) => {
-      const next = (pl.buildings.SINGULARITY || 0) + 1;
+  return alive().some((player) =>
+    owned(player).some((planet) => {
+      const next = (planet.buildings.SINGULARITY || 0) + 1;
       return (
         next <= maxLevel('SINGULARITY') &&
-        next <= techLevel(p) &&
-        isSingularityLabOk(pl, next)
+        next <= techLevel(player) &&
+        isSingularityLabOk(planet, next)
       );
     }),
   );

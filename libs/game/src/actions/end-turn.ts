@@ -18,9 +18,9 @@ export function endTurn(payload: EndTurnPayload): void {
       ({ state, humanResolve }) =>
         void chain(state)
           .tap(() => setHumanResolve(null))
-          .thru((s) => Object.assign(s, { awaitingAction: false }))
+          .thru((state) => Object.assign(state, { awaitingAction: false }))
           .tap(() => humanResolve?.())
-          .tap((s) => setGameState(s))
+          .tap((state) => setGameState(state))
           .value(),
     );
 }

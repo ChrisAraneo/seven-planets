@@ -37,15 +37,15 @@ export interface AttackPlanetPayload {
   playerId: number;
   sourceId: number;
   targetId: number;
-  n: number;
+  troops: number;
 }
 
 interface BattleContext {
   source: Planet;
   target: Planet;
   defenderId: number;
-  ap: number;
-  dp: number;
+  attackPower: number;
+  defensePower: number;
   win: boolean;
   attLoss: number;
   defLoss: number;
@@ -66,11 +66,11 @@ export async function attackPlanet(
     )
     .otherwise((state) =>
       chain(Object.assign(state, setBusy(state, true)))
-        .thru((s) =>
-          doAttack(s, payload, hooks)
+        .thru((state) =>
+          doAttack(state, payload, hooks)
             // The busy flag must clear whether the attack resolves or rejects.
-            .finally(() => Object.assign(s, setBusy(s, false)))
-            .then(() => setGameState(s)),
+            .finally(() => Object.assign(state, setBusy(state, false)))
+            .then(() => setGameState(state)),
         )
         .value(),
     );
@@ -78,7 +78,7 @@ export async function attackPlanet(
 
 async function doAttack(
   state: GameState,
-  { playerId: attackerId, sourceId, targetId, n }: AttackPlanetPayload,
+  { playerId: attackerId, sourceId, targetId, troops }: AttackPlanetPayload,
   hooks: PresentationHooks,
 ): Promise<void> {
   return match({
@@ -97,29 +97,40 @@ async function doAttack(
     )
     .otherwise(({ source, target }) =>
       chain(state)
-        .tap((s) => breakPacifistVow(s, attackerId, hooks))
-        .thru((s) => Object.assign(s, spendActionCard(s, attackerId, 'ATTACK')))
-        .tap((s) =>
-          // Resets the pacifist countdown
-          Object.assign(s.players[attackerId], { lastAttackTurn: s.turn }),
+        .tap((state) => breakPacifistVow(state, attackerId, hooks))
+        .thru((state) =>
+          Object.assign(state, spendActionCard(state, attackerId, 'ATTACK')),
         )
-        .tap(() => Object.assign(source, { troops: source.troops - n }))
-        .tap((s) =>
+        .tap((state) =>
+          // Resets the pacifist countdown
+          Object.assign(state.players[attackerId], {
+            lastAttackTurn: state.turn,
+          }),
+        )
+        .tap(() => Object.assign(source, { troops: source.troops - troops }))
+        .tap((state) =>
           Object.assign(
-            s,
+            state,
             log(
-              s,
-              `🚀 ${s.players[attackerId].name} launches a rocket with ${n} troops from ${source.name} at ${target.name} (${s.players[target.ownerId].name})!`,
+              state,
+              `🚀 ${state.players[attackerId].name} launches a rocket with ${troops} troops from ${source.name} at ${target.name} (${state.players[target.ownerId].name})!`,
               'war',
             ),
           ),
         )
-        .tap((s) => maybeTaunt(s, attackerId))
-        .thru((s) =>
+        .tap((state) => maybeTaunt(state, attackerId))
+        .thru((state) =>
           hooks
-            .rocket(source, target, s.players[attackerId].color)
+            .rocket(source, target, state.players[attackerId].color)
             .then(() =>
-              resolveBattle(s, attackerId, sourceId, targetId, n, hooks),
+              resolveBattle(
+                state,
+                attackerId,
+                sourceId,
+                targetId,
+                troops,
+                hooks,
+              ),
             ),
         )
         .value(),
@@ -153,9 +164,9 @@ function breakPacifistVow(
               ),
             ),
           )
-          .tap((s) =>
-            ownedPlanets(s, s.players[attackerId]).forEach((pl) =>
-              hooks.floatText(pl, '⚔️ VOW BROKEN', '#ff6b6b'),
+          .tap((state) =>
+            ownedPlanets(state, state.players[attackerId]).forEach((planet) =>
+              hooks.floatText(planet, '⚔️ VOW BROKEN', '#ff6b6b'),
             ),
           )
           .value(),
@@ -187,7 +198,7 @@ function resolveBattle(
   attackerId: number,
   sourceId: number,
   targetId: number,
-  n: number,
+  troops: number,
   hooks: PresentationHooks,
 ): void {
   return void chain({
@@ -199,11 +210,11 @@ function resolveBattle(
       source,
       target,
       defenderId,
-      ap:
-        COMBAT.attackPerTroop * n +
+      attackPower:
+        COMBAT.attackPerTroop * troops +
         siloBonus(source) +
         randInt(0, COMBAT.attackRoll),
-      dp:
+      defensePower:
         COMBAT.defensePerTroop * target.troops +
         (target.buildings.SHIELD || 0) * SHIELD_DEFENSE + // Shields stack
         pacifistDefBonus(state, target) +
@@ -211,56 +222,73 @@ function resolveBattle(
         HOME_FIELD +
         randInt(0, COMBAT.defenseRoll),
     }))
-    .thru((ctx) => ({ ...ctx, win: ctx.ap > ctx.dp }))
+    .thru((context) => ({
+      ...context,
+      win: context.attackPower > context.defensePower,
+    }))
     .thru(
-      (ctx): BattleContext => ({
-        ...ctx,
-        ...battleLosses(ctx.win, n, ctx.target.troops),
+      (context): BattleContext => ({
+        ...context,
+        ...battleLosses(context.win, troops, context.target.troops),
       }),
     )
     .tap(({ target, defLoss }) =>
       Object.assign(target, { troops: target.troops - defLoss }),
     )
     .tap(({ target }) => hooks.boom(target))
-    .tap((ctx) =>
+    .tap((battle) =>
       Object.assign(
         state,
-        log(state, battleLine(state, ctx, attackerId), 'war'),
+        log(state, battleLine(state, battle, attackerId), 'war'),
       ),
     )
-    .tap((ctx) => applyOutcome(state, ctx, attackerId, targetId, n, hooks))
+    .tap((battle) =>
+      applyOutcome(state, battle, attackerId, targetId, troops, hooks),
+    )
     .thru(() => Object.assign(state, checkWin(state)))
     .value();
 }
 
 function battleLosses(
   win: boolean,
-  n: number,
+  troops: number,
   targetTroops: number,
 ): { attLoss: number; defLoss: number } {
   return match(win)
     .with(true, () => ({
       defLoss: Math.min(
         targetTroops,
-        Math.ceil((n * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
+        Math.ceil((troops * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
       ),
-      attLoss: Math.floor((n * COMBAT.winAttLoss.num) / COMBAT.winAttLoss.den),
+      attLoss: Math.floor(
+        (troops * COMBAT.winAttLoss.num) / COMBAT.winAttLoss.den,
+      ),
     }))
     .otherwise(() => ({
-      attLoss: Math.ceil((n * COMBAT.loseAttLoss.num) / COMBAT.loseAttLoss.den),
+      attLoss: Math.ceil(
+        (troops * COMBAT.loseAttLoss.num) / COMBAT.loseAttLoss.den,
+      ),
       defLoss: Math.min(
         targetTroops,
-        Math.floor((n * COMBAT.loseDefLoss.num) / COMBAT.loseDefLoss.den),
+        Math.floor((troops * COMBAT.loseDefLoss.num) / COMBAT.loseDefLoss.den),
       ),
     }));
 }
 
 function battleLine(
   state: GameState,
-  { target, defenderId, ap, dp, win, attLoss, defLoss }: BattleContext,
+  {
+    target,
+    defenderId,
+    attackPower,
+    defensePower,
+    win,
+    attLoss,
+    defLoss,
+  }: BattleContext,
   attackerId: number,
 ): string {
-  return `💥 Battle for ${target.name}: attack ${ap} vs defense ${dp} — ${match(
+  return `💥 Battle for ${target.name}: attack ${attackPower} vs defense ${defensePower} — ${match(
     win,
   )
     .with(true, () => `${state.players[attackerId].name} WINS`)
@@ -271,26 +299,26 @@ function battleLine(
 
 function applyOutcome(
   state: GameState,
-  ctx: BattleContext,
+  eachBattle: BattleContext,
   attackerId: number,
   targetId: number,
-  n: number,
+  troops: number,
   hooks: PresentationHooks,
 ): void {
-  return match(ctx)
+  return match(eachBattle)
     .when(
       // No spoils for merely winning a battle — only conquest pays
       ({ win, target }) => win && target.troops <= 0,
       ({ attLoss }) =>
         // The surviving strike force garrisons it
-        conquerPlanet(state, attackerId, targetId, n - attLoss, hooks),
+        conquerPlanet(state, attackerId, targetId, troops - attLoss, hooks),
     )
     .when(
       ({ win }) => win,
       ({ source, target, attLoss }) =>
         void chain(
           // Raiders fly home
-          Object.assign(source, { troops: source.troops + (n - attLoss) }),
+          Object.assign(source, { troops: source.troops + (troops - attLoss) }),
         )
           .tap(() => hooks.floatText(target, 'RAIDED!', '#ff8a97'))
           .value(),
@@ -298,7 +326,7 @@ function applyOutcome(
     .otherwise(
       ({ source, target, attLoss }) =>
         void chain(
-          Object.assign(source, { troops: source.troops + (n - attLoss) }),
+          Object.assign(source, { troops: source.troops + (troops - attLoss) }),
         )
           .tap(() => hooks.floatText(target, 'DEFENDED!', '#7dff8a'))
           .value(),
@@ -365,31 +393,36 @@ function eliminateDefender(
   defenderId: number,
 ): void {
   return void chain(state)
-    .tap((s) =>
+    .tap((state) =>
       lootCards(
-        s,
+        state,
         defenderId,
         attackerId,
-        Math.min(6, handSize(s.players[defenderId])),
+        Math.min(6, handSize(state.players[defenderId])),
         (taken) =>
-          `💰 ${s.players[attackerId].name} salvages ${fmtCards(taken)} from the ruins!`,
+          `💰 ${state.players[attackerId].name} salvages ${fmtCards(taken)} from the ruins!`,
       ),
     )
-    .tap((s) =>
-      Object.assign(s.players[defenderId], {
+    .tap((state) =>
+      Object.assign(state.players[defenderId], {
         hand: {
-          ...s.players[defenderId].hand,
-          ...fromPairs([...CARD_TYPES, ...INFLUENCE_TYPES].map((t) => [t, 0])),
+          ...state.players[defenderId].hand,
+          ...fromPairs(
+            [...CARD_TYPES, ...INFLUENCE_TYPES].map((cardType) => [
+              cardType,
+              0,
+            ]),
+          ),
         },
         isAlive: false,
       }),
     )
-    .tap((s) =>
+    .tap((state) =>
       Object.assign(
-        s,
+        state,
         log(
-          s,
-          `☠️ ${s.players[defenderId].name} has been wiped from the galaxy!`,
+          state,
+          `☠️ ${state.players[defenderId].name} has been wiped from the galaxy!`,
           'war',
         ),
       ),

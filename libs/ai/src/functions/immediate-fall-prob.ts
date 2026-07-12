@@ -17,14 +17,18 @@ export function immediateFallProb(ownerP: Player, planet: Planet): number {
     return 0;
   }
   let pSafe = 1;
-  for (const r of alive()) {
-    if (r.id === ownerP.id || r.hasPacifistStatus || (r.hand.ATTACK || 0) < 1) {
+  for (const player of alive()) {
+    if (
+      player.id === ownerP.id ||
+      player.hasPacifistStatus ||
+      (player.hand.ATTACK || 0) < 1
+    ) {
       continue;
     }
-    if (!mayTarget(r, ownerP)) {
+    if (!mayTarget(player, ownerP)) {
       continue;
     }
-    const strike = projectedStrike(r, 0, planet.id);
+    const strike = projectedStrike(player, 0, planet.id);
     if (strike.n < minTroopsToConquer(planet.troops)) {
       continue;
     }
@@ -32,7 +36,7 @@ export function immediateFallProb(ownerP: Player, planet: Planet): number {
       COMBAT.attackPerTroop * strike.n + strike.bonus,
       defenseBaseOf(planet),
     );
-    pSafe *= 1 - pWin * aggression(r);
+    pSafe *= 1 - pWin * aggression(player);
   }
   return 1 - pSafe;
 }

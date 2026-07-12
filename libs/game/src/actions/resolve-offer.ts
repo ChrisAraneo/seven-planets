@@ -24,12 +24,12 @@ export function resolveOffer(payload: ResolveOfferPayload): void {
     .thru(({ state, offer }) =>
       match(offer)
         .with(nullish, noop)
-        .when((o) => o.toId !== payload.playerId, noop)
+        .when((offer) => offer.toId !== payload.playerId, noop)
         .otherwise(
-          (o) =>
+          (offer) =>
             void chain(Object.assign(state, { pendingOffer: null }))
-              .thru((s) => applyDecision(s, o, payload.accept))
-              .tap((s) => setGameState(s))
+              .thru((state) => applyDecision(state, offer, payload.accept))
+              .tap((state) => setGameState(state))
               .value(),
         ),
     )
@@ -65,27 +65,27 @@ function execTrade(
   bGives: Cost,
 ): GameState {
   return chain(Object.assign(state, spendActionCard(state, aId, 'TRADE')))
-    .tap((s) =>
-      Object.entries(aGives).forEach(([t, amount]) =>
-        transferCards(s, aId, bId, t, amount),
+    .tap((state) =>
+      Object.entries(aGives).forEach(([type, amount]) =>
+        transferCards(state, aId, bId, type, amount),
       ),
     )
-    .tap((s) =>
-      Object.entries(bGives).forEach(([t, amount]) =>
-        transferCards(s, bId, aId, t, amount),
+    .tap((state) =>
+      Object.entries(bGives).forEach(([type, amount]) =>
+        transferCards(state, bId, aId, type, amount),
       ),
     )
-    .tap((s) =>
-      Object.assign(s.players[aId], {
-        influence: s.players[aId].influence + 1,
+    .tap((state) =>
+      Object.assign(state.players[aId], {
+        influence: state.players[aId].influence + 1,
       }),
     )
-    .thru((s) =>
+    .thru((state) =>
       Object.assign(
-        s,
+        state,
         log(
-          s,
-          `🔁 ${s.players[aId].name} trades ${fmtCards(aGives)} to ${s.players[bId].name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
+          state,
+          `🔁 ${state.players[aId].name} trades ${fmtCards(aGives)} to ${state.players[bId].name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
           'trade',
         ),
       ),
@@ -94,21 +94,21 @@ function execTrade(
 }
 
 function transferCards(
-  s: GameState,
+  state: GameState,
   fromId: number,
   toId: number,
-  t: string,
+  type: string,
   amount: number,
 ): void {
-  return void chain(s)
-    .tap((st) =>
-      Object.assign(st.players[fromId].hand, {
-        [t]: st.players[fromId].hand[t] - amount,
+  return void chain(state)
+    .tap((state) =>
+      Object.assign(state.players[fromId].hand, {
+        [type]: state.players[fromId].hand[type] - amount,
       }),
     )
-    .tap((st) =>
-      Object.assign(st.players[toId].hand, {
-        [t]: st.players[toId].hand[t] + amount,
+    .tap((state) =>
+      Object.assign(state.players[toId].hand, {
+        [type]: state.players[toId].hand[type] + amount,
       }),
     )
     .value();

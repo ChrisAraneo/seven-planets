@@ -10,11 +10,11 @@ import { getTechLevel } from './get-tech-level';
 // The owned planet where the Singularity can still be built or upgraded.
 export function singularityReadyPlanet(
   state: GameState,
-  p: Player,
+  player: Player,
 ): Planet | undefined {
-  const cap = Math.min(maxLevel('SINGULARITY'), getTechLevel(state, p));
-  return ownedPlanets(state, p).find((pl) => {
-    const next = (pl.buildings.SINGULARITY || 0) + 1;
-    return next <= cap && isSingularityLabOk(pl, next);
+  const cap = Math.min(maxLevel('SINGULARITY'), getTechLevel(state, player));
+  return ownedPlanets(state, player).find((planet) => {
+    const next = (planet.buildings.SINGULARITY || 0) + 1;
+    return next <= cap && isSingularityLabOk(planet, next);
   });
 }

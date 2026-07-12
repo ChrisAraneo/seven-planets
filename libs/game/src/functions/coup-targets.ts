@@ -11,11 +11,11 @@ import { ownedPlanets } from './owned-planets';
 export function coupTargets(state: GameState, player: Player): Planet[] {
   const mayTakeLast = isPacifist(player);
   return state.planets.filter(
-    (pl) =>
-      pl.ownerId !== player.id &&
-      state.players[pl.ownerId].isAlive &&
-      !isUnderTruce(pl) &&
+    (planet) =>
+      planet.ownerId !== player.id &&
+      state.players[planet.ownerId].isAlive &&
+      !isUnderTruce(planet) &&
       (mayTakeLast ||
-        ownedPlanets(state, state.players[pl.ownerId]).length > 1),
+        ownedPlanets(state, state.players[planet.ownerId]).length > 1),
   );
 }

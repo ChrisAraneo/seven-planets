@@ -5,7 +5,7 @@ import type { BuildingType, Planet, Player } from '@seven-planets/game';
 import { techLevel } from './tech-level';
 
 export function nextLevelAllowed(
-  p: Player,
+  player: Player,
   planet: Planet,
   id: BuildingType,
 ): number {
@@ -13,7 +13,7 @@ export function nextLevelAllowed(
   if (next > maxLevel(id)) {
     return 0;
   }
-  if (next > techLevel(p)) {
+  if (next > techLevel(player)) {
     return 0;
   }
   if (id === 'SINGULARITY' && !isSingularityLabOk(planet, next)) {
