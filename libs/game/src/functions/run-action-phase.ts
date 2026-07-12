@@ -10,10 +10,10 @@ import { turnOrder } from './turn-order';
 import type { EngineGen } from './engine-driver';
 
 /* Every seat's action turn is handled identically: raise `awaitingAction`
-   and suspend. The human answers by ending their turn from the UI; an AI
-   seat is answered by the AI driver (notified through the engine's input
-   listener), which plays its actions and dispatches the same `endTurn`
-   to resume the engine. */
+   (bumping inputSeq) and suspend. The human answers by ending their turn
+   from the UI; an AI seat is answered by the AI, which WATCHES inputSeq
+   on the state, plays its actions and dispatches the same `endTurn` to
+   resume the engine. */
 export function* runActionPhase(): EngineGen {
   assign(getGameState(), { phase: 'action' });
   const seatIds = turnOrder(getGameState()).map((player) => player.id);
@@ -34,7 +34,7 @@ function* runSeat(seatId: number): EngineGen {
   const state = assign(getGameState(), { activeId: seatId });
   assign(state, setStatus(state, seatStatus(player)));
   // Raise the flag on the live state and suspend until `endTurn` resumes us.
-  assign(getGameState(), { awaitingAction: true });
+  assign(state, { awaitingAction: true, inputSeq: state.inputSeq + 1 });
   yield { kind: 'action' };
 }
 

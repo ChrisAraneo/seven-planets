@@ -10,7 +10,6 @@ import { setStatus } from '../functions/set-status';
 import { AUTO_HUMAN } from '../functions/auto-human';
 import { hasActionCard } from '../functions/has-action-card';
 import { log } from '../functions/log';
-import { getPendingOfferCallback } from '../functions/resolver-state';
 
 export interface MakeOfferPayload {
   playerId: number;
@@ -75,10 +74,10 @@ function sendOffer(
         pendingOffer: { fromId: playerId, toId: partnerId, gives, gets },
       }),
     )
+    // Installing the state IS the notification: the partner seat reacts to
+    // pendingOffer appearing on it (TradeOfferModal for the human, the AI's
+    // watcher for AI seats) and answers by dispatching resolveOffer.
     .tap((state) => setGameState(state))
-    // Notify synchronously so AI seats can respond without relying on async
-    // Vue watchers, which may not fire reliably across full state replacements.
-    .tap(() => getPendingOfferCallback()?.(partnerId))
     .value();
 }
 

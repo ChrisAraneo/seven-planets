@@ -1,5 +1,5 @@
 import { match, P } from 'ts-pattern';
-import { getGameState, setGameState } from '../game-state';
+import { getGameState, setGameState } from '../../game-state';
 
 const { nullish } = P;
 

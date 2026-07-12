@@ -1,20 +1,20 @@
 /* =====================================================================
-   The engine coroutine driver — fully SYNCHRONOUS.
+   The engine coroutine driver.
 
    The game runs as ONE plain (non-async) generator (see run-game.ts)
    that suspends whenever the seat in play must answer — a pool pick
-   during the draft, or the end of an action turn. There are no promises
-   anywhere in the game core: every state transition is synchronous, and
-   the public signal of "whose turn, what input is expected" is a set of
-   plain flags on GameState (`activeId` + `awaitingPick`/`awaitingAction`).
+   during the draft, or the end of an action turn. The driver holds NO
+   callbacks and notifies nobody: the engine's only output is the game
+   state itself. When it parks it raises `awaitingPick`/`awaitingAction`
+   and bumps `inputSeq` on the state; whoever reacts to state changes
+   (the human UI via computeds, the AI via `watch` on inputSeq — exactly
+   like the effects player watches effectSeq) answers by dispatching the
+   matching action (`pickCard` / `endTurn`), which advances the engine
+   synchronously through `resumeEngine` to its next suspension.
 
-   The UI and the AI answer by dispatching the matching action
-   (`pickCard` / `endTurn`); each dispatch advances the engine
-   synchronously through `resumeEngine` to its next suspension. After
-   every suspension the driver notifies the registered input listener
-   (the AI driver) — when the listener answers synchronously (headless
-   runs), the drive loop below consumes the answer without recursion, so
-   an entire game can run to completion inside one `startEngine` call.
+   startEngine returns a promise that settles when the game finishes —
+   the one orchestration handle headless runs await; the browser ignores
+   it. Game state and actions themselves stay fully synchronous.
    ===================================================================== */
 
 /** What the engine yields when it needs the active seat to answer. */
@@ -34,15 +34,18 @@ let driving = false;
 // An answer delivered while the loop is advancing is held here (one slot —
 // the flag gating in pickCard/endTurn admits at most one pending answer).
 let pending: { answer: InputAnswer } | null = null;
-let inputListener: ((request: InputRequest) => void) | null = null;
+let finish: (() => void) | null = null;
 
-/** Install a fresh engine and run it forward. In a fully AI-driven
-    (headless) game the input listener answers every suspension
-    synchronously, so the WHOLE game completes before this returns. */
-export function startEngine(build: () => EngineGen): void {
+/** Install a fresh engine and run it forward to its first suspension.
+    Resolves when the whole game finishes (game over or the turn cap). */
+export function startEngine(build: () => EngineGen): Promise<void> {
   engine = build();
   pending = { answer: undefined };
+  const done = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
   drive();
+  return done;
 }
 
 /** Feed the seat's answer to the suspended engine and advance it
@@ -59,26 +62,13 @@ export function resumeEngine(answer: InputAnswer): void {
 export function resetEngine(): void {
   engine = null;
   pending = null;
-}
-
-/** True while a game is in progress (the engine has not finished). */
-export function isEngineActive(): boolean {
-  return engine !== null;
-}
-
-/** Register the callback fired after every suspension (the AI driver).
-    It may answer synchronously by dispatching pickCard/endTurn, or later
-    via its own timers — pacing lives entirely in the listener. */
-export function setInputListener(
-  listener: ((request: InputRequest) => void) | null,
-): void {
-  inputListener = listener;
+  finish?.();
+  finish = null;
 }
 
 /* The trampoline: consume answers in a flat loop rather than recursing,
-   so a listener that answers synchronously (a headless AI playing a whole
-   game) cannot grow the call stack. A resumeEngine arriving mid-loop (from
-   the listener) only stores the answer — the loop picks it up. */
+   so an answer arriving synchronously mid-drive (via resumeEngine, which
+   only stores it) is picked up without stack growth. */
 function drive(): void {
   if (driving) {
     return;
@@ -91,9 +81,9 @@ function drive(): void {
       const step = engine.next(answer);
       if (step.done) {
         engine = null;
-        break;
+        finish?.();
+        finish = null;
       }
-      inputListener?.(step.value);
     }
   } finally {
     driving = false;

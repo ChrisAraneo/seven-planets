@@ -25,9 +25,9 @@ import type { EngineGen } from './engine-driver';
 type DraftOutcome = 'completed' | 'aborted';
 
 /* Every seat drafts through the same suspended `pick` action. We raise
-   `awaitingPick` and suspend: the human answers with a pool click; an AI
-   seat is answered by the AI driver (notified through the engine's input
-   listener), both dispatching the same `pickCard` action. Pacing is the
+   `awaitingPick` (bumping inputSeq) and suspend: the human answers with a
+   pool click; an AI seat is answered by the AI, which WATCHES inputSeq on
+   the state — both dispatch the same `pickCard` action. Pacing is the
    answerer's concern — the engine itself never waits on time. Because the
    `pickCard` mutation clones and replaces the state object, we never hold
    a state/entity reference across a suspension — everything is re-read
@@ -181,8 +181,10 @@ function* promptAndPick(
     ),
   );
   // Raise awaitingPick on the live state and suspend for the pick (human
-  // click or AI driver), which resumes us with the chosen pool index.
-  assign(getGameState(), { awaitingPick: true });
+  // click, or the AI's watcher on inputSeq), which resumes us with the
+  // chosen pool index.
+  const live = getGameState();
+  assign(live, { awaitingPick: true, inputSeq: live.inputSeq + 1 });
   const index = (yield { kind: 'pick' }) ?? 0;
   if (getOver()) {
     return 'aborted';

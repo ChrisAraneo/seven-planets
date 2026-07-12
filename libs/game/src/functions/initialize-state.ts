@@ -90,6 +90,7 @@ export function initializeState(): GameState {
         status: '—',
         awaitingPick: false,
         awaitingAction: false,
+        inputSeq: 0,
         pendingOffer: null,
       }),
     )

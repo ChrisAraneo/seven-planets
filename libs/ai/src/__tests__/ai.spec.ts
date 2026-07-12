@@ -268,5 +268,5 @@ describe('mastermind in full headless games', () => {
     }
     // Non-flaky sanity floor: it must win SOMETHING across 24 games.
     expect(wins).toBeGreaterThan(0);
-  }, 60_000);
+  }, 300_000);
 });

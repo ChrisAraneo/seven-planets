@@ -30,6 +30,10 @@ export interface GameState {
   awaitingPick: boolean;
   /** True while it is the human's action turn (reactive). */
   awaitingAction: boolean;
+  /** Monotonic count of input requests: bumped each time the engine parks
+      awaiting a pick/action (reactive) — the AI watches this the same way
+      the effects player watches effectSeq. */
+  inputSeq: number;
   /** A trade offer awaiting the target seat's accept/decline (reactive). */
   pendingOffer: PendingOffer | null;
 }

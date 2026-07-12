@@ -7,7 +7,7 @@ import type { GameOver } from '../interfaces/game-over';
 
 import { assignKamikazes } from './assign-kamikazes';
 import { playTurns } from './play-turns';
-import { isEngineActive, startEngine } from './engine-driver';
+import { startEngine } from './engine-driver';
 
 const { nonNullable } = P;
 
@@ -17,30 +17,23 @@ interface SimulationResult {
   reason: string;
 }
 
-// Fully SYNCHRONOUS: in a headless run every seat is AI-driven and the AI
-// answers each engine suspension synchronously (see the ai lib's input
-// listener), so the whole game completes inside startEngine.
-export function simulateGame(
+export async function simulateGame(
   maxTurns = 400,
   opts: { kamikazeCount?: number } = {},
-): SimulationResult {
+): Promise<SimulationResult> {
   // Each simulated game runs on a fresh state in the store's game module;
   // every engine/AI function reads it from there. Games run strictly
-  // sequentially, so resetting between games is safe. Raw (non-reactive)
-  // state: the AI is driven by the engine's input listener, not by Vue
-  // watchers, so nothing headless needs reactivity — and the AI's hot
-  // loops read the state millions of times per game.
-  resetGameState({ raw: true });
+  // sequentially, so resetting between games is safe. The state must stay
+  // reactive: the AI drives every seat through its `watch` on inputSeq,
+  // so it only reacts when the engine's mutations are observable.
+  resetGameState();
   assign(
     getGameState(),
     assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
   );
-  startEngine(() => playTurns(maxTurns));
-  if (isEngineActive()) {
-    throw new Error(
-      'simulateGame: the engine is still parked awaiting input — a seat was not answered synchronously (is the AI driver installed?)',
-    );
-  }
+  // The engine parks at each seat's input; the AI's watcher answers on
+  // the following flush, so the game completes over a chain of microtasks.
+  await startEngine(() => playTurns(maxTurns));
   return gameResult(getOver(), getTurn());
 }
 
