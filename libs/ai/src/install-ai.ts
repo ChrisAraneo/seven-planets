@@ -68,7 +68,7 @@ async function performDecision(
         playerId,
         sourceId: decision.source.id,
         targetId: decision.target.id,
-        n: decision.n,
+        troops: decision.n,
       });
       return;
     case 'recruit':
@@ -79,7 +79,7 @@ async function performDecision(
         playerId,
         fromId: decision.from.id,
         toId: decision.to.id,
-        n: decision.n,
+        troops: decision.n,
       });
       return;
     case 'trade':
