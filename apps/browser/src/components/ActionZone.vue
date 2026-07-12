@@ -8,7 +8,6 @@ import { hasActionCard } from '@seven-planets/game';
 import { totalTroops } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
 import { getAwaitingAction } from '@seven-planets/game';
-import { getBusy } from '@seven-planets/game';
 import { getOver } from '@seven-planets/game';
 import { endTurn, recruitTroops } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
@@ -17,7 +16,7 @@ import { computed } from 'vue';
 const game = useGameStore();
 const ui = useUiStore();
 
-const my = computed(() => getAwaitingAction() && !getBusy() && !getOver());
+const my = computed(() => getAwaitingAction() && !getOver());
 const human = computed(() => game.state.players[0]);
 
 const hasBarracks = computed(() =>

@@ -1,7 +1,6 @@
 import { assign, chain, cloneDeep, fromPairs, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { hasActionCard } from '../functions/has-action-card';
-import { setBusy } from '../functions/set-busy';
 import type { GameState } from '../interfaces/game-state';
 import type { Hand } from '../interfaces/hand';
 import type { Planet } from '../interfaces/planet';
@@ -19,8 +18,8 @@ import {
   randInt,
   SHIELD_DEFENSE,
   TAUNTS,
-  NO_PRESENTATION,
 } from '../config/constants';
+import { emitEffect } from '../functions/emit-effect';
 import { handSize } from '../functions/hand-size';
 import { log } from '../functions/log';
 import { stealCards } from '../functions/steal-cards';
@@ -31,7 +30,6 @@ import { ownedPlanets } from '../functions/owned-planets';
 import { pacifistDefBonus } from '../functions/pacifist-def-bonus';
 import { spendActionCard } from '../functions/spend-action-card';
 import { getGameState, setGameState } from '../game-state';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export interface AttackPlanetPayload {
   playerId: number;
@@ -51,10 +49,10 @@ interface BattleContext {
   defLoss: number;
 }
 
-export async function attackPlanet(
-  payload: AttackPlanetPayload,
-  hooks: PresentationHooks = NO_PRESENTATION,
-): Promise<void> {
+// Resolves the whole attack SYNCHRONOUSLY: the state carries the outcome the
+// moment this returns. The rocket flight / explosion / banners are emitted as
+// effect events on the state — the presentation layer plays them in response.
+export function attackPlanet(payload: AttackPlanetPayload): void {
   return match(cloneDeep(getGameState()))
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
@@ -64,23 +62,19 @@ export async function attackPlanet(
       (state) => !hasActionCard(state.players[payload.playerId], 'ATTACK'),
       noop,
     )
-    .otherwise((state) =>
-      chain(assign(state, setBusy(state, true)))
-        .thru((state) =>
-          doAttack(state, payload, hooks)
-            // The busy flag must clear whether the attack resolves or rejects.
-            .finally(() => assign(state, setBusy(state, false)))
-            .then(() => setGameState(state)),
-        )
-        .value(),
+    .otherwise(
+      (state) =>
+        void chain(state)
+          .tap((state) => doAttack(state, payload))
+          .tap((state) => setGameState(state))
+          .value(),
     );
 }
 
-async function doAttack(
+function doAttack(
   state: GameState,
   { playerId: attackerId, sourceId, targetId, troops }: AttackPlanetPayload,
-  hooks: PresentationHooks,
-): Promise<void> {
+): void {
   return match({
     source: state.planets[sourceId],
     target: state.planets[targetId],
@@ -88,62 +82,59 @@ async function doAttack(
     .when(
       // Freshly conquered planets cannot be attacked
       ({ target }) => isUnderTruce(target),
-      async (): Promise<void> => undefined,
+      noop,
     )
     .when(
       // No silo, no rockets
       ({ source }) => !source.buildings.SILO,
-      async (): Promise<void> => undefined,
+      noop,
     )
-    .otherwise(({ source, target }) =>
-      chain(state)
-        .tap((state) => breakPacifistVow(state, attackerId, hooks))
-        .thru((state) =>
-          assign(state, spendActionCard(state, attackerId, 'ATTACK')),
-        )
-        .tap((state) =>
-          // Resets the pacifist countdown
-          assign(state.players[attackerId], {
-            lastAttackTurn: state.turn,
-          }),
-        )
-        .tap(() => assign(source, { troops: source.troops - troops }))
-        .tap((state) =>
-          assign(
-            state,
-            log(
+    .otherwise(
+      ({ source, target }) =>
+        void chain(state)
+          .tap((state) => breakPacifistVow(state, attackerId))
+          .thru((state) =>
+            assign(state, spendActionCard(state, attackerId, 'ATTACK')),
+          )
+          .tap((state) =>
+            // Resets the pacifist countdown
+            assign(state.players[attackerId], {
+              lastAttackTurn: state.turn,
+            }),
+          )
+          .tap(() => assign(source, { troops: source.troops - troops }))
+          .tap((state) =>
+            assign(
               state,
-              `🚀 ${state.players[attackerId].name} launches a rocket with ${troops} troops from ${source.name} at ${target.name} (${state.players[target.ownerId].name})!`,
-              'war',
-            ),
-          ),
-        )
-        .tap((state) => maybeTaunt(state, attackerId))
-        .thru((state) =>
-          hooks
-            .rocket(source, target, state.players[attackerId].color)
-            .then(() =>
-              resolveBattle(
+              log(
                 state,
-                attackerId,
-                sourceId,
-                targetId,
-                troops,
-                hooks,
+                `🚀 ${state.players[attackerId].name} launches a rocket with ${troops} troops from ${source.name} at ${target.name} (${state.players[target.ownerId].name})!`,
+                'war',
               ),
             ),
-        )
-        .value(),
+          )
+          .tap((state) =>
+            assign(
+              state,
+              emitEffect(state, {
+                kind: 'rocket',
+                fromId: sourceId,
+                toId: targetId,
+                color: state.players[attackerId].color,
+              }),
+            ),
+          )
+          .tap((state) => maybeTaunt(state, attackerId))
+          .tap((state) =>
+            resolveBattle(state, attackerId, sourceId, targetId, troops),
+          )
+          .value(),
     );
 }
 
 // Breaking the vow: a PACIFIST may attack, but doing so permanently strips the
 // Status and its bonuses — and pacifismForfeited bars them from ever regaining it.
-function breakPacifistVow(
-  state: GameState,
-  attackerId: number,
-  hooks: PresentationHooks,
-): void {
+function breakPacifistVow(state: GameState, attackerId: number): void {
   return match(state.players[attackerId].hasPacifistStatus)
     .with(
       true,
@@ -166,7 +157,15 @@ function breakPacifistVow(
           )
           .tap((state) =>
             ownedPlanets(state, state.players[attackerId]).forEach((planet) =>
-              hooks.floatText(planet, '⚔️ VOW BROKEN', '#ff6b6b'),
+              assign(
+                state,
+                emitEffect(state, {
+                  kind: 'floatText',
+                  planetId: planet.id,
+                  text: '⚔️ VOW BROKEN',
+                  color: '#ff6b6b',
+                }),
+              ),
             ),
           )
           .value(),
@@ -199,7 +198,6 @@ function resolveBattle(
   sourceId: number,
   targetId: number,
   troops: number,
-  hooks: PresentationHooks,
 ): void {
   return void chain({
     source: state.planets[sourceId],
@@ -235,16 +233,13 @@ function resolveBattle(
     .tap(({ target, defLoss }) =>
       assign(target, { troops: target.troops - defLoss }),
     )
-    .tap(({ target }) => hooks.boom(target))
-    .tap((battle) =>
-      assign(
-        state,
-        log(state, battleLine(state, battle, attackerId), 'war'),
-      ),
+    .tap(() =>
+      assign(state, emitEffect(state, { kind: 'boom', planetId: targetId })),
     )
     .tap((battle) =>
-      applyOutcome(state, battle, attackerId, targetId, troops, hooks),
+      assign(state, log(state, battleLine(state, battle, attackerId), 'war')),
     )
+    .tap((battle) => applyOutcome(state, battle, attackerId, targetId, troops))
     .thru(() => assign(state, checkWin(state)))
     .value();
 }
@@ -303,7 +298,6 @@ function applyOutcome(
   attackerId: number,
   targetId: number,
   troops: number,
-  hooks: PresentationHooks,
 ): void {
   return match(eachBattle)
     .when(
@@ -311,7 +305,7 @@ function applyOutcome(
       ({ win, target }) => win && target.troops <= 0,
       ({ attLoss }) =>
         // The surviving strike force garrisons it
-        conquerPlanet(state, attackerId, targetId, troops - attLoss, hooks),
+        conquerPlanet(state, attackerId, targetId, troops - attLoss),
     )
     .when(
       ({ win }) => win,
@@ -320,7 +314,17 @@ function applyOutcome(
           // Raiders fly home
           assign(source, { troops: source.troops + (troops - attLoss) }),
         )
-          .tap(() => hooks.floatText(target, 'RAIDED!', '#ff8a97'))
+          .tap(() =>
+            assign(
+              state,
+              emitEffect(state, {
+                kind: 'floatText',
+                planetId: target.id,
+                text: 'RAIDED!',
+                color: '#ff8a97',
+              }),
+            ),
+          )
           .value(),
     )
     .otherwise(
@@ -328,7 +332,17 @@ function applyOutcome(
         void chain(
           assign(source, { troops: source.troops + (troops - attLoss) }),
         )
-          .tap(() => hooks.floatText(target, 'DEFENDED!', '#7dff8a'))
+          .tap(() =>
+            assign(
+              state,
+              emitEffect(state, {
+                kind: 'floatText',
+                planetId: target.id,
+                text: 'DEFENDED!',
+                color: '#7dff8a',
+              }),
+            ),
+          )
           .value(),
     );
 }
@@ -338,7 +352,6 @@ function conquerPlanet(
   attackerId: number,
   targetId: number,
   garrison: number,
-  hooks: PresentationHooks,
 ): void {
   return void chain({
     target: state.planets[targetId],
@@ -351,7 +364,17 @@ function conquerPlanet(
         protectedUntil: state.turn + CONQUEST_TRUCE,
       }),
     )
-    .tap(({ target }) => hooks.floatText(target, 'CONQUERED!', '#ff9e3d'))
+    .tap(() =>
+      assign(
+        state,
+        emitEffect(state, {
+          kind: 'floatText',
+          planetId: targetId,
+          text: 'CONQUERED!',
+          color: '#ff9e3d',
+        }),
+      ),
+    )
     .tap(({ target }) =>
       assign(
         state,

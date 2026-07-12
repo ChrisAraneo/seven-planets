@@ -56,7 +56,6 @@ export function initializeState(): GameState {
         draftPlanetId: -1, // The planet whose draft turn it is (buildings land here)
         singularityAnnounced: false,
         startIdx: 0,
-        busy: false,
         players: gameDefs.map((definition, index) => ({
           id: index,
           name: definition.name,
@@ -86,6 +85,8 @@ export function initializeState(): GameState {
           styleIdx: definition.styleIdx,
         })),
         log: [],
+        effects: [],
+        effectSeq: 0,
         status: '—',
         awaitingPick: false,
         awaitingAction: false,

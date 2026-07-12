@@ -1,7 +1,7 @@
 import { assign, chain, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
-import { CARDS, INFLUENCE_CARDS, NO_PRESENTATION } from '../config/constants';
+import { CARDS, INFLUENCE_CARDS } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceType } from '../interfaces/influence-type';
@@ -18,194 +18,125 @@ import { log } from './log';
 import { mainPicks } from './main-picks';
 import { setStatus } from './set-status';
 import { ownedPlanets } from './owned-planets';
-import { waitPoolPick } from './wait-pool-pick';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
+import type { EngineGen } from './engine-driver';
 
 /* 'aborted' = the game ended mid-draft; unwinding stops immediately and the
    draft-planet marker is deliberately left as-is (matching the old early return). */
 type DraftOutcome = 'completed' | 'aborted';
 
-/* Every seat drafts through the same parked `pick` store action. We raise
-   `awaitingPick` and wait: the human answers with a pool click; an AI seat
-   is answered by the `ai` store module, which watches the flag and dispatches
-   the same `pickCard` action. Because the `pickCard` mutation clones and
-   replaces the state object, we never hold a state/entity reference across an
-   await — everything is re-read from getGameState() by id. */
-export async function runDraft(
-  hooks: PresentationHooks = NO_PRESENTATION,
-): Promise<void> {
-  return chain(assign(getGameState(), { phase: 'draft' }))
-    .thru((state) =>
-      draftSeats(
-        draftOrder(state).map((player) => player.id),
-        hooks,
-      ),
-    )
-    .value()
-    .then((outcome) =>
-      match(outcome)
-        .with(
-          'completed',
-          () => void assign(getGameState(), { draftPlanetId: -1 }),
-        )
-        .otherwise(noop),
-    );
+/* Every seat drafts through the same suspended `pick` action. We raise
+   `awaitingPick` and suspend: the human answers with a pool click; an AI
+   seat is answered by the AI driver (notified through the engine's input
+   listener), both dispatching the same `pickCard` action. Pacing is the
+   answerer's concern — the engine itself never waits on time. Because the
+   `pickCard` mutation clones and replaces the state object, we never hold
+   a state/entity reference across a suspension — everything is re-read
+   from getGameState() by id. */
+export function* runDraft(): EngineGen {
+  assign(getGameState(), { phase: 'draft' });
+  const seatIds = draftOrder(getGameState()).map((player) => player.id);
+  const outcome = yield* draftSeats(seatIds);
+  if (outcome === 'completed') {
+    assign(getGameState(), { draftPlanetId: -1 });
+  }
 }
 
-async function draftSeats(
-  seatIds: number[],
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return match(seatIds)
-    .when(
-      (ids) => ids.length === 0,
-      async (): Promise<DraftOutcome> => 'completed',
-    )
-    .otherwise(([seatId, ...rest]) =>
-      draftSeat(seatId, hooks).then((outcome) =>
-        match(outcome)
-          .with('aborted', async (): Promise<DraftOutcome> => 'aborted')
-          .otherwise(() => draftSeats(rest, hooks)),
-      ),
-    );
+function* draftSeats(seatIds: number[]): EngineGen<DraftOutcome> {
+  for (const seatId of seatIds) {
+    const outcome = yield* draftSeat(seatId);
+    if (outcome === 'aborted') {
+      return 'aborted';
+    }
+  }
+  return 'completed';
 }
 
-async function draftSeat(
-  seatId: number,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return match(getGameState().players[seatId])
-    .when(
-      // Paralysed by an influence card
-      (player) => player.skippedNow,
-      async (): Promise<DraftOutcome> => 'completed',
-    )
-    .otherwise(() => draftPlanetSlots(seatId, 0, hooks));
+function* draftSeat(seatId: number): EngineGen<DraftOutcome> {
+  // Paralysed by an influence card
+  if (getGameState().players[seatId].skippedNow) {
+    return 'completed';
+  }
+  return yield* draftPlanetSlots(seatId);
 }
 
 // One iteration per owned planet; the list is re-read live because conquests
 // during the draft can change what the seat owns.
-async function draftPlanetSlots(
-  seatId: number,
-  sum: number,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return match(getGameState())
-    .when(
-      (state) => sum >= ownedPlanets(state, state.players[seatId]).length,
-      async (): Promise<DraftOutcome> => 'completed',
-    )
-    .when(
-      () => Boolean(getOver()),
-      async (): Promise<DraftOutcome> => 'aborted',
-    )
-    .otherwise(() =>
-      draftSlot(seatId, sum, hooks).then((outcome) =>
-        match(outcome)
-          .with('aborted', async (): Promise<DraftOutcome> => 'aborted')
-          .otherwise(() => draftPlanetSlots(seatId, sum + 1, hooks)),
-      ),
-    );
+function* draftPlanetSlots(seatId: number): EngineGen<DraftOutcome> {
+  let sum = 0;
+  for (;;) {
+    const state = getGameState();
+    if (sum >= ownedPlanets(state, state.players[seatId]).length) {
+      return 'completed';
+    }
+    if (getOver()) {
+      return 'aborted';
+    }
+    const outcome = yield* draftSlot(seatId, sum);
+    if (outcome === 'aborted') {
+      return 'aborted';
+    }
+    sum++;
+  }
 }
 
-async function draftSlot(
-  seatId: number,
-  sum: number,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return match(getGameState())
-    .when(
-      (state) => !state.players[seatId].isAlive || state.pool.length === 0,
-      async (): Promise<DraftOutcome> => 'completed',
-    )
-    .otherwise((state) =>
-      chain({
-        planetId: ownedPlanets(state, state.players[seatId])[sum].id,
-        picks: match(sum)
-          .with(0, () => mainPicks(state, state.players[seatId]))
-          .otherwise((): number => 1),
-      })
-        .tap(({ planetId }) =>
-          assign(state, { activeId: seatId, draftPlanetId: planetId }),
-        )
-        .thru(({ planetId, picks }) =>
-          draftPicks(seatId, sum, planetId, picks, 0, hooks),
-        )
-        .value(),
-    );
+function* draftSlot(seatId: number, sum: number): EngineGen<DraftOutcome> {
+  const state = getGameState();
+  if (!state.players[seatId].isAlive || state.pool.length === 0) {
+    return 'completed';
+  }
+  const planetId = ownedPlanets(state, state.players[seatId])[sum].id;
+  const picks = match(sum)
+    .with(0, () => mainPicks(state, state.players[seatId]))
+    .otherwise((): number => 1);
+  assign(state, { activeId: seatId, draftPlanetId: planetId });
+  return yield* draftPicks(seatId, sum, planetId, picks);
 }
 
-async function draftPicks(
+function* draftPicks(
   seatId: number,
   sum: number,
   planetId: number,
   picks: number,
-  counter: number,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return match(getGameState())
-    .when(
-      (state) => counter >= picks || state.pool.length === 0,
-      async (): Promise<DraftOutcome> => 'completed',
-    )
-    .otherwise((state) =>
-      draftOnePick(state, seatId, sum, planetId, picks, counter, hooks).then(
-        (outcome) =>
-          match(outcome)
-            .with('aborted', async (): Promise<DraftOutcome> => 'aborted')
-            .otherwise(() =>
-              draftPicks(seatId, sum, planetId, picks, counter + 1, hooks),
-            ),
-      ),
-    );
+): EngineGen<DraftOutcome> {
+  for (let counter = 0; counter < picks; counter++) {
+    const state = getGameState();
+    if (state.pool.length === 0) {
+      return 'completed';
+    }
+    const outcome = yield* draftOnePick(state, seatId, sum, planetId, picks, counter);
+    if (outcome === 'aborted') {
+      return 'aborted';
+    }
+  }
+  return 'completed';
 }
 
-async function draftOnePick(
+function* draftOnePick(
   state: GameState,
   seatId: number,
   sum: number,
   planetId: number,
   picks: number,
   counter: number,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return chain({
-    p: state.players[seatId],
-    planet: state.planets[planetId],
-    humanControlled: state.players[seatId].isHuman && !AUTO_HUMAN,
-  })
-    .thru(({ p: player, planet, humanControlled }) =>
-      match(
-        state.pool.some((poolType) =>
-          canPickCard(state, player, poolType, planet),
-        ),
-      )
-        .with(false, () =>
-          passSlot(state, player, planet, humanControlled, hooks),
-        )
-        .otherwise(() =>
-          promptAndPick(
-            state,
-            seatId,
-            sum,
-            planetId,
-            picks,
-            counter,
-            humanControlled,
-            hooks,
-          ),
-        ),
-    )
-    .value();
+): EngineGen<DraftOutcome> {
+  const player = state.players[seatId];
+  const planet = state.planets[planetId];
+  const humanControlled = player.isHuman && !AUTO_HUMAN;
+  const pickable = state.pool.some((poolType) =>
+    canPickCard(state, player, poolType, planet),
+  );
+  if (!pickable) {
+    return passSlot(state, player, planet, humanControlled);
+  }
+  return yield* promptAndPick(state, seatId, sum, planetId, picks, counter, humanControlled);
 }
 
-async function passSlot(
+function passSlot(
   state: GameState,
   player: Player,
   planet: Planet,
   humanControlled: boolean,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
+): DraftOutcome {
   return chain(state)
     .tap((state) =>
       match(humanControlled)
@@ -229,18 +160,11 @@ async function passSlot(
         ),
       ),
     )
-    .thru(() =>
-      hooks.sleep(
-        match(humanControlled)
-          .with(true, (): number => 600)
-          .otherwise((): number => 300),
-      ),
-    )
-    .value()
-    .then((): DraftOutcome => 'completed');
+    .thru((): DraftOutcome => 'completed')
+    .value();
 }
 
-async function promptAndPick(
+function* promptAndPick(
   state: GameState,
   seatId: number,
   sum: number,
@@ -248,41 +172,22 @@ async function promptAndPick(
   picks: number,
   counter: number,
   humanControlled: boolean,
-  hooks: PresentationHooks,
-): Promise<DraftOutcome> {
-  return (
-    chain(state)
-      .tap((state) =>
-        assign(
-          state,
-          setStatus(
-            state,
-            pickStatus(
-              state,
-              seatId,
-              planetId,
-              picks,
-              counter,
-              sum,
-              humanControlled,
-            ),
-          ),
-        ),
-      )
-      .thru((state) =>
-        match(humanControlled)
-          .with(false, () => hooks.sleep(300)) // Let the AI's draft read at a human pace.
-          .otherwise(async (): Promise<void> => undefined),
-      )
-      .value()
-      // Raise awaitingPick and wait for the pick (human click or AI module).
-      .then(() => waitPoolPick(getGameState()))
-      .then((index) =>
-        match(Boolean(getOver()))
-          .with(true, (): DraftOutcome => 'aborted')
-          .otherwise(() => applyPick(index, seatId, sum, planetId, hooks)),
-      )
+): EngineGen<DraftOutcome> {
+  assign(
+    state,
+    setStatus(
+      state,
+      pickStatus(state, seatId, planetId, picks, counter, sum, humanControlled),
+    ),
   );
+  // Raise awaitingPick on the live state and suspend for the pick (human
+  // click or AI driver), which resumes us with the chosen pool index.
+  assign(getGameState(), { awaitingPick: true });
+  const index = (yield { kind: 'pick' }) ?? 0;
+  if (getOver()) {
+    return 'aborted';
+  }
+  return applyPick(index, seatId, sum, planetId);
 }
 
 function pickStatus(
@@ -321,7 +226,6 @@ function applyPick(
   seatId: number,
   sum: number,
   planetId: number,
-  hooks: PresentationHooks,
 ): DraftOutcome {
   return chain(getGameState())
     .thru((state) => ({
@@ -335,13 +239,7 @@ function applyPick(
         .when(
           (poolType) => Boolean(CARDS[poolType].building),
           (poolType) =>
-            applyBuildingPick(
-              state,
-              player,
-              planet,
-              poolType as BuildingType,
-              hooks,
-            ),
+            applyBuildingPick(state, player, planet, poolType as BuildingType),
         )
         .when(
           (poolType) => Boolean(CARDS[poolType].influenceCard),
@@ -361,13 +259,9 @@ function applyBuildingPick(
   player: Player,
   planet: Planet,
   buildingType: BuildingType,
-  hooks: PresentationHooks,
 ): DraftOutcome {
   return chain(
-    assign(
-      state,
-      buildBuilding(state, player.id, planet.id, buildingType, hooks),
-    ),
+    assign(state, buildBuilding(state, player.id, planet.id, buildingType)),
   )
     .thru(() =>
       match(Boolean(getOver()))

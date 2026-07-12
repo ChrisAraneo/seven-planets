@@ -3,7 +3,7 @@ import type { GameState } from './interfaces/game-state';
 import { initializeState } from './functions/initialize-state';
 import { markRaw } from 'vue';
 
-import { resetResolvers } from './functions/resolver-state';
+import { resetEngine } from './functions/engine-driver';
 
 const { nonNullable } = P;
 
@@ -59,7 +59,7 @@ export function setGameState(state: GameState): void {
 export function resetGameState(opts: { raw?: boolean } = {}): void {
   raw = Boolean(opts.raw);
   setGameState(initializeState());
-  resetResolvers();
+  resetEngine();
 }
 
 // The one place the lib fails fast: engine/AI calls are meaningless without an

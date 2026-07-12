@@ -3,7 +3,7 @@
    Ported from the original vanilla-JS game.js.
    ===================================================================== */
 
-import { assign, chain, fromPairs, mapValues, noop } from 'lodash-es';
+import { assign, chain, fromPairs, mapValues } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { ActionType } from '../interfaces/action-type';
 import type { BuildingDef } from '../interfaces/building-def';
@@ -16,7 +16,6 @@ import type { InfluenceCardDef } from '../interfaces/influence-card-def';
 import type { InfluenceType } from '../interfaces/influence-type';
 import type { PlanetStyle } from '../interfaces/planet-style';
 import type { PoolType } from '../interfaces/pool-type';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
 import type { ResourceType } from '../interfaces/resource-type';
 
 export const RESOURCE_TYPES: ResourceType[] = [
@@ -573,9 +572,3 @@ export function fmtCards(map: Hand | Cost): string {
     .otherwise(() => 'nothing');
 }
 
-export const NO_PRESENTATION: PresentationHooks = {
-  sleep: () => Promise.resolve(),
-  rocket: () => Promise.resolve(),
-  boom: noop,
-  floatText: noop,
-};

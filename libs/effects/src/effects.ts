@@ -1,15 +1,20 @@
-import { NO_PRESENTATION, type PresentationHooks } from '@seven-planets/game';
-import type { Planet } from '@seven-planets/game';
+import type { EffectEvent, GameState } from '@seven-planets/game';
 
 /* =====================================================================
-   SEVEN PLANETS — graphical effects (canvas animations + pacing).
+   SEVEN PLANETS — graphical effects (canvas animations).
 
-   Implements the game core's presentation hooks: the engine signals
-   rockets / explosions / floating text and pacing pauses, and this
-   layer hands canvas animations to the sink the app injected (the
-   browser's effects store, drained by the GameBoard render loop) and
-   scales delays by the fast-animations toggle. Headless runs never
-   install this layer, so they pay no delays and queue no animations.
+   The game core is fully synchronous and never waits for animations.
+   Instead it appends EffectEvents to the game state as it mutates it;
+   this layer CONSUMES those events in response to the state change
+   (the browser watches `state.effectSeq` and calls playNewEffects) and
+   hands canvas animations to the sink the app injected (the browser's
+   effects store, drained by the GameBoard render loop).
+
+   Sequencing is presentation-side: events that follow a rocket in the
+   same batch are delayed by the rocket's flight time, so the boom still
+   lands when the rocket arrives even though the game state resolved the
+   battle instantly. Headless runs never install this layer — events
+   just accumulate in the state's capped tail and cost nothing.
    ===================================================================== */
 
 export interface Anim {
@@ -34,7 +39,8 @@ export interface EffectsSink {
 }
 
 let sink: EffectsSink | null = null;
-let installedHooks: PresentationHooks = NO_PRESENTATION;
+// The last event seq already played, so each call only plays new events.
+let playedSeq = 0;
 
 // Animation speed multiplier (the fast-animations toggle).
 function speedMult(): number {
@@ -45,62 +51,93 @@ function now(): number {
   return typeof performance === 'undefined' ? Date.now() : performance.now();
 }
 
-function enqueue(anim: Anim): void {
+function enqueue(anim: Anim, delay: number): void {
+  if (delay > 0) {
+    // Re-stamp t0 at fire time so the animation starts when it appears.
+    setTimeout(() => sink?.enqueue({ ...anim, t0: now() }), delay);
+    return;
+  }
   sink?.enqueue(anim);
 }
 
-function sleep(milliseconds: number): Promise<void> {
-  return new Promise((result) =>
-    setTimeout(result, milliseconds * speedMult()),
-  );
-}
-
-function rocket(from: Planet, to: Planet, color: string): Promise<void> {
-  const dur = Math.max(50, 1000 * speedMult());
-  enqueue({
-    type: 'rocket',
-    fx: from.x,
-    fy: from.y,
-    tx: to.x,
-    ty: to.y,
-    color,
-    t0: now(),
-    dur,
-  });
-  return new Promise((result) => setTimeout(result, dur + 60));
-}
-
-function boom(planet: Planet): void {
-  enqueue({
-    type: 'boom',
-    x: planet.x,
-    y: planet.y,
-    t0: now(),
-    dur: Math.max(200, 600 * speedMult()),
-  });
-}
-
-function floatText(planet: Planet, txt: string, color: string): void {
-  enqueue({
-    type: 'text',
-    x: planet.x,
-    y: planet.y - planet.r,
-    txt,
-    color,
-    t0: now(),
-    dur: Math.max(400, 1500 * speedMult()),
-  });
-}
-
-/** Install the graphical effects as the game core's presentation layer.
-    Called once at app startup (main.ts) with the app's animation sink. */
+/** Install the graphical effects layer. Called once at app startup
+    (main.ts) with the app's animation sink. */
 export function installEffects(effectsSink: EffectsSink): void {
   sink = effectsSink;
-  installedHooks = { sleep, rocket, boom, floatText };
+  playedSeq = 0;
 }
 
-/** Returns the installed presentation hooks. Returns NO_PRESENTATION before
-    installEffects is called (headless / test environments). */
-export function getEffectsHooks(): PresentationHooks {
-  return installedHooks;
+/** Play every effect event newer than the last call. The browser calls
+    this in response to the game state changing (watching `effectSeq`). */
+export function playNewEffects(state: GameState): void {
+  if (!sink) {
+    return;
+  }
+  // A fresh game restarts the seq from zero.
+  if (state.effectSeq < playedSeq) {
+    playedSeq = 0;
+  }
+  const fresh = state.effects.filter((event) => event.seq > playedSeq);
+  playedSeq = state.effectSeq;
+  // Delay accumulates across the batch: effects emitted after a rocket
+  // play once the rocket lands.
+  fresh.reduce((delay, event) => playEffect(state, event, delay), 0);
+}
+
+function playEffect(
+  state: GameState,
+  event: EffectEvent,
+  delay: number,
+): number {
+  switch (event.kind) {
+    case 'rocket': {
+      const from = state.planets[event.fromId];
+      const to = state.planets[event.toId];
+      const dur = Math.max(50, 1000 * speedMult());
+      enqueue(
+        {
+          type: 'rocket',
+          fx: from.x,
+          fy: from.y,
+          tx: to.x,
+          ty: to.y,
+          color: event.color,
+          t0: now(),
+          dur,
+        },
+        delay,
+      );
+      return delay + dur + 60;
+    }
+    case 'boom': {
+      const planet = state.planets[event.planetId];
+      enqueue(
+        {
+          type: 'boom',
+          x: planet.x,
+          y: planet.y,
+          t0: now(),
+          dur: Math.max(200, 600 * speedMult()),
+        },
+        delay,
+      );
+      return delay;
+    }
+    case 'floatText': {
+      const planet = state.planets[event.planetId];
+      enqueue(
+        {
+          type: 'text',
+          x: planet.x,
+          y: planet.y - planet.r,
+          txt: event.text,
+          color: event.color,
+          t0: now(),
+          dur: Math.max(400, 1500 * speedMult()),
+        },
+        delay,
+      );
+      return delay;
+    }
+  }
 }

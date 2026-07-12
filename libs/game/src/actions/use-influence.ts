@@ -14,10 +14,10 @@ import {
   fmtCards,
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
-  NO_PRESENTATION,
   PEACE_TRUCE,
   SKIP_TURNS,
 } from '../config/constants';
+import { emitEffect } from '../functions/emit-effect';
 import { influenceTarget } from '../functions/influence-target';
 import { checkWin } from '../functions/check-win';
 import { coupTargets } from '../functions/coup-targets';
@@ -27,7 +27,6 @@ import { log } from '../functions/log';
 import { ownedPlanets } from '../functions/owned-planets';
 import { stealCards } from '../functions/steal-cards';
 import { getGameState, setGameState } from '../game-state';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 const { nullish } = P;
 
@@ -37,10 +36,7 @@ export interface UseInfluencePayload {
   opts?: InfluenceOpts;
 }
 
-export async function useInfluence(
-  payload: UseInfluencePayload,
-  hooks: PresentationHooks = NO_PRESENTATION,
-): Promise<void> {
+export function useInfluence(payload: UseInfluencePayload): void {
   return match(cloneDeep(getGameState()))
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
@@ -55,7 +51,6 @@ export async function useInfluence(
               payload.playerId,
               payload.type,
               payload.opts ?? {},
-              hooks,
             ),
           )
           .tap((state) => setGameState(state))
@@ -71,7 +66,6 @@ function playInfluence(
   playerId: number,
   influenceType: InfluenceType,
   opts: InfluenceOpts,
-  hooks: PresentationHooks,
 ): boolean {
   return match(state.players[playerId].hand[influenceType] || 0)
     .when(
@@ -82,12 +76,12 @@ function playInfluence(
       match(influenceType)
         .when(
           (influenceType) => influenceType.startsWith('SKIP_'),
-          (influenceType) => playSkip(state, playerId, influenceType, hooks),
+          (influenceType) => playSkip(state, playerId, influenceType),
         )
         .with('STEAL_ACTION', (type) =>
-          playStealAction(state, playerId, type, opts, hooks),
+          playStealAction(state, playerId, type, opts),
         )
-        .with('COUP', (type) => playCoup(state, playerId, type, opts, hooks))
+        .with('COUP', (type) => playCoup(state, playerId, type, opts))
         .with('PEACE', (type) => playPeace(state, playerId, type))
         .otherwise(() => false),
     );
@@ -97,7 +91,6 @@ function playSkip(
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-  hooks: PresentationHooks,
 ): boolean {
   return match(influenceTarget(state, state.players[playerId], influenceType))
     .with(nullish, () => false)
@@ -125,10 +118,14 @@ function playSkip(
           ),
         )
         .tap((state) =>
-          hooks.floatText(
-            homePlanet(state, state.players[target.id]),
-            '⏭️ SKIPPED',
-            '#ffb0d8',
+          assign(
+            state,
+            emitEffect(state, {
+              kind: 'floatText',
+              planetId: homePlanet(state, state.players[target.id]).id,
+              text: '⏭️ SKIPPED',
+              color: '#ffb0d8',
+            }),
           ),
         )
         .thru(() => true)
@@ -141,7 +138,6 @@ function playStealAction(
   playerId: number,
   influenceType: InfluenceType,
   opts: InfluenceOpts,
-  hooks: PresentationHooks,
 ): boolean {
   return match(stealContext(state, opts))
     .with(nullish, () => false)
@@ -169,10 +165,14 @@ function playStealAction(
           ),
         )
         .tap((state) =>
-          hooks.floatText(
-            homePlanet(state, state.players[target.id]),
-            `−1${CARDS[cardType].icon}`,
-            '#ffb0d8',
+          assign(
+            state,
+            emitEffect(state, {
+              kind: 'floatText',
+              planetId: homePlanet(state, state.players[target.id]).id,
+              text: `−1${CARDS[cardType].icon}`,
+              color: '#ffb0d8',
+            }),
           ),
         )
         .thru(() => true)
@@ -212,7 +212,6 @@ function playCoup(
   playerId: number,
   influenceType: InfluenceType,
   opts: InfluenceOpts,
-  hooks: PresentationHooks,
 ): boolean {
   return match(opts.planet && state.planets[opts.planet.id])
     .with(nullish, () => false)
@@ -231,8 +230,23 @@ function playCoup(
             protectedUntil: state.turn + CONQUEST_TRUCE,
           }),
         )
-        .tap(() => hooks.boom(planet))
-        .tap(() => hooks.floatText(planet, '👑 COUP!', '#ffb0d8'))
+        .tap(() =>
+          assign(
+            state,
+            emitEffect(state, { kind: 'boom', planetId: planet.id }),
+          ),
+        )
+        .tap(() =>
+          assign(
+            state,
+            emitEffect(state, {
+              kind: 'floatText',
+              planetId: planet.id,
+              text: '👑 COUP!',
+              color: '#ffb0d8',
+            }),
+          ),
+        )
         .tap(({ defId }) =>
           assign(
             state,

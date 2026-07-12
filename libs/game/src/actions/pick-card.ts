@@ -2,7 +2,7 @@ import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { canPickCard } from '../functions/can-pick-card';
 import { homePlanet } from '../functions/home-planet';
-import { getPoolResolve, setPoolResolve } from '../functions/resolver-state';
+import { resumeEngine } from '../functions/engine-driver';
 import { getGameState, setGameState } from '../game-state';
 import type { GameState } from '../interfaces/game-state';
 
@@ -11,23 +11,25 @@ export interface PickCardPayload {
   idx: number;
 }
 
-export async function pickCard(payload: PickCardPayload): Promise<void> {
-  return match({ state: cloneDeep(getGameState()), resolve: getPoolResolve() })
+// A pool pick is only accepted while the engine is suspended awaiting it
+// (`awaitingPick`) for the seat in play. Clearing the flag and resuming the
+// engine with the chosen index is the whole answer — no callback involved.
+export function pickCard(payload: PickCardPayload): void {
+  return match(cloneDeep(getGameState()))
     .when(
-      ({ state, resolve }) =>
-        !resolve ||
+      (state) =>
+        !state.awaitingPick ||
         state.phase !== 'draft' ||
         payload.playerId !== state.activeId,
       noop,
     )
-    .when(({ state }) => !isValidPick(state, payload), noop)
+    .when((state) => !isValidPick(state, payload), noop)
     .otherwise(
-      ({ state, resolve }) =>
+      (state) =>
         void chain(state)
-          .tap(() => setPoolResolve(null))
           .thru((state) => assign(state, { awaitingPick: false }))
-          .tap(() => resolve?.(payload.idx))
           .tap((state) => setGameState(state))
+          .tap(() => resumeEngine(payload.idx))
           .value(),
     );
 }

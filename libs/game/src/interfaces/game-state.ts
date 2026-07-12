@@ -5,6 +5,7 @@ import type { Planet } from './planet';
 import type { LogEntry } from './log-entry';
 import type { PendingOffer } from './pending-offer';
 import type { GameOver } from './game-over';
+import type { EffectEvent } from './effect-event';
 
 export interface GameState {
   turn: number;
@@ -15,10 +16,14 @@ export interface GameState {
   draftPlanetId: number;
   singularityAnnounced: boolean;
   startIdx: number;
-  busy: boolean;
   players: Player[];
   planets: Planet[];
   log: LogEntry[];
+  /** Presentation-effect events, capped tail (reactive) — the UI plays
+      animations in response to these appearing on the state. */
+  effects: EffectEvent[];
+  /** Monotonic count of all effects ever emitted this game. */
+  effectSeq: number;
   /** UI status line shown in the pool zone (reactive). */
   status: string;
   /** True while the seat in play must pick a pool card (reactive). */

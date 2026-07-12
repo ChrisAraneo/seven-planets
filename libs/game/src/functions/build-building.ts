@@ -1,21 +1,20 @@
 import { chain } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { buildingCost, BUILDINGS, NO_PRESENTATION } from '../config/constants';
+import { buildingCost, BUILDINGS } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 
+import { emitEffect } from './emit-effect';
 import { log } from './log';
 import { payCost } from './pay-cost';
 import { getTechLevel } from './get-tech-level';
 import { updatePlanet } from './update-planet';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export function buildBuilding(
   state: GameState,
   playerId: number,
   planetId: number,
   buildingType: BuildingType,
-  hooks: PresentationHooks = NO_PRESENTATION,
 ): GameState {
   return chain({
     currentTech: getTechLevel(state, state.players[playerId]),
@@ -42,13 +41,15 @@ export function buildBuilding(
         'build',
       ),
     }))
-    .tap(({ level, state: logged }) =>
-      hooks.floatText(
-        logged.planets[planetId],
-        `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${levelSuffix(level)}`,
-        '#7dff8a',
-      ),
-    )
+    .thru(({ currentTech, level, state: logged }) => ({
+      currentTech,
+      state: emitEffect(logged, {
+        kind: 'floatText',
+        planetId,
+        text: `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${levelSuffix(level)}`,
+        color: '#7dff8a',
+      }),
+    }))
     .thru(({ currentTech, state: logged }) =>
       logTechAdvance(logged, playerId, currentTech),
     )

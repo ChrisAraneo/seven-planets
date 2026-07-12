@@ -1,26 +1,23 @@
 import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { GameState } from '../interfaces/game-state';
+import { emitEffect } from '../functions/emit-effect';
 import { hasActionCard } from '../functions/has-action-card';
 import { recruitCost } from '../functions/recruit-cost';
-import { canAfford, NO_PRESENTATION } from '../config/constants';
+import { canAfford } from '../config/constants';
 import { recruitYield } from '../functions/recruit-yield';
 import { log } from '../functions/log';
 import { payCost } from '../functions/pay-cost';
 import { pluralSuffix } from '../functions/plural-suffix';
 import { spendActionCard } from '../functions/spend-action-card';
 import { getGameState, setGameState } from '../game-state';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
 
 export interface RecruitTroopsPayload {
   playerId: number;
   planetId: number;
 }
 
-export async function recruitTroops(
-  payload: RecruitTroopsPayload,
-  hooks: PresentationHooks = NO_PRESENTATION,
-): Promise<void> {
+export function recruitTroops(payload: RecruitTroopsPayload): void {
   return match(cloneDeep(getGameState()))
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
@@ -34,7 +31,7 @@ export async function recruitTroops(
       (state) =>
         void chain(state)
           .tap((state) =>
-            executeRecruit(state, payload.playerId, payload.planetId, hooks),
+            executeRecruit(state, payload.playerId, payload.planetId),
           )
           .tap((state) => setGameState(state))
           .value(),
@@ -47,7 +44,6 @@ function executeRecruit(
   state: GameState,
   playerId: number,
   planetId: number,
-  hooks: PresentationHooks,
 ): void {
   return match(state.planets[planetId])
     .when((planet) => !planet.buildings.BARRACKS, noop)
@@ -80,7 +76,15 @@ function executeRecruit(
             ),
           )
           .tap(({ s: state, n: count }) =>
-            hooks.floatText(state.planets[planetId], `+${count}🪖`, '#7fd9ff'),
+            assign(
+              state,
+              emitEffect(state, {
+                kind: 'floatText',
+                planetId,
+                text: `+${count}🪖`,
+                color: '#7fd9ff',
+              }),
+            ),
           )
           .value(),
     );

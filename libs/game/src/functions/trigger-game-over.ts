@@ -5,20 +5,16 @@ import type { Player } from '../interfaces/player';
 
 import { log } from './log';
 import { setStatus } from './set-status';
-import {
-  getHumanResolve,
-  setHumanResolve,
-  getPoolResolve,
-  setPoolResolve,
-} from './resolver-state';
 
-const { nonNullable, nullish } = P;
+const { nonNullable } = P;
 
 type GameOverReason = 'conquest' | 'eliminated';
 
-// End the game. Pure w.r.t. GameState (returns a new state carrying the result and
-// the cleared input flags). The parked-resolver callbacks it fires are control-flow
-// plumbing (resolver-state is not game state), kept as the minimal residual effect.
+// End the game. Pure w.r.t. GameState — returns a new state carrying the result.
+// It does NOT touch the engine or its parked-input flags: the coroutine unwinds
+// on its own once `over` is set. A win taken during the draft aborts the current
+// step synchronously; one taken during an action turn is unwound by the seat's
+// own `endTurn` (the AI always ends its turn; the UI's turn is already over).
 export function triggerGameOver(
   state: GameState,
   winnerId: number | null,
@@ -46,9 +42,7 @@ function endGame(
   return chain({ ...state, over: { winner, reason } } as GameState)
     .thru((state) => logOutcome(state, winner, reason))
     .thru((state) => setStatus(state, statusLine(winner, reason)))
-    .thru((state) => releaseHumanResolve(state))
-    .thru((state) => releasePoolResolve(state))
-    .thru((state) => ({ ...state, pendingOffer: null }))
+    .thru((state) => ({ ...state, pendingOffer: null }) as GameState)
     .value();
 }
 
@@ -82,27 +76,4 @@ function statusLine(winner: Player | null, reason: GameOverReason): string {
       (player) => `GAME OVER — ${player.name} wins by ${reason}.`,
     )
     .otherwise(() => 'GAME OVER — your homeworld has fallen.');
-}
-
-// Unblock whatever input the loop is parked on — nobody answers now.
-function releaseHumanResolve(state: GameState): GameState {
-  return match(getHumanResolve())
-    .with(nullish, () => state)
-    .otherwise((end) =>
-      chain({ ...state, awaitingAction: false } as GameState)
-        .tap(() => setHumanResolve(null))
-        .tap(() => end())
-        .value(),
-    );
-}
-
-function releasePoolResolve(state: GameState): GameState {
-  return match(getPoolResolve())
-    .with(nullish, () => state)
-    .otherwise((pick) =>
-      chain({ ...state, awaitingPick: false } as GameState)
-        .tap(() => setPoolResolve(null))
-        .tap(() => pick(0))
-        .value(),
-    );
 }

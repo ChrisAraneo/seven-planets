@@ -1,50 +1,41 @@
-import { assign, chain } from 'lodash-es';
+import { assign } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { getGameState } from '../game-state';
 import type { Player } from '../interfaces/player';
 
 import { AUTO_HUMAN } from './auto-human';
-import { humanActionTurn } from './human-action-turn';
 import { setStatus } from './set-status';
 import { turnOrder } from './turn-order';
+import type { EngineGen } from './engine-driver';
 
 /* Every seat's action turn is handled identically: raise `awaitingAction`
-   and park. The human answers by ending their turn from the UI; an AI seat
-   is answered by the `ai` store module, which watches the same flag, plays
-   its actions and dispatches `endTurn` to unpark us. */
-export async function runActionPhase(): Promise<void> {
-  return chain(assign(getGameState(), { phase: 'action' }))
-    .thru((state) => runSeats(turnOrder(state).map((player) => player.id)))
-    .value();
+   and suspend. The human answers by ending their turn from the UI; an AI
+   seat is answered by the AI driver (notified through the engine's input
+   listener), which plays its actions and dispatches the same `endTurn`
+   to resume the engine. */
+export function* runActionPhase(): EngineGen {
+  assign(getGameState(), { phase: 'action' });
+  const seatIds = turnOrder(getGameState()).map((player) => player.id);
+  for (const seatId of seatIds) {
+    // Game-over is re-checked as each seat settles.
+    if (getOver()) {
+      return;
+    }
+    yield* runSeat(seatId);
+  }
 }
 
-// Recursion instead of a loop: game-over is re-checked as each seat settles.
-async function runSeats(seatIds: number[]): Promise<void> {
-  return match(seatIds)
-    .when(
-      (ids) => ids.length === 0 || Boolean(getOver()),
-      async (): Promise<void> => undefined,
-    )
-    .otherwise(([seatId, ...rest]) =>
-      runSeat(seatId).then(() => runSeats(rest)),
-    );
-}
-
-async function runSeat(seatId: number): Promise<void> {
-  return match(getGameState().players[seatId])
-    .when(
-      (player) => !player.isAlive || player.skippedNow,
-      async (): Promise<void> => undefined,
-    )
-    .otherwise((player) =>
-      chain(assign(getGameState(), { activeId: seatId }))
-        .tap((state) =>
-          assign(state, setStatus(state, seatStatus(player))),
-        )
-        .thru((state) => humanActionTurn(state))
-        .value(),
-    );
+function* runSeat(seatId: number): EngineGen {
+  const player = getGameState().players[seatId];
+  if (!player.isAlive || player.skippedNow) {
+    return;
+  }
+  const state = assign(getGameState(), { activeId: seatId });
+  assign(state, setStatus(state, seatStatus(player)));
+  // Raise the flag on the live state and suspend until `endTurn` resumes us.
+  assign(getGameState(), { awaitingAction: true });
+  yield { kind: 'action' };
 }
 
 function seatStatus(player: Player): string {

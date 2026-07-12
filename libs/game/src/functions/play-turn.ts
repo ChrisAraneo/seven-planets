@@ -8,7 +8,6 @@ import {
   BUILDINGS_FROM_TURN,
   choice,
   MOVE_CARDS_FROM_TURN,
-  NO_PRESENTATION,
 } from '../config/constants';
 import { getGameState } from '../game-state';
 import type { GameState } from '../interfaces/game-state';
@@ -23,41 +22,33 @@ import { makePool } from './make-pool';
 import { runActionPhase } from '../functions/run-action-phase';
 import { runDraft } from '../functions/run-draft';
 import { updatePacifistStatus } from './update-pacifist-status';
-import type { PresentationHooks } from '../interfaces/presentation-hooks';
+import type { EngineGen } from './engine-driver';
 
-export async function playTurn(
-  hooks: PresentationHooks = NO_PRESENTATION,
-): Promise<void> {
+export function* playTurn(): EngineGen {
   // The prelude is synchronous — no store mutation reassigns the state
-  // object here — so one reference is safe until the first `await`.
-  return chain(getGameState())
-    .tap((state) => assign(state, { turn: state.turn + 1 }))
-    .tap((state) =>
-      state.players.forEach((player) => beginPlayerTurn(state, player)),
-    )
-    .tap((state) => assign(state, updatePacifistStatus(state, hooks)))
-    .tap((state) => assign(state, doIncome(state)))
-    .tap((state) => announceSingularity(state))
-    .tap((state) =>
-      assign(state, {
-        pool: makePool(state),
-        startIdx: choice(filterAlivePlayers(state)).id,
-      }),
-    )
-    .tap((state) =>
-      assign(
-        state,
-        log(
-          state,
-          `— TURN ${state.turn} — ${draftOrder(state)[0].name} drafts first${turnFlavor(state.turn)}`,
-          'sys',
-        ),
-      ),
-    )
-    .tap((state) => assign(state, milestoneLogs(state)))
-    .thru(() => runDraft(hooks))
-    .value()
-    .then(() => afterDraft());
+  // object here — so one reference is safe until the first suspension.
+  const state = getGameState();
+  assign(state, { turn: state.turn + 1 });
+  state.players.forEach((player) => beginPlayerTurn(state, player));
+  assign(state, updatePacifistStatus(state));
+  assign(state, doIncome(state));
+  announceSingularity(state);
+  assign(state, {
+    pool: makePool(state),
+    startIdx: choice(filterAlivePlayers(state)).id,
+  });
+  assign(
+    state,
+    log(
+      state,
+      `— TURN ${state.turn} — ${draftOrder(state)[0].name} drafts first${turnFlavor(state.turn)}`,
+      'sys',
+    ),
+  );
+  assign(state, milestoneLogs(state));
+
+  yield* runDraft();
+  yield* afterDraft();
 }
 
 function beginPlayerTurn(state: GameState, player: Player): void {
@@ -177,24 +168,22 @@ function logWhenTurnIs(state: GameState, turn: number, msg: string): GameState {
 }
 
 // The pick mutations replaced the state object during the draft — re-read it.
-async function afterDraft(): Promise<void> {
-  return match(getGameState())
-    .when(
-      () => Boolean(getOver()),
-      async (): Promise<void> => undefined,
-    )
-    .when(
-      // Nobody can hold an action card before they exist, so skip the action phase.
-      (state) => state.turn < ACTION_CARDS_FROM_TURN,
-      async (state): Promise<void> =>
-        void assign(
-          state,
-          log(
-            state,
-            `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
-            'sys',
-          ),
-        ),
-    )
-    .otherwise(() => runActionPhase());
+function* afterDraft(): EngineGen {
+  if (getOver()) {
+    return;
+  }
+  // Nobody can hold an action card before they exist, so skip the action phase.
+  if (getGameState().turn < ACTION_CARDS_FROM_TURN) {
+    const state = getGameState();
+    assign(
+      state,
+      log(
+        state,
+        `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
+        'sys',
+      ),
+    );
+    return;
+  }
+  yield* runActionPhase();
 }
