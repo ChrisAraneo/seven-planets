@@ -1,3 +1,4 @@
+import { assign } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { getTurn } from '../getters/get-turn';
@@ -26,7 +27,7 @@ export async function simulateGame(
   // only reacts (drives AI seats) when those mutations are observable.
   return Promise.resolve(resetGameState())
     .then(() =>
-      Object.assign(
+      assign(
         getGameState(),
         assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
       ),

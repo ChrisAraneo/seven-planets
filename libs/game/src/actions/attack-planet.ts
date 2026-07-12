@@ -1,4 +1,4 @@
-import { chain, cloneDeep, fromPairs, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, fromPairs, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { hasActionCard } from '../functions/has-action-card';
 import { setBusy } from '../functions/set-busy';
@@ -65,11 +65,11 @@ export async function attackPlanet(
       noop,
     )
     .otherwise((state) =>
-      chain(Object.assign(state, setBusy(state, true)))
+      chain(assign(state, setBusy(state, true)))
         .thru((state) =>
           doAttack(state, payload, hooks)
             // The busy flag must clear whether the attack resolves or rejects.
-            .finally(() => Object.assign(state, setBusy(state, false)))
+            .finally(() => assign(state, setBusy(state, false)))
             .then(() => setGameState(state)),
         )
         .value(),
@@ -99,17 +99,17 @@ async function doAttack(
       chain(state)
         .tap((state) => breakPacifistVow(state, attackerId, hooks))
         .thru((state) =>
-          Object.assign(state, spendActionCard(state, attackerId, 'ATTACK')),
+          assign(state, spendActionCard(state, attackerId, 'ATTACK')),
         )
         .tap((state) =>
           // Resets the pacifist countdown
-          Object.assign(state.players[attackerId], {
+          assign(state.players[attackerId], {
             lastAttackTurn: state.turn,
           }),
         )
-        .tap(() => Object.assign(source, { troops: source.troops - troops }))
+        .tap(() => assign(source, { troops: source.troops - troops }))
         .tap((state) =>
-          Object.assign(
+          assign(
             state,
             log(
               state,
@@ -149,13 +149,13 @@ function breakPacifistVow(
       true,
       () =>
         void chain(
-          Object.assign(state.players[attackerId], {
+          assign(state.players[attackerId], {
             hasPacifistStatus: false,
             pacifismForfeited: true,
           }),
         )
           .thru(() =>
-            Object.assign(
+            assign(
               state,
               log(
                 state,
@@ -179,7 +179,7 @@ function maybeTaunt(state: GameState, attackerId: number): void {
     .with(
       true,
       () =>
-        void Object.assign(
+        void assign(
           state,
           log(
             state,
@@ -233,11 +233,11 @@ function resolveBattle(
       }),
     )
     .tap(({ target, defLoss }) =>
-      Object.assign(target, { troops: target.troops - defLoss }),
+      assign(target, { troops: target.troops - defLoss }),
     )
     .tap(({ target }) => hooks.boom(target))
     .tap((battle) =>
-      Object.assign(
+      assign(
         state,
         log(state, battleLine(state, battle, attackerId), 'war'),
       ),
@@ -245,7 +245,7 @@ function resolveBattle(
     .tap((battle) =>
       applyOutcome(state, battle, attackerId, targetId, troops, hooks),
     )
-    .thru(() => Object.assign(state, checkWin(state)))
+    .thru(() => assign(state, checkWin(state)))
     .value();
 }
 
@@ -318,7 +318,7 @@ function applyOutcome(
       ({ source, target, attLoss }) =>
         void chain(
           // Raiders fly home
-          Object.assign(source, { troops: source.troops + (troops - attLoss) }),
+          assign(source, { troops: source.troops + (troops - attLoss) }),
         )
           .tap(() => hooks.floatText(target, 'RAIDED!', '#ff8a97'))
           .value(),
@@ -326,7 +326,7 @@ function applyOutcome(
     .otherwise(
       ({ source, target, attLoss }) =>
         void chain(
-          Object.assign(source, { troops: source.troops + (troops - attLoss) }),
+          assign(source, { troops: source.troops + (troops - attLoss) }),
         )
           .tap(() => hooks.floatText(target, 'DEFENDED!', '#7dff8a'))
           .value(),
@@ -345,7 +345,7 @@ function conquerPlanet(
     defenderId: state.planets[targetId].ownerId,
   })
     .tap(({ target }) =>
-      Object.assign(target, {
+      assign(target, {
         ownerId: attackerId,
         troops: garrison,
         protectedUntil: state.turn + CONQUEST_TRUCE,
@@ -353,7 +353,7 @@ function conquerPlanet(
     )
     .tap(({ target }) => hooks.floatText(target, 'CONQUERED!', '#ff9e3d'))
     .tap(({ target }) =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -363,7 +363,7 @@ function conquerPlanet(
       ),
     )
     .tap(({ defenderId }) => resolveDefenderFate(state, attackerId, defenderId))
-    .thru(() => Object.assign(state, checkWin(state)))
+    .thru(() => assign(state, checkWin(state)))
     .value();
 }
 
@@ -404,7 +404,7 @@ function eliminateDefender(
       ),
     )
     .tap((state) =>
-      Object.assign(state.players[defenderId], {
+      assign(state.players[defenderId], {
         hand: {
           ...state.players[defenderId].hand,
           ...fromPairs(
@@ -418,7 +418,7 @@ function eliminateDefender(
       }),
     )
     .tap((state) =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -442,9 +442,9 @@ function lootCards(
     .otherwise(
       (count) =>
         void chain(stealCards(state, fromId, toId, count))
-          .tap(({ state: looted }) => Object.assign(state, looted))
+          .tap(({ state: looted }) => assign(state, looted))
           .tap(({ taken }) =>
-            Object.assign(state, log(state, message(taken), 'war')),
+            assign(state, log(state, message(taken), 'war')),
           )
           .value(),
     );

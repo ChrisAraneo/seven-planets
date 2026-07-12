@@ -1,4 +1,4 @@
-import { chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { GameState } from '../interfaces/game-state';
 import { hasActionCard } from '../functions/has-action-card';
@@ -41,7 +41,7 @@ export async function recruitTroops(
     );
 }
 
-// Applies pure engine results onto the private clone via Object.assign so the
+// Applies pure engine results onto the private clone via assign so the
 // object identity (and the caller's `state` reference) stays stable.
 function executeRecruit(
   state: GameState,
@@ -58,19 +58,19 @@ function executeRecruit(
     .otherwise(
       (planet) =>
         void chain(
-          Object.assign(state, spendActionCard(state, playerId, 'RECRUIT')),
+          assign(state, spendActionCard(state, playerId, 'RECRUIT')),
         )
           .thru((state) =>
-            Object.assign(state, payCost(state, playerId, recruitCost(planet))),
+            assign(state, payCost(state, playerId, recruitCost(planet))),
           )
           .thru((state) => ({ s: state, n: recruitYield(planet) }))
           .tap(({ s: state, n: count }) =>
-            Object.assign(state.planets[planetId], {
+            assign(state.planets[planetId], {
               troops: state.planets[planetId].troops + count,
             }),
           )
           .tap(({ s: state, n: count }) =>
-            Object.assign(
+            assign(
               state,
               log(
                 state,

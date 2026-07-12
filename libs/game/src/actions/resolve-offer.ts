@@ -1,4 +1,4 @@
-import { chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 import { getGameState, setGameState } from '../game-state';
 
@@ -27,7 +27,7 @@ export function resolveOffer(payload: ResolveOfferPayload): void {
         .when((offer) => offer.toId !== payload.playerId, noop)
         .otherwise(
           (offer) =>
-            void chain(Object.assign(state, { pendingOffer: null }))
+            void chain(assign(state, { pendingOffer: null }))
               .thru((state) => applyDecision(state, offer, payload.accept))
               .tap((state) => setGameState(state))
               .value(),
@@ -46,7 +46,7 @@ function applyDecision(
       execTrade(state, offer.fromId, offer.toId, offer.gives, offer.gets),
     )
     .otherwise(() =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -64,7 +64,7 @@ function execTrade(
   aGives: Cost,
   bGives: Cost,
 ): GameState {
-  return chain(Object.assign(state, spendActionCard(state, aId, 'TRADE')))
+  return chain(assign(state, spendActionCard(state, aId, 'TRADE')))
     .tap((state) =>
       Object.entries(aGives).forEach(([type, amount]) =>
         transferCards(state, aId, bId, type, amount),
@@ -76,12 +76,12 @@ function execTrade(
       ),
     )
     .tap((state) =>
-      Object.assign(state.players[aId], {
+      assign(state.players[aId], {
         influence: state.players[aId].influence + 1,
       }),
     )
     .thru((state) =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -102,12 +102,12 @@ function transferCards(
 ): void {
   return void chain(state)
     .tap((state) =>
-      Object.assign(state.players[fromId].hand, {
+      assign(state.players[fromId].hand, {
         [type]: state.players[fromId].hand[type] - amount,
       }),
     )
     .tap((state) =>
-      Object.assign(state.players[toId].hand, {
+      assign(state.players[toId].hand, {
         [type]: state.players[toId].hand[type] + amount,
       }),
     )

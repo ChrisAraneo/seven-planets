@@ -1,4 +1,4 @@
-import { chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { canPickCard } from '../functions/can-pick-card';
 import { homePlanet } from '../functions/home-planet';
@@ -25,7 +25,7 @@ export async function pickCard(payload: PickCardPayload): Promise<void> {
       ({ state, resolve }) =>
         void chain(state)
           .tap(() => setPoolResolve(null))
-          .thru((state) => Object.assign(state, { awaitingPick: false }))
+          .thru((state) => assign(state, { awaitingPick: false }))
           .tap(() => resolve?.(payload.idx))
           .tap((state) => setGameState(state))
           .value(),

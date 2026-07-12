@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { assign, chain } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { getGameState } from '../game-state';
@@ -14,7 +14,7 @@ import { turnOrder } from './turn-order';
    is answered by the `ai` store module, which watches the same flag, plays
    its actions and dispatches `endTurn` to unpark us. */
 export async function runActionPhase(): Promise<void> {
-  return chain(Object.assign(getGameState(), { phase: 'action' }))
+  return chain(assign(getGameState(), { phase: 'action' }))
     .thru((state) => runSeats(turnOrder(state).map((player) => player.id)))
     .value();
 }
@@ -38,9 +38,9 @@ async function runSeat(seatId: number): Promise<void> {
       async (): Promise<void> => undefined,
     )
     .otherwise((player) =>
-      chain(Object.assign(getGameState(), { activeId: seatId }))
+      chain(assign(getGameState(), { activeId: seatId }))
         .tap((state) =>
-          Object.assign(state, setStatus(state, seatStatus(player))),
+          assign(state, setStatus(state, seatStatus(player))),
         )
         .thru((state) => humanActionTurn(state))
         .value(),

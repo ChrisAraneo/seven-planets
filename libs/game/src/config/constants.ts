@@ -3,7 +3,7 @@
    Ported from the original vanilla-JS game.js.
    ===================================================================== */
 
-import { chain, fromPairs, mapValues, noop } from 'lodash-es';
+import { assign, chain, fromPairs, mapValues, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { ActionType } from '../interfaces/action-type';
 import type { BuildingDef } from '../interfaces/building-def';
@@ -257,7 +257,7 @@ export function incomeAmount(id: BuildingType, lvl: number): number {
 }
 
 // Building cards live in the pool alongside resources & actions.
-Object.assign(
+assign(
   CARDS,
   fromPairs(
     BUILD_ORDER.map((buildingType) => [
@@ -320,7 +320,7 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
   },
 };
 export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[];
-Object.assign(
+assign(
   CARDS,
   fromPairs(
     INFLUENCE_TYPES.map((influenceType) => [

@@ -1,4 +1,4 @@
-import { chain, noop } from 'lodash-es';
+import { assign, chain, noop } from 'lodash-es';
 import { getGameState } from '../game-state';
 
 import { log } from './log';
@@ -11,13 +11,13 @@ export async function runGame(
 ): Promise<void> {
   return chain(getGameState())
     .tap((state) =>
-      Object.assign(
+      assign(
         state,
         log(state, 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
       ),
     )
     .tap((state) =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -28,6 +28,6 @@ export async function runGame(
     )
     .thru(() => playTurns(400, hooks))
     .value()
-    .then(() => Object.assign(getGameState(), { activeId: -1 }))
+    .then(() => assign(getGameState(), { activeId: -1 }))
     .then(noop);
 }

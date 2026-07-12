@@ -1,4 +1,4 @@
-import { chain, noop } from 'lodash-es';
+import { assign, chain, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { getSingularityAnnounced } from '../getters/get-singularity-announced';
@@ -31,21 +31,21 @@ export async function playTurn(
   // The prelude is synchronous — no store mutation reassigns the state
   // object here — so one reference is safe until the first `await`.
   return chain(getGameState())
-    .tap((state) => Object.assign(state, { turn: state.turn + 1 }))
+    .tap((state) => assign(state, { turn: state.turn + 1 }))
     .tap((state) =>
       state.players.forEach((player) => beginPlayerTurn(state, player)),
     )
-    .tap((state) => Object.assign(state, updatePacifistStatus(state, hooks)))
-    .tap((state) => Object.assign(state, doIncome(state)))
+    .tap((state) => assign(state, updatePacifistStatus(state, hooks)))
+    .tap((state) => assign(state, doIncome(state)))
     .tap((state) => announceSingularity(state))
     .tap((state) =>
-      Object.assign(state, {
+      assign(state, {
         pool: makePool(state),
         startIdx: choice(filterAlivePlayers(state)).id,
       }),
     )
     .tap((state) =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -54,7 +54,7 @@ export async function playTurn(
         ),
       ),
     )
-    .tap((state) => Object.assign(state, milestoneLogs(state)))
+    .tap((state) => assign(state, milestoneLogs(state)))
     .thru(() => runDraft(hooks))
     .value()
     .then(() => afterDraft());
@@ -62,7 +62,7 @@ export async function playTurn(
 
 function beginPlayerTurn(state: GameState, player: Player): void {
   return chain(
-    Object.assign(player, {
+    assign(player, {
       hasTradedCurrentTurn: false,
       // Influence skip cards: paralysed players sit out draft AND action phases.
       skippedNow: player.isAlive && player.skipTurns > 0,
@@ -76,7 +76,7 @@ function tickSkipTurns(state: GameState, player: Player): void {
   return match(player)
     .when((player) => player.skipTurns <= 0, noop)
     .otherwise((player) =>
-      chain(Object.assign(player, { skipTurns: player.skipTurns - 1 }))
+      chain(assign(player, { skipTurns: player.skipTurns - 1 }))
         .thru((ticked) => logParalysis(state, ticked))
         .value(),
     );
@@ -87,7 +87,7 @@ function logParalysis(state: GameState, player: Player): void {
     .when((player) => !player.isAlive, noop)
     .otherwise(
       (player) =>
-        void Object.assign(
+        void assign(
           state,
           log(
             state,
@@ -112,10 +112,10 @@ function announceSingularity(state: GameState): void {
     .with(
       true,
       () =>
-        void Object.assign(
+        void assign(
           state,
           log(
-            Object.assign(state, { singularityAnnounced: true }),
+            assign(state, { singularityAnnounced: true }),
             '🌀 A Research Lab stands complete somewhere — the SINGULARITY card (technology + extra draft picks) can now appear in the pool!',
             'sys',
           ),
@@ -187,7 +187,7 @@ async function afterDraft(): Promise<void> {
       // Nobody can hold an action card before they exist, so skip the action phase.
       (state) => state.turn < ACTION_CARDS_FROM_TURN,
       async (state): Promise<void> =>
-        void Object.assign(
+        void assign(
           state,
           log(
             state,

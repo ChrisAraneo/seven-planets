@@ -1,4 +1,4 @@
-import { chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { getHumanResolve, setHumanResolve } from '../functions/resolver-state';
 import { getGameState, setGameState } from '../game-state';
@@ -18,7 +18,7 @@ export function endTurn(payload: EndTurnPayload): void {
       ({ state, humanResolve }) =>
         void chain(state)
           .tap(() => setHumanResolve(null))
-          .thru((state) => Object.assign(state, { awaitingAction: false }))
+          .thru((state) => assign(state, { awaitingAction: false }))
           .tap(() => humanResolve?.())
           .tap((state) => setGameState(state))
           .value(),

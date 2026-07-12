@@ -1,4 +1,4 @@
-import { chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { hasActionCard } from '../functions/has-action-card';
 import { setBusy } from '../functions/set-busy';
@@ -32,18 +32,18 @@ export async function moveTroops(
       noop,
     )
     .otherwise((state) =>
-      chain(Object.assign(state, setBusy(state, true)))
+      chain(assign(state, setBusy(state, true)))
         .thru((state) =>
           executeMove(state, payload, hooks)
             // The busy flag must clear whether the move resolves or rejects.
-            .finally(() => Object.assign(state, setBusy(state, false)))
+            .finally(() => assign(state, setBusy(state, false)))
             .then(() => setGameState(state)),
         )
         .value(),
     );
 }
 
-// Applies pure engine results onto the private clone via Object.assign so the
+// Applies pure engine results onto the private clone via assign so the
 // object identity (and the caller's `state` reference) stays stable.
 async function executeMove(
   state: GameState,
@@ -53,14 +53,14 @@ async function executeMove(
   return match(hasBuilding(state, state.players[playerId], 'SPACEPORT'))
     .with(false, async (): Promise<void> => undefined)
     .otherwise(() =>
-      chain(Object.assign(state, spendActionCard(state, playerId, 'MOVE')))
+      chain(assign(state, spendActionCard(state, playerId, 'MOVE')))
         .tap((state) =>
-          Object.assign(state.planets[fromId], {
+          assign(state.planets[fromId], {
             troops: state.planets[fromId].troops - troops,
           }),
         )
         .tap((state) =>
-          Object.assign(
+          assign(
             state,
             log(
               state,
@@ -77,7 +77,7 @@ async function executeMove(
               state.players[playerId].color,
             )
             .then(() =>
-              Object.assign(state.planets[toId], {
+              assign(state.planets[toId], {
                 troops: state.planets[toId].troops + troops,
               }),
             )

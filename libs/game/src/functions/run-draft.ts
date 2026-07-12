@@ -1,4 +1,4 @@
-import { chain, noop } from 'lodash-es';
+import { assign, chain, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import { getOver } from '../getters/get-over';
 import { CARDS, INFLUENCE_CARDS, NO_PRESENTATION } from '../config/constants';
@@ -34,7 +34,7 @@ type DraftOutcome = 'completed' | 'aborted';
 export async function runDraft(
   hooks: PresentationHooks = NO_PRESENTATION,
 ): Promise<void> {
-  return chain(Object.assign(getGameState(), { phase: 'draft' }))
+  return chain(assign(getGameState(), { phase: 'draft' }))
     .thru((state) =>
       draftSeats(
         draftOrder(state).map((player) => player.id),
@@ -46,7 +46,7 @@ export async function runDraft(
       match(outcome)
         .with(
           'completed',
-          () => void Object.assign(getGameState(), { draftPlanetId: -1 }),
+          () => void assign(getGameState(), { draftPlanetId: -1 }),
         )
         .otherwise(noop),
     );
@@ -126,7 +126,7 @@ async function draftSlot(
           .otherwise((): number => 1),
       })
         .tap(({ planetId }) =>
-          Object.assign(state, { activeId: seatId, draftPlanetId: planetId }),
+          assign(state, { activeId: seatId, draftPlanetId: planetId }),
         )
         .thru(({ planetId, picks }) =>
           draftPicks(seatId, sum, planetId, picks, 0, hooks),
@@ -212,7 +212,7 @@ async function passSlot(
         .with(
           true,
           () =>
-            void Object.assign(
+            void assign(
               state,
               setStatus(state, `No card you can take — ${planet.name} passes.`),
             ),
@@ -220,7 +220,7 @@ async function passSlot(
         .otherwise(noop),
     )
     .tap((state) =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -253,7 +253,7 @@ async function promptAndPick(
   return (
     chain(state)
       .tap((state) =>
-        Object.assign(
+        assign(
           state,
           setStatus(
             state,
@@ -364,7 +364,7 @@ function applyBuildingPick(
   hooks: PresentationHooks,
 ): DraftOutcome {
   return chain(
-    Object.assign(
+    assign(
       state,
       buildBuilding(state, player.id, planet.id, buildingType, hooks),
     ),
@@ -383,13 +383,13 @@ function applyInfluencePick(
   influenceType: InfluenceType,
 ): DraftOutcome {
   return chain(
-    Object.assign(player, {
+    assign(player, {
       influence: player.influence - INFLUENCE_CARDS[influenceType].cost,
       hand: { ...player.hand, [influenceType]: player.hand[influenceType] + 1 },
     }),
   )
     .tap(() =>
-      Object.assign(
+      assign(
         state,
         log(
           state,
@@ -410,12 +410,12 @@ function applyCardPick(
   sum: number,
 ): DraftOutcome {
   return chain(
-    Object.assign(player, {
+    assign(player, {
       hand: { ...player.hand, [type]: player.hand[type] + 1 },
     }),
   )
     .tap(() =>
-      Object.assign(
+      assign(
         state,
         log(
           state,

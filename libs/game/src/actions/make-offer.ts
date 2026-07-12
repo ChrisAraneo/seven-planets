@@ -1,4 +1,4 @@
-import { chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
@@ -67,11 +67,11 @@ function sendOffer(
   return void chain(state)
     // Note the attempt; the AI plans at most one trade per turn off this flag
     // (nothing restricts the human's seat, matching the original behavior).
-    .tap(() => Object.assign(player, { hasTradedCurrentTurn: true }))
+    .tap(() => assign(player, { hasTradedCurrentTurn: true }))
     .thru((state) => logSeeking(state, player, gets))
     .thru((state) => statusIfHuman(state, player, partner))
     .thru((state) =>
-      Object.assign(state, {
+      assign(state, {
         pendingOffer: { fromId: playerId, toId: partnerId, gives, gets },
       }),
     )
@@ -88,7 +88,7 @@ function logSeeking(state: GameState, player: Player, gets: Cost): GameState {
       (wantKey) =>
         Boolean(wantKey && RESOURCE_TYPES.includes(wantKey as never)),
       (wantKey) =>
-        Object.assign(
+        assign(
           state,
           log(
             state,
@@ -107,7 +107,7 @@ function statusIfHuman(
 ): GameState {
   return match(partner.isHuman && !AUTO_HUMAN)
     .with(true, () =>
-      Object.assign(
+      assign(
         state,
         setStatus(state, `${player.name} is hailing you with a trade offer…`),
       ),
