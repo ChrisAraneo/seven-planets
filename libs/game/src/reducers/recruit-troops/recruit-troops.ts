@@ -1,27 +1,16 @@
 import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
-import type { GameState } from '../interfaces/game-state';
-import { emitEffect } from '../functions/emit-effect';
-import { hasActionCard } from '../functions/has-action-card';
-import { recruitCost } from '../functions/recruit-cost';
-import { canAfford } from '../config/constants';
-import { recruitYield } from '../functions/recruit-yield';
-import { log } from '../functions/log';
-import { payCost } from '../functions/pay-cost';
-import { pluralSuffix } from '../functions/plural-suffix';
-import { spendActionCard } from '../functions/spend-action-card';
-import { dispatch } from '../state';
-
-export interface RecruitTroopsPayload {
-  playerId: number;
-  planetId: number;
-}
-
-/** Recruit troops. Event creator: validation and resolution live in the
-    reducer (applyRecruitTroops). */
-export function recruitTroops(payload: RecruitTroopsPayload): void {
-  dispatch({ kind: 'recruit', payload });
-}
+import type { GameState } from '../../interfaces/game-state';
+import { emitEffect } from '../../functions/emit-effect';
+import { hasActionCard } from '../../functions/has-action-card';
+import { recruitCost } from '../../functions/recruit-cost';
+import { canAfford } from '../../config/constants';
+import { recruitYield } from '../../functions/recruit-yield';
+import { log } from '../../functions/log';
+import { payCost } from '../../functions/pay-cost';
+import { pluralSuffix } from '../../functions/plural-suffix';
+import { spendActionCard } from '../../functions/spend-action-card';
+import type { RecruitTroopsPayload } from '../../actions/recruit-troops/recruit-troops';
 
 /* Reducer branch. Resolves the recruitment on a private clone; illegal
    intents reduce to the unchanged state. */

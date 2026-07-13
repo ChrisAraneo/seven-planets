@@ -5,11 +5,10 @@
 import { cloneDeep } from 'lodash-es';
 import { describe, expect, it } from 'vitest';
 
-import { advance } from '../functions/advance';
 import { canPickCard } from '../functions/can-pick-card';
 import { initializeState } from '../functions/initialize-state';
 import type { GameState } from '../interfaces/game-state';
-import { reduce } from '../reduce';
+import { advance, reduce } from '../reducers/reduce';
 
 /** Start a fresh game and return it parked at turn 1's first draft pick. */
 function parkedAtFirstPick(): GameState {

@@ -1,5 +1,5 @@
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getActiveId(): number {
-  return getGameState().activeId;
+  return getGameStateLastValue().activeId;
 }

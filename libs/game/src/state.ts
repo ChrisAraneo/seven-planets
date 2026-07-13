@@ -1,21 +1,27 @@
 import {
   BehaviorSubject,
-  map,
+  catchError,
+  defer,
+  filter,
+  mergeMap,
   type Observable,
   observeOn,
+  of,
   queueScheduler,
   Subject,
 } from 'rxjs';
+import { chain } from 'lodash-es';
 
 import { initializeState } from './functions/initialize-state';
-import type { GameIntent } from './intents';
+import type { Action } from './actions/action';
 import type { GameState } from './interfaces/game-state';
-import { reduce } from './reduce';
+import { reduce } from './reducers/reduce';
 
 /* =====================================================================
    The game core as one fold:
 
-     intent$ ─observeOn(queueScheduler)─▶ map(reduce) ─▶ state$
+     intent$ ─observeOn(queueScheduler)─▶ mergeMap(reduceIntentSafely)
+             ─▶ filter(non-null) ─▶ getGameState()
 
    Every player intent (human click, AI decision, sim driver) enters
    through dispatch(); the reducer applies it and advances the game to
@@ -23,50 +29,56 @@ import { reduce } from './reduce';
    is no publish call anywhere, emitting is what the pipeline does.
 
    queueScheduler serializes re-entrant intents: the headless AI answers
-   parks synchronously from a state$ subscription, and the scheduler
+   parks synchronously from a getGameState() subscription, and the scheduler
    flattens that recursion into iteration (no stack growth). It is the
    only scheduler in the system.
 
-   The reducer must never throw — a throw would error state$ for every
-   subscriber — so a defensive catch reduces a faulty intent to a no-op.
+   The reducer must never throw — a throw would error getGameState() for every
+   subscriber — so reduceIntentSafely turns a faulty intent into a
+   no-op (null, filtered out) instead of letting it error the stream.
    ===================================================================== */
 
-const intent$ = new Subject<GameIntent>();
-const subject = new BehaviorSubject<GameState>(initializeState());
+const actionSubject = new Subject<Action>();
+const stateSubject = new BehaviorSubject<GameState>(initializeState());
 
-intent$
+actionSubject
   .pipe(
     observeOn(queueScheduler),
-    /* Reading the accumulator from the subject instead of scan's closure
-       keeps resetGameState trivially correct between simulated games. */
-    map((intent) => {
-      try {
-        return reduce(subject.getValue(), intent);
-      } catch (error) {
-        console.error('[seven-planets] intent reduced to a no-op:', error);
-        return subject.getValue();
-      }
-    }),
+    mergeMap((action) =>
+      defer(() => of(reduce(stateSubject.getValue(), action))).pipe(
+        catchError((error: unknown) =>
+          chain(error)
+            .tap((error) =>
+              console.error(
+                '[seven-planets] action reduced to a no-op:',
+                error,
+              ),
+            )
+            .thru(() => of(null))
+            .value(),
+        ),
+      ),
+    ),
+    filter((state): state is GameState => state !== null),
   )
-  .subscribe((state) => subject.next(state));
+  .subscribe((state) => stateSubject.next(state));
 
-export const state$: Observable<GameState> = subject.asObservable();
-
-export function dispatch(intent: GameIntent): void {
-  intent$.next(intent);
+export function dispatch(action: Action): void {
+  actionSubject.next(action);
 }
 
-/** Hot-loop reads (canvas frames, AI planning) — the live snapshot. */
-export function getGameState(): GameState {
-  return subject.getValue();
+export function getGameState(): Observable<GameState> {
+  return stateSubject.asObservable();
 }
 
-/** Install a state directly — reserved for setup-time seeding (difficulty
-    kamikazes, tests). Gameplay goes through dispatch(). */
+export function getGameStateLastValue(): GameState {
+  return stateSubject.getValue();
+}
+
 export function setGameState(state: GameState): void {
-  subject.next(state);
+  stateSubject.next(state);
 }
 
 export function resetGameState(): void {
-  subject.next(initializeState());
+  stateSubject.next(initializeState());
 }

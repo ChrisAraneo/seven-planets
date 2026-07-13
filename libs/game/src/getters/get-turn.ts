@@ -1,5 +1,5 @@
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getTurn(): number {
-  return getGameState().turn;
+  return getGameStateLastValue().turn;
 }

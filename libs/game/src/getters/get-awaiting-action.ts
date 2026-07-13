@@ -1,5 +1,5 @@
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getAwaitingAction(): boolean {
-  return getGameState().awaitingAction;
+  return getGameStateLastValue().awaitingAction;
 }

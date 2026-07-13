@@ -1,26 +1,13 @@
 import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { hasActionCard } from '../functions/has-action-card';
-import type { GameState } from '../interfaces/game-state';
-import { emitEffect } from '../functions/emit-effect';
-import { hasBuilding } from '../functions/has-building';
-import { log } from '../functions/log';
-import { pluralSuffix } from '../functions/plural-suffix';
-import { spendActionCard } from '../functions/spend-action-card';
-import { dispatch } from '../state';
-
-export interface MoveTroopsPayload {
-  playerId: number;
-  fromId: number;
-  toId: number;
-  troops: number;
-}
-
-/** Redeploy troops. Event creator: validation and resolution live in the
-    reducer (applyMoveTroops). */
-export function moveTroops(payload: MoveTroopsPayload): void {
-  dispatch({ kind: 'move', payload });
-}
+import { hasActionCard } from '../../functions/has-action-card';
+import type { GameState } from '../../interfaces/game-state';
+import { emitEffect } from '../../functions/emit-effect';
+import { hasBuilding } from '../../functions/has-building';
+import { log } from '../../functions/log';
+import { pluralSuffix } from '../../functions/plural-suffix';
+import { spendActionCard } from '../../functions/spend-action-card';
+import type { MoveTroopsPayload } from '../../actions/move-troops/move-troops';
 
 /* Reducer branch. Resolves the redeploy SYNCHRONOUSLY on a private clone;
    the rocket flight and arrival banner are effect events the presentation

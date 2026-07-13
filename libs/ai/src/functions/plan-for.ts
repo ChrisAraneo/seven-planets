@@ -1,14 +1,14 @@
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import type { Player } from '@seven-planets/game';
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 
 import { computePlan } from './compute-plan';
 import type { Plan } from './plan-types';
 
 export function planFor(player: Player): Plan {
   const aiState = getAiState();
-  const state = getGameState();
+  const state = getGameStateLastValue();
   let per = aiState.planCache.get(state);
   if (!per) {
     per = new Map();

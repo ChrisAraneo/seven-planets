@@ -1,10 +1,10 @@
 import { assign, chain, cloneDeep, noop } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import type { ActionType } from '../interfaces/action-type';
-import type { GameState } from '../interfaces/game-state';
-import type { InfluenceOpts } from '../interfaces/influence-opts';
-import type { InfluenceType } from '../interfaces/influence-type';
-import type { Player } from '../interfaces/player';
+import type { ActionType } from '../../interfaces/action-type';
+import type { GameState } from '../../interfaces/game-state';
+import type { InfluenceOpts } from '../../interfaces/influence-opts';
+import type { InfluenceType } from '../../interfaces/influence-type';
+import type { Player } from '../../interfaces/player';
 
 import {
   ACTION_TYPES,
@@ -16,31 +16,19 @@ import {
   INFLUENCE_TYPES,
   PEACE_TRUCE,
   SKIP_TURNS,
-} from '../config/constants';
-import { emitEffect } from '../functions/emit-effect';
-import { influenceTarget } from '../functions/influence-target';
-import { checkWin } from '../functions/check-win';
-import { coupTargets } from '../functions/coup-targets';
-import { handSize } from '../functions/hand-size';
-import { homePlanet } from '../functions/home-planet';
-import { log } from '../functions/log';
-import { ownedPlanets } from '../functions/owned-planets';
-import { stealCards } from '../functions/steal-cards';
-import { dispatch } from '../state';
+} from '../../config/constants';
+import { emitEffect } from '../../functions/emit-effect';
+import { influenceTarget } from '../../functions/influence-target';
+import { checkWin } from '../../functions/check-win';
+import { coupTargets } from '../../functions/coup-targets';
+import { handSize } from '../../functions/hand-size';
+import { homePlanet } from '../../functions/home-planet';
+import { log } from '../../functions/log';
+import { ownedPlanets } from '../../functions/owned-planets';
+import { stealCards } from '../../functions/steal-cards';
+import type { UseInfluencePayload } from '../../actions/use-influence/use-influence';
 
 const { nullish } = P;
-
-export interface UseInfluencePayload {
-  playerId: number;
-  type: InfluenceType;
-  opts?: InfluenceOpts;
-}
-
-/** Play a held influence card. Event creator: validation and resolution
-    live in the reducer (applyUseInfluence). */
-export function useInfluence(payload: UseInfluencePayload): void {
-  dispatch({ kind: 'influence', payload });
-}
 
 /* Reducer branch. Resolves the play on a private clone; illegal intents
    (including refused plays inside playInfluence) reduce to a state with no

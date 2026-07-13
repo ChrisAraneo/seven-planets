@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import {
@@ -74,10 +74,10 @@ export function buildingWorth(
       }
       if (hasB(player, 'SILO')) {
         let minNeed = Infinity;
-        for (const eachPlanet of getGameState().planets) {
+        for (const eachPlanet of getGameStateLastValue().planets) {
           if (
             eachPlanet.ownerId === player.id ||
-            !getGameState().players[eachPlanet.ownerId].isAlive ||
+            !getGameStateLastValue().players[eachPlanet.ownerId].isAlive ||
             isUnderTruce(eachPlanet)
           ) {
             continue;

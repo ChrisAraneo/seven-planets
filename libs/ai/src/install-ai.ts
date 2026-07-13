@@ -6,10 +6,13 @@ import type {
   InfluenceType,
   Cost,
 } from '@seven-planets/game';
-import { AUTO_HUMAN } from '@seven-planets/game';
+import {
+  AUTO_HUMAN,
+  getGameState,
+  getGameStateLastValue,
+} from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
 import { homePlanet } from '@seven-planets/game';
-import { getGameState, state$ } from '@seven-planets/game';
 import {
   attackPlanet,
   endTurn,
@@ -31,14 +34,14 @@ import { shouldAcceptTrade } from './functions/should-accept-trade';
    The AI has no bespoke bridge into the game loop — it only SUBSCRIBES
    to the game's state stream, exactly like the effects player:
 
-     state$ | distinctUntilKeyChanged('inputSeq')  → answer picks/turns
-     state$ | map(pendingOffer) | distinct         → answer trade offers
+     getGameState() | distinctUntilKeyChanged('inputSeq')  → answer picks/turns
+     getGameState() | map(pendingOffer) | distinct         → answer trade offers
 
    The engine bumps `inputSeq` and publishes a snapshot every time it
    parks awaiting the seat in play; when that seat is AI-controlled the
    subscription answers by calling the very same game actions the
    human's clicks call. The AI never mutates game state directly, and
-   the game core registers no callbacks — its output is state$, its
+   the game core registers no callbacks — its output is getGameState(), its
    input is the actions.
 
    Pacing is entirely the AI's concern (the engine never waits on time):
@@ -63,7 +66,7 @@ const PICK_DELAY = 300;
 /** A seat is AI-controlled when it is not the human, or in demo mode
     (AUTO_HUMAN) when even the human proxy is driven by the AI. */
 export function isAiSeat(seatId: number): boolean {
-  const players = getGameState().players;
+  const players = getGameStateLastValue().players;
   if (seatId < 0 || seatId >= players.length) {
     return false;
   }
@@ -114,7 +117,7 @@ function performDecision(playerId: number, decision: Decision): void {
 /** The engine parked a draft pick for AI seat `playerId`: choose a pool
     card and answer with the shared pickCard action. */
 function aiPickCard(playerId: number): void {
-  const state = getGameState();
+  const state = getGameStateLastValue();
   const player = state.players[playerId];
   const planet =
     state.planets[state.draftPlanetId] ?? homePlanet(state, player);
@@ -132,10 +135,10 @@ function aiPickCard(playerId: number): void {
 
 /** Decide and perform one action, returning false when the turn is done. */
 function takeOneAction(playerId: number): boolean {
-  if (getGameState().over) {
+  if (getGameStateLastValue().over) {
     return false;
   }
-  const player = getGameState().players[playerId];
+  const player = getGameStateLastValue().players[playerId];
   const mastermindDecision = mastermindAction(player);
   if (!mastermindDecision) {
     return false;
@@ -145,7 +148,7 @@ function takeOneAction(playerId: number): boolean {
 }
 
 /* Headless action turns run ONE intent per emission: dispatching from
-   inside a state$ subscriber queues the intent (queueScheduler), so the
+   inside a getGameState() subscriber queues the intent (queueScheduler), so the
    NEXT snapshot — the one carrying that intent's outcome — is what
    re-triggers this driver for the following decision. Deciding several
    actions off one snapshot would plan them all against stale state. The
@@ -200,7 +203,7 @@ function aiTakeTurnPaced(playerId: number, remaining = 12): void {
 /** A trade offer appeared on the state for AI seat `playerId`: judge it
     and answer with the shared resolveOffer action. */
 function aiConsiderOffer(playerId: number): void {
-  const state = getGameState();
+  const state = getGameStateLastValue();
   const offer = state.pendingOffer;
   if (!offer || offer.toId !== playerId) {
     return;
@@ -242,12 +245,12 @@ function respond(snapshot: GameState): void {
    --------------------------------------------------------------------- */
 export function installAi(): void {
   // The engine parked awaiting the seat in play (pick or action turn).
-  state$.pipe(distinctUntilKeyChanged('inputSeq')).subscribe(respond);
+  getGameState().pipe(distinctUntilKeyChanged('inputSeq')).subscribe(respond);
 
   // A trade offer awaits its target seat's answer. Subscribed BEFORE the
   // headless turn driver so the answer is queued (and thus reduced) ahead
   // of the offerer's next decision.
-  state$
+  getGameState()
     .pipe(
       map((snapshot) => snapshot.pendingOffer),
       distinctUntilChanged(),
@@ -259,5 +262,5 @@ export function installAi(): void {
     });
 
   // Headless action turns: one intent per emission (see headlessTurnStep).
-  state$.subscribe(headlessTurnStep);
+  getGameState().subscribe(headlessTurnStep);
 }

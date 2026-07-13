@@ -2,7 +2,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { distinctUntilChanged, map } from 'rxjs';
 
 import { installAi } from '@seven-planets/ai';
-import { state$ } from '@seven-planets/game';
+import { getGameState } from '@seven-planets/game';
 
 import { useUiStore } from './ui-store';
 import { useUnlocksStore } from './unlocks-store';
@@ -10,7 +10,7 @@ import { useUnlocksStore } from './unlocks-store';
 /* =====================================================================
    The composition root. One Pinia, four stores:
 
-     game    — a Vue ref over the game lib's state$ observable (the
+     game    — a Vue ref over the game lib's getGameState() observable (the
                game lib's action functions are the only ways to act —
                human UI and AI both call them)
      ui      — modals / difficulty / lifecycle (presentation-side)
@@ -18,7 +18,7 @@ import { useUnlocksStore } from './unlocks-store';
      unlocks — earned difficulty levels (persisted)
 
    The game lib OWNS the live state as an RxJS BehaviorSubject and emits
-   snapshots on state$; the game store merely subscribes (via
+   snapshots on getGameState(); the game store merely subscribes (via
    @vueuse/rxjs) so templates react. Importing this module activates
    Pinia (usable outside components and in headless scripts/tests) and
    seats the AI's subscriptions.
@@ -32,12 +32,12 @@ export { useGameStore } from './game-store';
 export { useUiStore, type ModalName } from './ui-store';
 export { useUnlocksStore } from './unlocks-store';
 
-// Seat the AI: subscriptions on state$ drive every non-human seat.
+// Seat the AI: subscriptions on getGameState() drive every non-human seat.
 installAi();
 
 // When the human wins, unlock the next difficulty rung and persist it.
 // Fires once per game (state.over is set exactly once).
-state$
+getGameState()
   .pipe(
     map((snapshot) => snapshot.over),
     distinctUntilChanged(),

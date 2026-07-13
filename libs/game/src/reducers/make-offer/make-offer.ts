@@ -1,28 +1,14 @@
 import { assign, chain, cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
-import type { Cost } from '../interfaces/cost';
-import type { GameState } from '../interfaces/game-state';
-import type { Player } from '../interfaces/player';
-import { dispatch } from '../state';
+import type { GameState } from '../../interfaces/game-state';
+import type { Player } from '../../interfaces/player';
+import type { MakeOfferPayload } from '../../actions/make-offer/make-offer';
 
-import { RESOURCE_TYPES, CARDS } from '../config/constants';
-import { setStatus } from '../functions/set-status';
-import { AUTO_HUMAN } from '../functions/auto-human';
-import { hasActionCard } from '../functions/has-action-card';
-import { log } from '../functions/log';
-
-export interface MakeOfferPayload {
-  playerId: number;
-  partnerId: number;
-  gives: Cost;
-  gets: Cost;
-}
-
-/** Open a trade offer. Event creator: validation and application live in
-    the reducer (applyMakeOffer). */
-export function makeOffer(payload: MakeOfferPayload): void {
-  dispatch({ kind: 'offer', payload });
-}
+import { RESOURCE_TYPES, CARDS } from '../../config/constants';
+import { setStatus } from '../../functions/set-status';
+import { AUTO_HUMAN } from '../../functions/auto-human';
+import { hasActionCard } from '../../functions/has-action-card';
+import { log } from '../../functions/log';
 
 /* Reducer branch. Sets pendingOffer on a private clone — the emission that
    carries it is the whole notification. The partner seat (human via
@@ -85,7 +71,11 @@ function sendOffer(
     .value();
 }
 
-function logSeeking(state: GameState, player: Player, gets: Cost): GameState {
+function logSeeking(
+  state: GameState,
+  player: Player,
+  gets: MakeOfferPayload['gets'],
+): GameState {
   return match(Object.keys(gets)[0])
     .when(
       (wantKey) =>

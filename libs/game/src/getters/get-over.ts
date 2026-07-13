@@ -1,6 +1,6 @@
 import type { GameOver } from '../interfaces/game-over';
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getOver(): GameOver | null {
-  return getGameState().over;
+  return getGameStateLastValue().over;
 }

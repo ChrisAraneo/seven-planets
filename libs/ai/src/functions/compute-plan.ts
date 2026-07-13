@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import {
@@ -74,11 +74,11 @@ export function computePlan(
   if (!player.hasPacifistStatus) {
     const rate = Math.max(0.4, recruitRate(player));
     const bonus = staging ? (staging.buildings.SILO || 0) * 2 : 0;
-    for (const target of getGameState().planets) {
+    for (const target of getGameStateLastValue().planets) {
       if (target.ownerId === player.id) {
         continue;
       }
-      const defOwner = getGameState().players[target.ownerId];
+      const defOwner = getGameStateLastValue().players[target.ownerId];
       if (!defOwner.isAlive) {
         continue;
       }

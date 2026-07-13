@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import { getAiState } from '../state';
 import type { Planet, Player } from '@seven-planets/game';
 
@@ -19,7 +19,7 @@ export function mastermindDraftPick(
     Math.random() < aiState.randomPickChance
   ) {
     const options: number[] = [];
-    for (let index = 0; index < getGameState().pool.length; index++) {
+    for (let index = 0; index < getGameStateLastValue().pool.length; index++) {
       if (pickable[index]) {
         options.push(index);
       }
@@ -31,12 +31,16 @@ export function mastermindDraftPick(
   const plan = planFor(player);
   let bestIdx = -1;
   let bestScore = -Infinity;
-  for (let eachIndex = 0; eachIndex < getGameState().pool.length; eachIndex++) {
+  for (
+    let eachIndex = 0;
+    eachIndex < getGameStateLastValue().pool.length;
+    eachIndex++
+  ) {
     if (!pickable[eachIndex]) {
       continue;
     }
-    const poolType = getGameState().pool[eachIndex];
-    const copies = getGameState().pool.filter(
+    const poolType = getGameStateLastValue().pool[eachIndex];
+    const copies = getGameStateLastValue().pool.filter(
       (poolType) => poolType === poolType,
     ).length;
     const score =

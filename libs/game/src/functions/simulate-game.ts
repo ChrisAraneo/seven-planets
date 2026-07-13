@@ -7,9 +7,9 @@ import type { GameOver } from '../interfaces/game-over';
 import {
   dispatch,
   getGameState,
+  getGameStateLastValue,
   resetGameState,
   setGameState,
-  state$,
 } from '../state';
 import { assignKamikazes } from './assign-kamikazes';
 
@@ -27,17 +27,17 @@ export async function simulateGame(
 ): Promise<SimulationResult> {
   /* Each simulated game runs on a fresh state; games run strictly
      sequentially, so resetting between games is safe. Headless, every
-     seat is AI-driven: the AI's state$ subscriptions answer each park
+     seat is AI-driven: the AI's getGameState() subscriptions answer each park
      synchronously (RxJS subjects deliver synchronously; the intent
      pipeline's queueScheduler flattens the loop), so the cursor rests at
      'done' by the time dispatch('start') returns. */
   resetGameState();
   setGameState({
-    ...assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
+    ...assignKamikazes(getGameStateLastValue(), opts.kamikazeCount ?? 0),
     maxTurns,
   });
   const done = firstValueFrom(
-    state$.pipe(filter((state) => state.cursor.phase === 'done')),
+    getGameState().pipe(filter((state) => state.cursor.phase === 'done')),
   );
   dispatch({ kind: 'start' });
   await done;

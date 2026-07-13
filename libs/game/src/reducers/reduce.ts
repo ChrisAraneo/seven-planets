@@ -1,24 +1,71 @@
 import { assign } from 'lodash-es';
-
+import { match } from 'ts-pattern';
+import type { Action } from '../actions/action';
 import { ACTION_CARDS_FROM_TURN } from '../config/constants';
+import { applyStart } from '../functions/apply-start';
+import { AUTO_HUMAN } from '../functions/auto-human';
+import { canPickCard } from '../functions/can-pick-card';
+import { draftOrder } from '../functions/draft-order';
+import { log } from '../functions/log';
+import { mainPicks } from '../functions/main-picks';
+import { ownedPlanets } from '../functions/owned-planets';
+import { passSlot } from '../functions/pass-slot';
+import { pickStatus } from '../functions/pick-status';
+import { seatStatus } from '../functions/seat-status';
+import { setStatus } from '../functions/set-status';
+import { turnOrder } from '../functions/turn-order';
+import { turnPrelude } from '../functions/turn-prelude';
 import type { EngineCursor } from '../interfaces/engine-cursor';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-import { AUTO_HUMAN } from './auto-human';
-import { canPickCard } from './can-pick-card';
-import { draftOrder } from './draft-order';
-import { log } from './log';
-import { mainPicks } from './main-picks';
-import { ownedPlanets } from './owned-planets';
-import { passSlot } from './pass-slot';
-import { pickStatus } from './pick-status';
-import { seatStatus } from './seat-status';
-import { setStatus } from './set-status';
-import { turnOrder } from './turn-order';
-import { turnPrelude } from './turn-prelude';
+import { applyAttackPlanet } from './attack-planet/attack-planet';
+import { applyEndTurn } from './end-turn/end-turn';
+import { applyMakeOffer } from './make-offer/make-offer';
+import { applyMoveTroops } from './move-troops/move-troops';
+import { applyPickCard } from './pick-card/pick-card';
+import { applyRecruitTroops } from './recruit-troops/recruit-troops';
+import { applyResolveOffer } from './resolve-offer/resolve-offer';
+import { applySetPlanetLayout } from './set-planet-layout/set-planet-layout';
+import { applyUseInfluence } from './use-influence/use-influence';
+
+/* The whole game core: apply the intent's own semantics, then advance the
+   game (turn preludes, draft passes, phase transitions) until it next needs
+   input. getGameState() is the fold of this over the intent stream (see state.ts). */
+export function reduce(state: GameState, intent: Action): GameState {
+  return advance(applyIntent(state, intent));
+}
 
 type DraftCursor = Extract<EngineCursor, { phase: 'draft' }>;
 type ActionCursor = Extract<EngineCursor, { phase: 'action' }>;
+
+function applyIntent(state: GameState, intent: Action): GameState {
+  return match(intent)
+    .with({ kind: 'start' }, () => applyStart(state))
+    .with({ kind: 'pick' }, ({ playerId, idx }) =>
+      applyPickCard(state, { playerId, idx }),
+    )
+    .with({ kind: 'endTurn' }, ({ playerId }) =>
+      applyEndTurn(state, { playerId }),
+    )
+    .with({ kind: 'attack' }, ({ payload }) =>
+      applyAttackPlanet(state, payload),
+    )
+    .with({ kind: 'move' }, ({ payload }) => applyMoveTroops(state, payload))
+    .with({ kind: 'recruit' }, ({ payload }) =>
+      applyRecruitTroops(state, payload),
+    )
+    .with({ kind: 'influence' }, ({ payload }) =>
+      applyUseInfluence(state, payload),
+    )
+    .with({ kind: 'offer' }, ({ payload }) => applyMakeOffer(state, payload))
+    .with({ kind: 'resolveOffer' }, ({ payload }) =>
+      applyResolveOffer(state, payload),
+    )
+    .with({ kind: 'layout' }, ({ payload }) =>
+      applySetPlanetLayout(state, payload),
+    )
+    .exhaustive();
+}
 
 /* THE ENGINE. Advance the game from `state` until it next needs player
    input: run turn preludes, draft passes and phase transitions, then park by

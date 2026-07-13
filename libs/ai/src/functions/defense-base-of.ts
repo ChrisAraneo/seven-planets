@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import {
   COMBAT,
   HOME_FIELD,
@@ -9,7 +9,7 @@ import { singularityDefBonus } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 
 export function defenseBaseOf(planet: Planet, troops = planet.troops): number {
-  const pac = getGameState().players[planet.ownerId]?.hasPacifistStatus
+  const pac = getGameStateLastValue().players[planet.ownerId]?.hasPacifistStatus
     ? PACIFIST_DEF_BONUS
     : 0;
   return (

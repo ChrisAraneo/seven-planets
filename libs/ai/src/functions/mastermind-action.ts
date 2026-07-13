@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import { getAiState } from '../state';
 import { canAfford } from '@seven-planets/game';
 import { recruitYield } from '@seven-planets/game';
@@ -76,7 +76,9 @@ export function mastermindAction(player: Player): MastermindDecision | null {
       plan.kind === 'STRIKE' ||
       ((player.hand.ATTACK || 0) > 0 && plan.stagingId != null);
     const staging =
-      plan.stagingId == null ? null : getGameState().planets[plan.stagingId];
+      plan.stagingId == null
+        ? null
+        : getGameStateLastValue().planets[plan.stagingId];
     if (
       stacking &&
       staging &&
@@ -145,7 +147,9 @@ export function mastermindAction(player: Player): MastermindDecision | null {
       }
     }
     const staging =
-      plan.stagingId == null ? null : getGameState().planets[plan.stagingId];
+      plan.stagingId == null
+        ? null
+        : getGameStateLastValue().planets[plan.stagingId];
     if (
       staging &&
       staging.ownerId === player.id &&

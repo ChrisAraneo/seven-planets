@@ -1,7 +1,7 @@
 // @vitest-environment node
 // The mastermind brain reads the game state like any player, so it can be
 // tested headless; full games run with AUTO_HUMAN (no `document`). Importing
-// the store seats the AI's state$ subscriptions, which answer every engine
+// the store seats the AI's getGameState() subscriptions, which answer every engine
 // park synchronously — whole games complete inside one simulateGame await.
 import '@/stores';
 
@@ -20,13 +20,13 @@ import { survivorsAfterWin } from '../functions/survivors-after-win';
 import { COMBAT } from '@seven-planets/game';
 import { simulateGame } from '@seven-planets/game';
 import type { GameState } from '@seven-planets/game';
-import { getGameState, resetGameState } from '@seven-planets/game';
+import { getGameStateLastValue, resetGameState } from '@seven-planets/game';
 
 /** A deterministic mid-game state: player 0 is the mastermind. Installed as
     the live state, which is where the AI functions read it from. */
 function midGameState(): GameState {
   resetGameState();
-  const state = getGameState();
+  const state = getGameStateLastValue();
   state.turn = 20;
   return state;
 }
@@ -71,15 +71,15 @@ describe('mastermind retention forecast (holdProbability)', () => {
   it('stays within [0,1] and drops when a rival grows stronger', () => {
     resetAiWeights();
     const state = midGameState();
-    const player = getGameState().players[0];
-    const mine = getGameState().planets[0];
+    const player = getGameStateLastValue().players[0];
+    const mine = getGameStateLastValue().planets[0];
     // No rival has a silo yet — nobody can attack, we surely hold.
     expect(holdProbability(player, mine, 5)).toBe(1);
     // Arm a rival heavily: retention must drop, but stay a probability.
-    getGameState().planets[1].buildings.SILO = 2;
-    getGameState().planets[1].buildings.BARRACKS = 2;
-    getGameState().planets[1].troops = 20;
-    getGameState().players[1].hand.ATTACK = 2;
+    getGameStateLastValue().planets[1].buildings.SILO = 2;
+    getGameStateLastValue().planets[1].buildings.BARRACKS = 2;
+    getGameStateLastValue().planets[1].troops = 20;
+    getGameStateLastValue().players[1].hand.ATTACK = 2;
     const threatened = holdProbability(player, mine, 5);
     expect(threatened).toBeLessThan(1);
     expect(threatened).toBeGreaterThanOrEqual(0);
@@ -94,10 +94,10 @@ describe('mastermind attack planning', () => {
   it('finds a high-confidence conquest and prices its retention', () => {
     resetAiWeights();
     const state = midGameState();
-    const player = getGameState().players[0];
-    getGameState().planets[0].buildings.SILO = 2; // Cap 12
-    getGameState().planets[0].troops = 14;
-    getGameState().planets[1].troops = 2; // Soft target
+    const player = getGameStateLastValue().players[0];
+    getGameStateLastValue().planets[0].buildings.SILO = 2; // Cap 12
+    getGameStateLastValue().planets[0].troops = 14;
+    getGameStateLastValue().planets[1].troops = 2; // Soft target
     player.hand.ATTACK = 1;
     const plans = evaluateAttacks(player);
     expect(plans.length).toBeGreaterThan(0);
@@ -105,22 +105,24 @@ describe('mastermind attack planning', () => {
     expect(best.conquers).toBe(true);
     expect(best.pWin).toBeGreaterThan(0.6);
     expect(best.n).toBeGreaterThanOrEqual(
-      minTroopsToConquer(getGameState().planets[1].troops),
+      minTroopsToConquer(getGameStateLastValue().planets[1].troops),
     );
     expect(best.holdProb).toBeGreaterThanOrEqual(0);
     expect(best.holdProb).toBeLessThanOrEqual(1);
     const now = bestAttackNow(player);
     expect(now).not.toBeNull();
     // Never commits more troops than the source can spare or the rocket holds.
-    expect(now!.n).toBeLessThanOrEqual(getGameState().planets[0].troops);
+    expect(now!.n).toBeLessThanOrEqual(
+      getGameStateLastValue().planets[0].troops,
+    );
   });
 
   it('never plans an attack for a pacifist', () => {
     const state = midGameState();
-    const player = getGameState().players[0];
+    const player = getGameStateLastValue().players[0];
     player.hasPacifistStatus = true;
-    getGameState().planets[0].buildings.SILO = 3;
-    getGameState().planets[0].troops = 30;
+    getGameStateLastValue().planets[0].buildings.SILO = 3;
+    getGameStateLastValue().planets[0].troops = 30;
     player.hand.ATTACK = 3;
     expect(evaluateAttacks(player)).toHaveLength(0);
     expect(bestAttackNow(player)).toBeNull();
@@ -131,7 +133,7 @@ describe('mastermind build planning and strategy', () => {
   it('proposes worthwhile builds and forms a plan', () => {
     resetAiWeights();
     const state = midGameState();
-    const player = getGameState().players[0];
+    const player = getGameStateLastValue().players[0];
     player.hand.ORE = 3;
     player.hand.CRYSTAL = 3;
     player.hand.ENERGY = 3;
@@ -154,24 +156,28 @@ describe('mastermind drafting', () => {
   it('picks a valid pool index and respects pickability', () => {
     resetAiWeights();
     const state = midGameState();
-    const player = getGameState().players[0];
+    const player = getGameStateLastValue().players[0];
     state.pool = ['ORE', 'CRYSTAL', 'ENERGY', 'ATTACK', 'RELIC'];
-    const all = getGameState().pool.map(() => true);
-    const index = mastermindDraftPick(player, getGameState().planets[0], all);
+    const all = getGameStateLastValue().pool.map(() => true);
+    const index = mastermindDraftPick(
+      player,
+      getGameStateLastValue().planets[0],
+      all,
+    );
     expect(index).toBeGreaterThanOrEqual(0);
-    expect(index).toBeLessThan(getGameState().pool.length);
+    expect(index).toBeLessThan(getGameStateLastValue().pool.length);
     // Nothing pickable → pass.
     expect(
       mastermindDraftPick(
         player,
-        getGameState().planets[0],
-        getGameState().pool.map(() => false),
+        getGameStateLastValue().planets[0],
+        getGameStateLastValue().pool.map(() => false),
       ),
     ).toBe(-1);
     // Only slot 2 pickable → must take slot 2.
-    const onlyTwo = getGameState().pool.map((_, index) => index === 2);
+    const onlyTwo = getGameStateLastValue().pool.map((_, index) => index === 2);
     expect(
-      mastermindDraftPick(player, getGameState().planets[0], onlyTwo),
+      mastermindDraftPick(player, getGameStateLastValue().planets[0], onlyTwo),
     ).toBe(2);
   });
 });
@@ -180,46 +186,46 @@ describe('kamikaze (Hard mode) targeting', () => {
   it('a kamikaze only ever plans attacks against the human — never another AI', () => {
     resetAiWeights();
     const state = midGameState();
-    const kami = getGameState().players[1];
+    const kami = getGameStateLastValue().players[1];
     kami.isKamikaze = true;
     // Arm the kamikaze with a real strike force.
-    getGameState().planets[1].buildings.SILO = 2;
-    getGameState().planets[1].troops = 16;
+    getGameStateLastValue().planets[1].buildings.SILO = 2;
+    getGameStateLastValue().planets[1].troops = 16;
     kami.hand.ATTACK = 1;
-    getGameState().planets[0].troops = 2; // Human — the ONLY legal target
-    getGameState().planets[2].troops = 2; // Rival AI — juicy but forbidden
+    getGameStateLastValue().planets[0].troops = 2; // Human — the ONLY legal target
+    getGameStateLastValue().planets[2].troops = 2; // Rival AI — juicy but forbidden
     const plans = evaluateAttacks(kami);
     expect(plans.length).toBeGreaterThan(0);
     expect(
       plans.every(
         (attackPlan) =>
-          getGameState().planets[attackPlan.target.id].ownerId === 0,
+          getGameStateLastValue().planets[attackPlan.target.id].ownerId === 0,
       ),
     ).toBe(true);
     const now = bestAttackNow(kami);
     expect(now).not.toBeNull();
-    expect(getGameState().planets[now!.target.id].ownerId).toBe(0); // Struck the human
+    expect(getGameStateLastValue().planets[now!.target.id].ownerId).toBe(0); // Struck the human
   });
 
   it('a normal AI ignores kamikazes — never plans an attack against one', () => {
     resetAiWeights();
     const state = midGameState();
-    getGameState().players[1].isKamikaze = true;
+    getGameStateLastValue().players[1].isKamikaze = true;
     // A normal AI (id 2) with a strike force.
-    const normal = getGameState().players[2];
-    getGameState().planets[2].buildings.SILO = 2;
-    getGameState().planets[2].troops = 16;
+    const normal = getGameStateLastValue().players[2];
+    getGameStateLastValue().planets[2].buildings.SILO = 2;
+    getGameStateLastValue().planets[2].troops = 16;
     normal.hand.ATTACK = 1;
     // Make the kamikaze's planet the softest target in the galaxy.
-    getGameState().planets[1].troops = 1;
-    getGameState().planets[0].troops = 8; // Human, better defended
-    getGameState().planets[3].troops = 8; // Another rival
+    getGameStateLastValue().planets[1].troops = 1;
+    getGameStateLastValue().planets[0].troops = 8; // Human, better defended
+    getGameStateLastValue().planets[3].troops = 8; // Another rival
     const plans = evaluateAttacks(normal);
     // It may attack the human or other rivals, but NEVER the kamikaze (id 1).
     expect(
       plans.every(
         (attackPlan) =>
-          getGameState().planets[attackPlan.target.id].ownerId !== 1,
+          getGameStateLastValue().planets[attackPlan.target.id].ownerId !== 1,
       ),
     ).toBe(true);
   });
@@ -227,27 +233,27 @@ describe('kamikaze (Hard mode) targeting', () => {
   it('a kamikaze threatens the human but is no threat to other AI', () => {
     resetAiWeights();
     const state = midGameState();
-    const kami = getGameState().players[1];
+    const kami = getGameStateLastValue().players[1];
     kami.isKamikaze = true;
     // Heavily arm the kamikaze so it WOULD threaten anyone it could reach.
-    getGameState().planets[1].buildings.SILO = 3;
-    getGameState().planets[1].buildings.BARRACKS = 3;
-    getGameState().planets[1].troops = 30;
+    getGameStateLastValue().planets[1].buildings.SILO = 3;
+    getGameStateLastValue().planets[1].buildings.BARRACKS = 3;
+    getGameStateLastValue().planets[1].troops = 30;
     kami.hand.ATTACK = 3;
     // With ONLY the kamikaze armed, a rival AI's planet is perfectly safe…
     expect(
       holdProbability(
-        getGameState().players[2],
-        getGameState().planets[2],
-        getGameState().planets[2].troops,
+        getGameStateLastValue().players[2],
+        getGameStateLastValue().planets[2],
+        getGameStateLastValue().planets[2].troops,
       ),
     ).toBe(1);
     // …but the human's planet is not.
     expect(
       holdProbability(
-        getGameState().players[0],
-        getGameState().planets[0],
-        getGameState().planets[0].troops,
+        getGameStateLastValue().players[0],
+        getGameStateLastValue().planets[0],
+        getGameStateLastValue().planets[0].troops,
       ),
     ).toBeLessThan(1);
   });

@@ -1,8 +1,8 @@
 import { chain } from 'lodash-es';
-import type { GameState } from '../../../interfaces/game-state';
-import type { PickCardPayload } from '../pick-card';
-import { homePlanet } from '../../../functions/home-planet';
-import { canPickCard } from '../../../functions/can-pick-card';
+import type { GameState } from '../../interfaces/game-state';
+import type { PickCardPayload } from '../../actions/pick-card/pick-card';
+import { homePlanet } from '../../functions/home-planet';
+import { canPickCard } from '../../functions/can-pick-card';
 
 export function isValidPick(
   state: GameState,

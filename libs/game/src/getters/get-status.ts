@@ -1,5 +1,5 @@
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getStatus(): string {
-  return getGameState().status;
+  return getGameStateLastValue().status;
 }

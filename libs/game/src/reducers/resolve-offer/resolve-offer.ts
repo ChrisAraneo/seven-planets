@@ -1,26 +1,15 @@
 import { assign, chain, cloneDeep } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import { dispatch } from '../state';
 
-import { fmtCards } from '../config/constants';
-import { log } from '../functions/log';
-import { spendActionCard } from '../functions/spend-action-card';
-import type { Cost } from '../interfaces/cost';
-import type { GameState } from '../interfaces/game-state';
-import type { PendingOffer } from '../interfaces/pending-offer';
+import { fmtCards } from '../../config/constants';
+import { log } from '../../functions/log';
+import { spendActionCard } from '../../functions/spend-action-card';
+import type { Cost } from '../../interfaces/cost';
+import type { GameState } from '../../interfaces/game-state';
+import type { PendingOffer } from '../../interfaces/pending-offer';
+import type { ResolveOfferPayload } from '../../actions/resolve-offer/resolve-offer';
 
 const { nullish } = P;
-
-export interface ResolveOfferPayload {
-  playerId: number;
-  accept: boolean;
-}
-
-/** Answer a pending trade offer. Event creator: validation and application
-    live in the reducer (applyResolveOffer). */
-export function resolveOffer(payload: ResolveOfferPayload): void {
-  dispatch({ kind: 'resolveOffer', payload });
-}
 
 /* Reducer branch. The target seat of pendingOffer accepts or declines it:
    executes the trade when accepted, logs the decline otherwise, then clears

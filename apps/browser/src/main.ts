@@ -5,7 +5,7 @@ import { distinctUntilKeyChanged } from 'rxjs';
 
 import App from './App.vue';
 import { installEffects, playNewEffects } from '@seven-planets/effects';
-import { state$ } from '@seven-planets/game';
+import { getGameState } from '@seven-planets/game';
 import { pinia, useEffectsStore } from './stores';
 
 // Composition root: hook the graphical effects into the app, with the
@@ -20,7 +20,7 @@ installEffects({
 // Animations fire in RESPONSE to game-state emissions: the game core
 // appends effect events as it mutates state and publishes snapshots;
 // this subscription plays the new ones.
-state$
+getGameState()
   .pipe(distinctUntilKeyChanged('effectSeq'))
   .subscribe((snapshot) => playNewEffects(snapshot));
 

@@ -1,15 +1,15 @@
 import { assign, chain } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import { CARDS, INFLUENCE_CARDS } from '../../../config/constants';
-import { buildBuilding } from '../../../functions/build-building';
-import { log } from '../../../functions/log';
-import type { BuildingType } from '../../../interfaces/building-type';
-import type { GameState } from '../../../interfaces/game-state';
-import type { InfluenceType } from '../../../interfaces/influence-type';
-import type { Planet } from '../../../interfaces/planet';
-import type { Player } from '../../../interfaces/player';
-import type { PoolType } from '../../../interfaces/pool-type';
+import { CARDS, INFLUENCE_CARDS } from '../../config/constants';
+import { buildBuilding } from '../../functions/build-building';
+import { log } from '../../functions/log';
+import type { BuildingType } from '../../interfaces/building-type';
+import type { GameState } from '../../interfaces/game-state';
+import type { InfluenceType } from '../../interfaces/influence-type';
+import type { Planet } from '../../interfaces/planet';
+import type { Player } from '../../interfaces/player';
+import type { PoolType } from '../../interfaces/pool-type';
 
 /* Apply the chosen pool card to the drafting seat: remove it from the pool
    and route it by kind (construct the building, buy the influence card, or

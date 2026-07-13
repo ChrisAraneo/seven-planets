@@ -10,7 +10,7 @@ import {
 import { assignKamikazes } from '@seven-planets/game';
 import { AUTO_HUMAN } from '@seven-planets/game';
 import { runGame } from '@seven-planets/game';
-import { getGameState, setGameState } from '@seven-planets/game';
+import { getGameStateLastValue, setGameState } from '@seven-planets/game';
 
 import { useEffectsStore } from './effects-store';
 
@@ -55,7 +55,7 @@ export const useUiStore = defineStore('ui', () => {
     // Apply this level's handicap to every mastermind AI before the loop runs,
     // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
     setAiDifficulty(def.ai);
-    setGameState(assignKamikazes(getGameState(), def.kamikazeCount));
+    setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount));
     started.value = true;
     runGame();
   }

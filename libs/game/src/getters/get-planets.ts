@@ -1,6 +1,6 @@
 import type { Planet } from '../interfaces/planet';
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getPlanets(): readonly Planet[] {
-  return getGameState().planets;
+  return getGameStateLastValue().planets;
 }

@@ -1,5 +1,5 @@
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getSingularityAnnounced(): boolean {
-  return getGameState().singularityAnnounced;
+  return getGameStateLastValue().singularityAnnounced;
 }

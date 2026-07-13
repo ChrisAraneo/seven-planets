@@ -1,10 +1,10 @@
 import { assign, chain, cloneDeep, fromPairs, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { hasActionCard } from '../functions/has-action-card';
-import type { GameState } from '../interfaces/game-state';
-import type { Hand } from '../interfaces/hand';
-import type { Planet } from '../interfaces/planet';
-import { checkWin } from '../functions/check-win';
+import { hasActionCard } from '../../functions/has-action-card';
+import type { GameState } from '../../interfaces/game-state';
+import type { Hand } from '../../interfaces/hand';
+import type { Planet } from '../../interfaces/planet';
+import { checkWin } from '../../functions/check-win';
 import {
   CONQUEST_TRUCE,
   fmtCards,
@@ -18,25 +18,18 @@ import {
   randInt,
   SHIELD_DEFENSE,
   TAUNTS,
-} from '../config/constants';
-import { emitEffect } from '../functions/emit-effect';
-import { handSize } from '../functions/hand-size';
-import { log } from '../functions/log';
-import { stealCards } from '../functions/steal-cards';
-import { siloBonus } from '../functions/silo-bonus';
-import { singularityDefBonus } from '../functions/singularity-def-bonus';
-import { isUnderTruce } from '../functions/is-under-truce';
-import { ownedPlanets } from '../functions/owned-planets';
-import { pacifistDefBonus } from '../functions/pacifist-def-bonus';
-import { spendActionCard } from '../functions/spend-action-card';
-import { dispatch } from '../state';
-
-export interface AttackPlanetPayload {
-  playerId: number;
-  sourceId: number;
-  targetId: number;
-  troops: number;
-}
+} from '../../config/constants';
+import { emitEffect } from '../../functions/emit-effect';
+import { handSize } from '../../functions/hand-size';
+import { log } from '../../functions/log';
+import { stealCards } from '../../functions/steal-cards';
+import { siloBonus } from '../../functions/silo-bonus';
+import { singularityDefBonus } from '../../functions/singularity-def-bonus';
+import { isUnderTruce } from '../../functions/is-under-truce';
+import { ownedPlanets } from '../../functions/owned-planets';
+import { pacifistDefBonus } from '../../functions/pacifist-def-bonus';
+import { spendActionCard } from '../../functions/spend-action-card';
+import type { AttackPlanetPayload } from '../../actions/attack-planet/attack-planet';
 
 interface BattleContext {
   source: Planet;
@@ -47,12 +40,6 @@ interface BattleContext {
   win: boolean;
   attLoss: number;
   defLoss: number;
-}
-
-/** Launch an attack. Event creator: validation and resolution live in the
-    reducer (applyAttackPlanet). */
-export function attackPlanet(payload: AttackPlanetPayload): void {
-  dispatch({ kind: 'attack', payload });
 }
 
 /* Reducer branch. Resolves the whole attack SYNCHRONOUSLY on a private

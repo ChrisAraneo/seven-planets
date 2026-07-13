@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import {
@@ -50,11 +50,11 @@ export function evaluateAttacks(player: Player): AttackPlan[] {
   // when it scores a strike, so even long-shot attacks stay on the table.
   const lossWeight = aiState.W.troopValue * (player.isKamikaze ? 0.25 : 1);
   const plans: AttackPlan[] = [];
-  for (const target of getGameState().planets) {
+  for (const target of getGameStateLastValue().planets) {
     if (target.ownerId === player.id) {
       continue;
     }
-    const defOwner = getGameState().players[target.ownerId];
+    const defOwner = getGameStateLastValue().players[target.ownerId];
     if (!defOwner.isAlive || isUnderTruce(target)) {
       continue;
     }

@@ -1,5 +1,5 @@
-import { getGameState } from '../state';
+import { getGameStateLastValue } from '../state';
 
 export function getDraftPlanetId(): number {
-  return getGameState().draftPlanetId;
+  return getGameStateLastValue().draftPlanetId;
 }

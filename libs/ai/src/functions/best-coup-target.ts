@@ -1,4 +1,4 @@
-import { getGameState } from '@seven-planets/game';
+import { getGameStateLastValue } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
 
 import { mayTarget } from './may-target';
@@ -14,8 +14,8 @@ export function bestCoupTarget(
   }
   const mayTakeLast = player.hasPacifistStatus;
   let best: { planet: Planet; value: number } | null = null;
-  for (const eachPlanet of getGameState().planets) {
-    const owner = getGameState().players[eachPlanet.ownerId];
+  for (const eachPlanet of getGameStateLastValue().planets) {
+    const owner = getGameStateLastValue().players[eachPlanet.ownerId];
     if (
       eachPlanet.ownerId === player.id ||
       !owner.isAlive ||
