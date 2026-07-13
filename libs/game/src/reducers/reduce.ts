@@ -94,6 +94,7 @@ export function advance(state: GameState): GameState {
     if (state.over) {
       return finishGame(state);
     }
+
     if (state.cursor.phase === 'draft') {
       draftStep(state, state.cursor);
     } else {

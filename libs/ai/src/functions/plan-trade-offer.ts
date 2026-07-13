@@ -1,7 +1,7 @@
 import { canAfford, CARDS, RESOURCE_TYPES } from '@seven-planets/game';
 import type { Cost, Player } from '@seven-planets/game';
 
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { avgStrength } from './avg-strength';
 import { hasB } from './has-b';
 import { incomePerTurn } from './income-per-turn';
@@ -64,7 +64,7 @@ export function planTradeOffer(
     return null;
   }
   const avg = avgStrength();
-  const partners = alive()
+  const partners = getAlivePlayers()
     .filter((player) => player.id !== player.id && (player.hand[want] || 0) > 0)
     .sort(
       (player, eachPlayer) =>

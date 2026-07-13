@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getActiveId } from '@seven-planets/game';
-import { getOver } from '@seven-planets/game';
+import { getIsOver } from '@seven-planets/game';
 import { getPlanets } from '@seven-planets/game';
 import { getPlayers } from '@seven-planets/game';
 import { PLANET_STYLES, BUILD_ORDER, BUILDINGS } from '@seven-planets/game';
@@ -211,7 +211,7 @@ function drawPlanet(planet: Planet, now: number): void {
   const blackHole =
     FORCE_BLACK_HOLES || (planet.buildings.SINGULARITY || 0) >= 3;
 
-  if (owner.id === getActiveId() && !getOver()) {
+  if (owner.id === getActiveId() && !getIsOver()) {
     const pulse = 0.5 + 0.5 * Math.sin(now / 300);
     context.strokeStyle = owner.color;
     context.globalAlpha = 0.25 + 0.35 * pulse;

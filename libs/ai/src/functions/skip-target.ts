@@ -1,6 +1,6 @@
 import type { InfluenceType, Player } from '@seven-planets/game';
 
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { owned } from './owned';
 import { techLevel } from './tech-level';
 import { totalTroops } from './total-troops';
@@ -9,7 +9,7 @@ export function skipTarget(
   player: Player,
   influenceType: InfluenceType,
 ): Player | null {
-  const rivals = alive().filter((player) => player.id !== player.id);
+  const rivals = getAlivePlayers().filter((player) => player.id !== player.id);
   if (rivals.length === 0) {
     return null;
   }

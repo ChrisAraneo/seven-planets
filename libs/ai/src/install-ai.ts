@@ -10,6 +10,8 @@ import {
   AUTO_HUMAN,
   getGameState,
   getGameStateLastValue,
+  getIsOver,
+  getPlayers,
 } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
 import { homePlanet } from '@seven-planets/game';
@@ -27,6 +29,7 @@ import {
 import { mastermindAction } from './functions/mastermind-action';
 import { mastermindDraftPick } from './functions/mastermind-draft-pick';
 import { shouldAcceptTrade } from './functions/should-accept-trade';
+import { getPlayerByIndex } from '../../game/src/getters/get-player-by-index';
 
 /* =====================================================================
    The mastermind AI driver.
@@ -66,7 +69,7 @@ const PICK_DELAY = 300;
 /** A seat is AI-controlled when it is not the human, or in demo mode
     (AUTO_HUMAN) when even the human proxy is driven by the AI. */
 export function isAiSeat(seatId: number): boolean {
-  const players = getGameStateLastValue().players;
+  const players = getPlayers();
   if (seatId < 0 || seatId >= players.length) {
     return false;
   }
@@ -135,15 +138,24 @@ function aiPickCard(playerId: number): void {
 
 /** Decide and perform one action, returning false when the turn is done. */
 function takeOneAction(playerId: number): boolean {
-  if (getGameStateLastValue().over) {
+  if (getIsOver()) {
     return false;
   }
-  const player = getGameStateLastValue().players[playerId];
+
+  const player = getPlayerByIndex(playerId);
+
+  if (player === undefined) {
+    return false;
+  }
+
   const mastermindDecision = mastermindAction(player);
+
   if (!mastermindDecision) {
     return false;
   }
+
   performDecision(playerId, mastermindDecision);
+
   return true;
 }
 

@@ -11,7 +11,7 @@ import type { Planet, Player } from '@seven-planets/game';
 
 import { actionDrawProb } from './action-draw-prob';
 import { aggression } from './aggression';
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { battleWinProb } from './battle-win-prob';
 import { mayTarget } from './may-target';
 import { minTroopsToConquer } from './min-troops-to-conquer';
@@ -32,7 +32,7 @@ export function holdProbability(
     (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE +
     singularityDefBonus(planet);
   const pacBonus = owner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0;
-  for (const player of alive()) {
+  for (const player of getAlivePlayers()) {
     if (player.id === owner.id || player.hasPacifistStatus) {
       continue;
     }

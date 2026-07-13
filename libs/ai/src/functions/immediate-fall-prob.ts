@@ -2,7 +2,7 @@ import { COMBAT } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
 
 import { aggression } from './aggression';
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { attackBaseOf } from './attack-base-of';
 import { battleWinProb } from './battle-win-prob';
 import { defenseBaseOf } from './defense-base-of';
@@ -17,7 +17,7 @@ export function immediateFallProb(ownerP: Player, planet: Planet): number {
     return 0;
   }
   let pSafe = 1;
-  for (const player of alive()) {
+  for (const player of getAlivePlayers()) {
     if (
       player.id === ownerP.id ||
       player.hasPacifistStatus ||

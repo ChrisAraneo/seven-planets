@@ -5,7 +5,7 @@ export * from './functions/afford-eta';
 export * from './functions/aggression';
 export * from './functions/ai-constants';
 export * from './functions/ai-difficulty';
-export * from './functions/alive';
+export * from '../../game/src/getters/get-alive-players';
 export * from './functions/attack-base-of';
 export * from './functions/avg-resource-card-value';
 export * from './functions/avg-strength';

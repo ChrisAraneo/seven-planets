@@ -2,7 +2,7 @@ import { getAiState } from '../state';
 import { INFLUENCE_CARDS } from '@seven-planets/game';
 import type { InfluenceType, Player } from '@seven-planets/game';
 
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { bestCoupTarget } from './best-coup-target';
 import type { Plan } from './plan-types';
 import { playerStrength } from './player-strength';
@@ -28,7 +28,7 @@ export function influenceDraftValue(
       break;
     }
     case 'STEAL_ACTION': {
-      const loot = alive().some(
+      const loot = getAlivePlayers().some(
         (player) =>
           player.id !== player.id &&
           (['ATTACK', 'RECRUIT', 'MOVE', 'TRADE'] as const).some(
@@ -47,7 +47,7 @@ export function influenceDraftValue(
       if (!target) {
         return -2;
       }
-      const allStr = alive().map((player) => playerStrength(player));
+      const allStr = getAlivePlayers().map((player) => playerStrength(player));
       const avgStr =
         allStr.reduce((first, building) => first + building, 0) /
         (allStr.length || 1);

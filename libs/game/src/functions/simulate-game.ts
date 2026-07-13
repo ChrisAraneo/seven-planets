@@ -1,7 +1,6 @@
 import { filter, firstValueFrom } from 'rxjs';
 import { match, P } from 'ts-pattern';
 
-import { getOver } from '../getters/get-over';
 import { getTurn } from '../getters/get-turn';
 import type { GameOver } from '../interfaces/game-over';
 import {
@@ -12,6 +11,7 @@ import {
   setGameState,
 } from '../state';
 import { assignKamikazes } from './assign-kamikazes';
+import { getGameOverObject } from '..';
 
 const { nonNullable } = P;
 
@@ -23,7 +23,7 @@ interface SimulationResult {
 
 export async function simulateGame(
   maxTurns = 400,
-  opts: { kamikazeCount?: number } = {},
+  options: { kamikazeCount?: number } = {},
 ): Promise<SimulationResult> {
   /* Each simulated game runs on a fresh state; games run strictly
      sequentially, so resetting between games is safe. Headless, every
@@ -33,7 +33,7 @@ export async function simulateGame(
      'done' by the time dispatch('start') returns. */
   resetGameState();
   setGameState({
-    ...assignKamikazes(getGameStateLastValue(), opts.kamikazeCount ?? 0),
+    ...assignKamikazes(getGameStateLastValue(), options.kamikazeCount ?? 0),
     maxTurns,
   });
   const done = firstValueFrom(
@@ -41,10 +41,13 @@ export async function simulateGame(
   );
   dispatch({ kind: 'start' });
   await done;
-  return gameResult(getOver(), getTurn());
+  return gameResult(getGameOverObject(), getTurn());
 }
 
-function gameResult(over: GameOver | null, turns: number): SimulationResult {
+function gameResult(
+  over: GameOver | undefined,
+  turns: number,
+): SimulationResult {
   return {
     turns,
     winner: match(over?.winner)

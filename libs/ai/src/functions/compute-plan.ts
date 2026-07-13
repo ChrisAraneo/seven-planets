@@ -31,6 +31,7 @@ import type { Plan, StrategyKind } from './plan-types';
 import { planetValue } from './planet-value';
 import { recruitRate } from './recruit-rate';
 import { survivorsAfterWin } from './survivors-after-win';
+import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 
 export function computePlan(
   player: Player,
@@ -78,13 +79,20 @@ export function computePlan(
       if (target.ownerId === player.id) {
         continue;
       }
-      const defOwner = getGameStateLastValue().players[target.ownerId];
+      const defOwner = getPlayerByIndex(target.ownerId);
+
+      if (!defOwner) {
+        continue;
+      }
+
       if (!defOwner.isAlive) {
         continue;
       }
+
       if (!mayTarget(player, defOwner)) {
         continue;
       }
+
       const futureDef = Math.round(target.troops + recruitRate(defOwner) * 3);
       let need = minTroopsToConquer(futureDef);
       const defB =

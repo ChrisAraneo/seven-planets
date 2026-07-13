@@ -11,10 +11,6 @@ import type { Planet } from '../../interfaces/planet';
 import type { Player } from '../../interfaces/player';
 import type { PoolType } from '../../interfaces/pool-type';
 
-/* Apply the chosen pool card to the drafting seat: remove it from the pool
-   and route it by kind (construct the building, buy the influence card, or
-   take the card to hand). Mutates the reducer's private clone in place; a
-   building pick may end the game (state.over), which advance settles. */
 export function applyPick(
   state: GameState,
   index: number,

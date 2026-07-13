@@ -1,17 +1,11 @@
-import { getGameStateLastValue } from '@seven-planets/game';
+import { getPlanets } from '@seven-planets/game';
+import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
-import {
-  COMBAT,
-  CONQUEST_TRUCE,
-  PACIFIST_DEF_BONUS,
-  SHIELD_DEFENSE,
-} from '@seven-planets/game';
+import { COMBAT, CONQUEST_TRUCE } from '@seven-planets/game';
 import { rocketCap } from '@seven-planets/game';
-import { siloBonus } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
 
-import { alive } from './alive';
 import { attackBaseOf } from './attack-base-of';
 import { avgStrength } from './avg-strength';
 import { battleWinProb } from './battle-win-prob';
@@ -50,12 +44,12 @@ export function evaluateAttacks(player: Player): AttackPlan[] {
   // when it scores a strike, so even long-shot attacks stay on the table.
   const lossWeight = aiState.W.troopValue * (player.isKamikaze ? 0.25 : 1);
   const plans: AttackPlan[] = [];
-  for (const target of getGameStateLastValue().planets) {
+  for (const target of getPlanets()) {
     if (target.ownerId === player.id) {
       continue;
     }
-    const defOwner = getGameStateLastValue().players[target.ownerId];
-    if (!defOwner.isAlive || isUnderTruce(target)) {
+    const defOwner = getPlayerByIndex(target.ownerId);
+    if (!defOwner || !defOwner.isAlive || isUnderTruce(target)) {
       continue;
     }
     if (!mayTarget(player, defOwner)) {

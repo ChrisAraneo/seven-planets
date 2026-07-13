@@ -1,7 +1,7 @@
 import { getAiState } from '../state';
 import type { InfluenceOpts, InfluenceType, Player } from '@seven-planets/game';
 
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { avgStrength } from './avg-strength';
 import { bestCoupTarget } from './best-coup-target';
 import { hasB } from './has-b';
@@ -50,13 +50,15 @@ export function influencePlay(
     const scary =
       playerStrength(target) >= avg * 1.15 ||
       isImminentAttacker(player, target) ||
-      alive().length === 2;
+      getAlivePlayers().length === 2;
     if (scary) {
       return { type: influenceType, opts: {}, ev: 3 };
     }
   }
   if ((player.hand.STEAL_ACTION || 0) > 0) {
-    const rivals = alive().filter((player) => player.id !== player.id);
+    const rivals = getAlivePlayers().filter(
+      (player) => player.id !== player.id,
+    );
     const byStrength = (player: Player, eachPlayer: Player) =>
       playerStrength(eachPlayer) - playerStrength(player);
     const danger = rivals

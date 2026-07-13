@@ -25,6 +25,7 @@ import { owned } from './owned';
 import { planetValue } from './planet-value';
 import { totalTroops } from './total-troops';
 import { isUnderTruce } from './is-under-truce';
+import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 
 export function buildingWorth(
   player: Player,
@@ -77,7 +78,7 @@ export function buildingWorth(
         for (const eachPlanet of getGameStateLastValue().planets) {
           if (
             eachPlanet.ownerId === player.id ||
-            !getGameStateLastValue().players[eachPlanet.ownerId].isAlive ||
+            !getPlayerByIndex(eachPlanet.ownerId)?.isAlive ||
             isUnderTruce(eachPlanet)
           ) {
             continue;

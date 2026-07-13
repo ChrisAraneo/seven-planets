@@ -1,12 +1,12 @@
 import { ADVANCED_FROM_TURN, BUILD_ORDER, maxLevel } from '@seven-planets/game';
 import { isSingularityLabOk } from '@seven-planets/game';
 
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { owned } from './owned';
 import { techLevel } from './tech-level';
 
 export function isSingularityLive(): boolean {
-  return alive().some((player) =>
+  return getAlivePlayers().some((player) =>
     owned(player).some((planet) => {
       const next = (planet.buildings.SINGULARITY || 0) + 1;
       return (

@@ -8,7 +8,7 @@ import type {
 } from '@seven-planets/game';
 
 import { aggression } from './aggression';
-import { alive } from './alive';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { avgStrength } from './avg-strength';
 import { hasB } from './has-b';
 import { playerStrength } from './player-strength';
@@ -20,7 +20,7 @@ export function denialValue(player: Player, poolType: PoolType): number {
   const avg = avgStrength();
   let worst = 0;
   const def = CARDS[poolType];
-  for (const eachPlayer of alive()) {
+  for (const eachPlayer of getAlivePlayers()) {
     if (eachPlayer.id === player.id) {
       continue;
     }
