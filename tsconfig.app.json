@@ -1,23 +1,15 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  // simulation.ts and tune.ts are Node-only analysis scripts (run via jiti);
-  // they use node globals (process/fs) absent from the browser app's types.
-  "exclude": ["src/**/__tests__/*", "src/game/simulation.ts", "src/game/tune.ts"],
+  "extends": ["@vue/tsconfig/tsconfig.dom.json", "./tsconfig.base.json"],
+  "include": [
+    "env.d.ts",
+    "apps/browser/src/**/*",
+    "apps/browser/src/**/*.vue",
+    "libs/**/*.ts"
+  ],
+  // Tests are type-checked by tsconfig.vitest.json; scripts run headless via jiti.
+  "exclude": ["**/__tests__/*", "scripts/**"],
   "compilerOptions": {
-    // The ported game engine (src/game/*) is built on dynamic dictionary access
-    // keyed by runtime card/building strings (hands, cost tables, lookup maps).
-    // noUncheckedIndexedAccess would force pervasive `?? 0` / `!` noise across the
-    // tuned logic, so it is left off for this codebase.
-    "noUncheckedIndexedAccess": false,
-
-    // Path mapping for cleaner imports.
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
-    // Specified here to keep it out of the root directory.
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   }
 }
