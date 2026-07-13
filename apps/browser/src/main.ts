@@ -1,27 +1,28 @@
 import './assets/game.css';
 
-import { createApp, watch } from 'vue';
+import { createApp } from 'vue';
+import { distinctUntilKeyChanged } from 'rxjs';
 
 import App from './App.vue';
 import { installEffects, playNewEffects } from '@seven-planets/effects';
-import { getGameState } from '@seven-planets/game';
+import { state$ } from '@seven-planets/game';
 import { pinia, useEffectsStore } from './stores';
 
 // Composition root: hook the graphical effects into the app, with the
 // effects store as the animation sink. Importing ./stores above already
-// wired the game state accessor and seated the AI.
+// seated the AI's subscriptions.
 const effectsStore = useEffectsStore();
 installEffects({
   enqueue: (anim) => effectsStore.anims.push(anim),
   isFastMode: () => effectsStore.fastMode,
 });
 
-// Animations fire in RESPONSE to game-state changes: the game core appends
-// effect events as it mutates state; this watcher plays the new ones.
-watch(
-  () => getGameState().effectSeq,
-  () => playNewEffects(getGameState()),
-);
+// Animations fire in RESPONSE to game-state emissions: the game core
+// appends effect events as it mutates state and publishes snapshots;
+// this subscription plays the new ones.
+state$
+  .pipe(distinctUntilKeyChanged('effectSeq'))
+  .subscribe((snapshot) => playNewEffects(snapshot));
 
 const app = createApp(App);
 

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { getPendingOffer } from '@seven-planets/game';
-import { getPlayers } from '@seven-planets/game';
 import { computed } from 'vue';
 import { resolveOffer as resolveGameOffer } from '@seven-planets/game';
+import { useGameStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { fmtCards } from '@seven-planets/game';
 
-const offer = computed(() => getPendingOffer());
+const game = useGameStore();
+
+const offer = computed(() => game.state.pendingOffer);
 const from = computed(() =>
-  offer.value ? getPlayers()[offer.value.fromId] : null,
+  offer.value ? game.state.players[offer.value.fromId] : null,
 );
 
 function resolveOffer(accept: boolean): void {

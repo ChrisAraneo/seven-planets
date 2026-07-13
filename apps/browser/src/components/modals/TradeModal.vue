@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getPlayers } from '@seven-planets/game';
 import { computed, reactive, ref, watch } from 'vue';
 import { makeOffer } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
@@ -18,7 +17,7 @@ const partners = filterAlivePlayers(game.state).filter(
   (player) => !player.isHuman,
 );
 const partnerId = ref(partners[0].id);
-const partner = computed(() => getPlayers()[partnerId.value]);
+const partner = computed(() => game.state.players[partnerId.value]);
 
 const give = reactive<Record<string, number>>({});
 const get = reactive<Record<string, number>>({});

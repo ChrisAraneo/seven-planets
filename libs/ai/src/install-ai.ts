@@ -1,10 +1,15 @@
-import { watch } from 'vue';
+import { distinctUntilChanged, distinctUntilKeyChanged, map } from 'rxjs';
 
-import type { InfluenceOpts, InfluenceType, Cost } from '@seven-planets/game';
+import type {
+  GameState,
+  InfluenceOpts,
+  InfluenceType,
+  Cost,
+} from '@seven-planets/game';
 import { AUTO_HUMAN } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
 import { homePlanet } from '@seven-planets/game';
-import { getGameState } from '@seven-planets/game';
+import { getGameState, state$ } from '@seven-planets/game';
 import {
   attackPlanet,
   endTurn,
@@ -23,25 +28,29 @@ import { shouldAcceptTrade } from './functions/should-accept-trade';
 /* =====================================================================
    The mastermind AI driver.
 
-   The AI has no bespoke bridge into the game loop — it only WATCHES the
-   live game state, exactly like the effects player watches effectSeq:
+   The AI has no bespoke bridge into the game loop — it only SUBSCRIBES
+   to the game's state stream, exactly like the effects player:
 
-     watch(() => getGameState().inputSeq,     answer picks / turns)
-     watch(() => getGameState().pendingOffer, answer trade offers)
+     state$ | distinctUntilKeyChanged('inputSeq')  → answer picks/turns
+     state$ | map(pendingOffer) | distinct         → answer trade offers
 
-   The engine bumps `inputSeq` every time it parks awaiting the seat in
-   play; when that seat is AI-controlled the watcher answers by calling
-   the very same game actions the human's clicks call. The AI never
-   mutates game state directly, and nothing registers callbacks into the
-   game core.
+   The engine bumps `inputSeq` and publishes a snapshot every time it
+   parks awaiting the seat in play; when that seat is AI-controlled the
+   subscription answers by calling the very same game actions the
+   human's clicks call. The AI never mutates game state directly, and
+   the game core registers no callbacks — its output is state$, its
+   input is the actions.
 
    Pacing is entirely the AI's concern (the engine never waits on time):
-   in the browser the AI defers its answers with timers so its play reads
-   at a human pace; headless it answers one microtask after the flush.
+   in the browser the AI defers its answers with timers so its play
+   reads at a human pace; headless it answers synchronously — RxJS
+   subjects deliver synchronously and the engine stream's queueScheduler
+   flattens the loop, so whole simulated games run without timers,
+   promises or a Vue scheduler.
 
-   The AI's private tuning memory (weights, plan cache) deliberately stays
-   a plain non-reactive singleton in ./state — its hottest loops read it
-   millions of times per simulated game.
+   The AI's private tuning memory (weights, plan cache) deliberately
+   stays a plain non-reactive singleton in ./state — its hottest loops
+   read it millions of times per simulated game.
    ===================================================================== */
 
 /** Paced (timer-deferred) answers in the browser; instant headless. */
@@ -135,15 +144,41 @@ function takeOneAction(playerId: number): boolean {
   return true;
 }
 
-/** The engine parked an action turn for AI seat `playerId`: perform up
-    to 12 actions, then end the turn to resume the engine. */
-function aiTakeTurnNow(playerId: number): void {
-  for (let index = 0; index < 12; index++) {
-    if (!takeOneAction(playerId)) {
-      break;
+/* Headless action turns run ONE intent per emission: dispatching from
+   inside a state$ subscriber queues the intent (queueScheduler), so the
+   NEXT snapshot — the one carrying that intent's outcome — is what
+   re-triggers this driver for the following decision. Deciding several
+   actions off one snapshot would plan them all against stale state. The
+   12-action budget is keyed to the park's inputSeq. */
+const HEADLESS_ACTION_BUDGET = 12;
+let headlessTurnKey = -1;
+let headlessActionsLeft = 0;
+
+function headlessTurnStep(snapshot: GameState): void {
+  if (PACED || !snapshot.awaitingAction || !isAiSeat(snapshot.activeId)) {
+    return;
+  }
+  // A trade offer is out: resume when the partner's answer is reduced.
+  if (snapshot.pendingOffer) {
+    return;
+  }
+  // The AI always ends its turn — even a game-ending action must be
+  // followed by endTurn so the engine can settle the cursor to 'done'.
+  if (snapshot.over) {
+    endTurn({ playerId: snapshot.activeId });
+    return;
+  }
+  if (snapshot.inputSeq !== headlessTurnKey) {
+    headlessTurnKey = snapshot.inputSeq;
+    headlessActionsLeft = HEADLESS_ACTION_BUDGET;
+  }
+  if (headlessActionsLeft > 0) {
+    headlessActionsLeft -= 1;
+    if (takeOneAction(snapshot.activeId)) {
+      return;
     }
   }
-  endTurn({ playerId });
+  endTurn({ playerId: snapshot.activeId });
 }
 
 /** Browser version of the same turn, paced with timers so the AI's play
@@ -177,56 +212,52 @@ function aiConsiderOffer(playerId: number): void {
   resolveOffer({ playerId, accept });
 }
 
-/** The engine parked awaiting input (inputSeq bumped) — answer if the
-    seat in play is ours. Answers are always DEFERRED out of the watcher
-    callback: answering in place would advance the engine synchronously
-    and re-trigger this same watcher within one scheduler flush, which
-    Vue's dev build cuts off as a recursive update. Headless a microtask
-    suffices; the browser uses pacing timers anyway. */
-function respond(): void {
-  const state = getGameState();
-  if (state.over || !isAiSeat(state.activeId)) {
+/** The engine parked awaiting input (a snapshot with a fresh inputSeq
+    arrived) — answer if the seat in play is ours. Headless action turns
+    are driven by headlessTurnStep on every emission instead, so the AI
+    always decides on the freshly reduced state. */
+function respond(snapshot: GameState): void {
+  if (snapshot.over || !isAiSeat(snapshot.activeId)) {
     return;
   }
-  const seatId = state.activeId;
-  if (state.awaitingPick) {
+  const seatId = snapshot.activeId;
+  if (snapshot.awaitingPick) {
     if (PACED) {
       setTimeout(() => aiPickCard(seatId), PICK_DELAY);
     } else {
-      queueMicrotask(() => aiPickCard(seatId));
+      aiPickCard(seatId);
     }
     return;
   }
-  if (!state.awaitingAction) {
-    return;
-  }
-  if (PACED) {
+  if (snapshot.awaitingAction && PACED) {
     aiTakeTurnPaced(seatId);
-  } else {
-    queueMicrotask(() => aiTakeTurnNow(seatId));
   }
 }
 
 /* ---------------------------------------------------------------------
-   The watchers. The AI's ONLY connection to the running game — the
-   engine treats AI seats exactly like the human, raising the same state
-   flags and resumed by the same actions. Requires the live state to be
-   reactive (the composition root installs it that way).
+   The subscriptions. The AI's ONLY connection to the running game — the
+   engine treats AI seats exactly like the human, publishing the same
+   snapshots and resumed by the same actions. Pure RxJS: no Vue, no
+   reactivity, works identically in the browser and headless.
    --------------------------------------------------------------------- */
 export function installAi(): void {
   // The engine parked awaiting the seat in play (pick or action turn).
-  watch(
-    () => getGameState().inputSeq,
-    () => respond(),
-  );
+  state$.pipe(distinctUntilKeyChanged('inputSeq')).subscribe(respond);
 
-  // A trade offer awaits its target seat's answer.
-  watch(
-    () => getGameState().pendingOffer,
-    (offer) => {
+  // A trade offer awaits its target seat's answer. Subscribed BEFORE the
+  // headless turn driver so the answer is queued (and thus reduced) ahead
+  // of the offerer's next decision.
+  state$
+    .pipe(
+      map((snapshot) => snapshot.pendingOffer),
+      distinctUntilChanged(),
+    )
+    .subscribe((offer) => {
       if (offer && isAiSeat(offer.toId)) {
         aiConsiderOffer(offer.toId);
       }
-    },
-  );
+    });
+
+  // Headless action turns: one intent per emission (see headlessTurnStep).
+  state$.subscribe(headlessTurnStep);
 }

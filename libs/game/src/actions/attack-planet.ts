@@ -29,7 +29,7 @@ import { isUnderTruce } from '../functions/is-under-truce';
 import { ownedPlanets } from '../functions/owned-planets';
 import { pacifistDefBonus } from '../functions/pacifist-def-bonus';
 import { spendActionCard } from '../functions/spend-action-card';
-import { getGameState, setGameState } from '../game-state';
+import { dispatch } from '../state';
 
 export interface AttackPlanetPayload {
   playerId: number;
@@ -49,25 +49,34 @@ interface BattleContext {
   defLoss: number;
 }
 
-// Resolves the whole attack SYNCHRONOUSLY: the state carries the outcome the
-// moment this returns. The rocket flight / explosion / banners are emitted as
-// effect events on the state — the presentation layer plays them in response.
+/** Launch an attack. Event creator: validation and resolution live in the
+    reducer (applyAttackPlanet). */
 export function attackPlanet(payload: AttackPlanetPayload): void {
-  return match(cloneDeep(getGameState()))
+  dispatch({ kind: 'attack', payload });
+}
+
+/* Reducer branch. Resolves the whole attack SYNCHRONOUSLY on a private
+   clone: the returned state carries the outcome. The rocket flight /
+   explosion / banners are emitted as effect events on the state — the
+   presentation layer plays them in response. Illegal intents reduce to the
+   unchanged state. */
+export function applyAttackPlanet(
+  state: GameState,
+  payload: AttackPlanetPayload,
+): GameState {
+  return match(state)
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
-      noop,
+      (state) => state,
     )
     .when(
       (state) => !hasActionCard(state.players[payload.playerId], 'ATTACK'),
-      noop,
+      (state) => state,
     )
-    .otherwise(
-      (state) =>
-        void chain(state)
-          .tap((state) => doAttack(state, payload))
-          .tap((state) => setGameState(state))
-          .value(),
+    .otherwise((state) =>
+      chain(cloneDeep(state))
+        .tap((clone) => doAttack(clone, payload))
+        .value(),
     );
 }
 
@@ -466,9 +475,7 @@ function lootCards(
       (count) =>
         void chain(stealCards(state, fromId, toId, count))
           .tap(({ state: looted }) => assign(state, looted))
-          .tap(({ taken }) =>
-            assign(state, log(state, message(taken), 'war')),
-          )
+          .tap(({ taken }) => assign(state, log(state, message(taken), 'war')))
           .value(),
     );
 }

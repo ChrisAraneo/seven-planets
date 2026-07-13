@@ -1,8 +1,8 @@
 // @vitest-environment node
-// The mastermind brain reads the game state from the store like any player,
-// So it can be tested headless; full games run with AUTO_HUMAN (no `document`).
-// Importing the store creates it and installs the state accessor. No
-// Presentation layer is installed, so the engine's hooks are no-ops.
+// The mastermind brain reads the game state like any player, so it can be
+// tested headless; full games run with AUTO_HUMAN (no `document`). Importing
+// the store seats the AI's state$ subscriptions, which answer every engine
+// park synchronously — whole games complete inside one simulateGame await.
 import '@/stores';
 
 import { describe, expect, it } from 'vitest';
@@ -22,10 +22,10 @@ import { simulateGame } from '@seven-planets/game';
 import type { GameState } from '@seven-planets/game';
 import { getGameState, resetGameState } from '@seven-planets/game';
 
-/** A deterministic mid-game state: player 0 is the mastermind. Installed into
-    the store's game module, which is where the AI functions read it from. */
+/** A deterministic mid-game state: player 0 is the mastermind. Installed as
+    the live state, which is where the AI functions read it from. */
 function midGameState(): GameState {
-  resetGameState({ raw: true }); // Headless — skip reactivity
+  resetGameState();
   const state = getGameState();
   state.turn = 20;
   return state;
@@ -268,5 +268,5 @@ describe('mastermind in full headless games', () => {
     }
     // Non-flaky sanity floor: it must win SOMETHING across 24 games.
     expect(wins).toBeGreaterThan(0);
-  }, 300_000);
+  }, 60_000);
 });

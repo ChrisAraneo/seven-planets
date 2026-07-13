@@ -1,15 +1,21 @@
-import type { Phase } from './phase';
-import type { PoolType } from './pool-type';
-import type { Player } from './player';
-import type { Planet } from './planet';
+import type { EffectEvent } from './effect-event';
+import type { EngineCursor } from './engine-cursor';
+import type { GameOver } from './game-over';
 import type { LogEntry } from './log-entry';
 import type { PendingOffer } from './pending-offer';
-import type { GameOver } from './game-over';
-import type { EffectEvent } from './effect-event';
+import type { Phase } from './phase';
+import type { Planet } from './planet';
+import type { Player } from './player';
+import type { PoolType } from './pool-type';
 
 export interface GameState {
   turn: number;
   phase: Phase;
+  /** The engine's position as data (see EngineCursor) — advanced by the
+      reducer; `phase` above stays as the UI-facing summary of it. */
+  cursor: EngineCursor;
+  /** Turn cap: the reducer stops before starting a turn past this. */
+  maxTurns: number;
   over: GameOver | null;
   pool: PoolType[];
   activeId: number;

@@ -1,13 +1,4 @@
 <script setup lang="ts">
-import { getActiveId } from '@seven-planets/game';
-import { getAwaitingPick } from '@seven-planets/game';
-import { getDraftPlanetId } from '@seven-planets/game';
-import { getOver } from '@seven-planets/game';
-import { getPhase } from '@seven-planets/game';
-import { getPlanets } from '@seven-planets/game';
-import { getPlayers } from '@seven-planets/game';
-import { getPool } from '@seven-planets/game';
-import { getStatus } from '@seven-planets/game';
 import { computed } from 'vue';
 import { pickCard } from '@seven-planets/game';
 import { useGameStore } from '@/stores';
@@ -32,7 +23,8 @@ const game = useGameStore();
 // AwaitingPick is raised for every drafting seat, so scope the human's pool
 // clicks to the human's own draft turn (seat 0).
 const isPicking = computed(
-  () => getAwaitingPick() && getActiveId() === 0 && !getOver(),
+  () =>
+    game.state.awaitingPick && game.state.activeId === 0 && !game.state.over,
 );
 
 interface PoolCardVM {
@@ -60,13 +52,13 @@ const hints: Partial<Record<PoolType, string>> = {
 };
 
 const poolCards = computed<PoolCardVM[]>(() => {
-  if (getPhase() !== 'draft' || getOver()) return [];
   const state = game.state;
+  if (state.phase !== 'draft' || state.over) return [];
   const picking = isPicking.value;
-  const human = getPlayers()[0];
+  const human = state.players[0];
   const draftPlanet =
-    getPlanets()[getDraftPlanetId()] || homePlanet(state, human);
-  return getPool().map((poolType: PoolType, poolIndex: number) => {
+    state.planets[state.draftPlanetId] || homePlanet(state, human);
+  return state.pool.map((poolType: PoolType, poolIndex: number) => {
     const card = CARDS[poolType];
     const valid = picking && canPickCard(state, human, poolType, draftPlanet);
     const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${card.action ? 'action' : ''}`;
@@ -131,7 +123,7 @@ function pick(poolCard: PoolCardVM): void {
 
 <template>
   <div id="pool-zone">
-    <div id="status">{{ getStatus() }}</div>
+    <div id="status">{{ game.state.status }}</div>
     <div id="pool">
       <div
         v-for="poolCard in poolCards"

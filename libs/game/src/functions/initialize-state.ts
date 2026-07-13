@@ -50,6 +50,8 @@ export function initializeState(): GameState {
       (gameDefs): GameState => ({
         turn: 0,
         phase: 'setup',
+        cursor: { phase: 'setup' },
+        maxTurns: 400,
         over: null,
         pool: [],
         activeId: -1,

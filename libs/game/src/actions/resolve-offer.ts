@@ -1,6 +1,6 @@
-import { assign, chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep } from 'lodash-es';
 import { match, P } from 'ts-pattern';
-import { getGameState, setGameState } from '../game-state';
+import { dispatch } from '../state';
 
 import { fmtCards } from '../config/constants';
 import { log } from '../functions/log';
@@ -16,24 +16,32 @@ export interface ResolveOfferPayload {
   accept: boolean;
 }
 
-/* The target seat of pendingOffer accepts or declines it. Executes the
-   trade when accepted, logs the decline otherwise, then clears the flag. */
+/** Answer a pending trade offer. Event creator: validation and application
+    live in the reducer (applyResolveOffer). */
 export function resolveOffer(payload: ResolveOfferPayload): void {
-  return chain(cloneDeep(getGameState()))
-    .thru((state) => ({ state, offer: state.pendingOffer }))
-    .thru(({ state, offer }) =>
-      match(offer)
-        .with(nullish, noop)
-        .when((offer) => offer.toId !== payload.playerId, noop)
-        .otherwise(
-          (offer) =>
-            void chain(assign(state, { pendingOffer: null }))
-              .thru((state) => applyDecision(state, offer, payload.accept))
-              .tap((state) => setGameState(state))
-              .value(),
-        ),
+  dispatch({ kind: 'resolveOffer', payload });
+}
+
+/* Reducer branch. The target seat of pendingOffer accepts or declines it:
+   executes the trade when accepted, logs the decline otherwise, then clears
+   the flag — all on a private clone. Illegal intents reduce to the
+   unchanged state. */
+export function applyResolveOffer(
+  state: GameState,
+  payload: ResolveOfferPayload,
+): GameState {
+  return match(state.pendingOffer)
+    .with(nullish, () => state)
+    .when(
+      (offer) => offer.toId !== payload.playerId,
+      () => state,
     )
-    .value();
+    .otherwise((offer) =>
+      chain(cloneDeep(state))
+        .thru((clone) => assign(clone, { pendingOffer: null }))
+        .thru((clone) => applyDecision(clone, offer, payload.accept))
+        .value(),
+    );
 }
 
 function applyDecision(

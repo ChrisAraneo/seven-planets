@@ -571,4 +571,3 @@ export function fmtCards(map: Hand | Cost): string {
     )
     .otherwise(() => 'nothing');
 }
-

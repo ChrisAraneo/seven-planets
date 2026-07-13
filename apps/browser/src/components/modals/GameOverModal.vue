@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { getOver } from '@seven-planets/game';
-import { getTurn } from '@seven-planets/game';
 import { computed } from 'vue';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
@@ -10,7 +8,7 @@ import { totalTroops } from '@seven-planets/game';
 const game = useGameStore();
 const ui = useUiStore();
 
-const over = computed(() => getOver());
+const over = computed(() => game.state.over);
 const human = game.state.players[0];
 const humanWon = computed(
   () => !!over.value?.winner && over.value.winner.isHuman,
@@ -40,7 +38,7 @@ const sub = computed(() => {
     </div>
     <div class="gostats">
       {{ sub }}<br /><br />
-      Turns played: {{ getTurn() }} · Planets held:
+      Turns played: {{ game.state.turn }} · Planets held:
       {{ game.state.planets.filter((pl) => pl.ownerId === human.id).length }} ·
       Buildings: {{ buildingCount(game.state, human) }} · Troops:
       {{ totalTroops(game.state, human) }}

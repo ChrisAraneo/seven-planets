@@ -1,5 +1,5 @@
 import type { LogEntry } from '../interfaces/log-entry';
-import { getGameState } from '../game-state';
+import { getGameState } from '../state';
 
 export function getLog(): readonly LogEntry[] {
   return getGameState().log;

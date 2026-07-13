@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getPlanets } from '@seven-planets/game';
 import { computed, ref, watch } from 'vue';
 import { moveTroops } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
@@ -20,7 +19,7 @@ const fromId = ref(
 const toId = ref(-1);
 const troopCount = ref(1);
 
-const from = computed(() => getPlanets()[fromId.value]);
+const from = computed(() => game.state.planets[fromId.value]);
 const owned = computed(() => ownedPlanets(game.state, human));
 const dests = computed(() =>
   owned.value.filter((planet) => planet.id !== fromId.value),

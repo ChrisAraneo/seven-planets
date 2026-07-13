@@ -1,25 +1,42 @@
-import { assign, chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { resumeEngine } from '../../functions/engine-driver';
-import { getGameState, setGameState } from '../../game-state';
+import type { GameState } from '../../interfaces/game-state';
+import { dispatch } from '../../state';
 
 export interface EndTurnPayload {
   playerId: number;
 }
 
-// An action turn ends only while the engine is suspended awaiting it
-// (`awaitingAction`) for the seat in play. Clearing the flag and resuming
-// the engine advances it to the next seat — the flag is the whole signal.
+/** End the seat in play's action turn. Event creator: validation and
+    application live in the reducer (applyEndTurn). */
 export function endTurn(payload: EndTurnPayload): void {
-  return match(cloneDeep(getGameState()))
-    .when((state) => payload.playerId !== state.activeId, noop)
-    .when((state) => !state.awaitingAction, noop)
-    .otherwise(
-      (state) =>
-        void chain(state)
-          .thru((state) => assign(state, { awaitingAction: false }))
-          .tap((state) => setGameState(state))
-          .tap(() => resumeEngine(undefined))
-          .value(),
+  dispatch({ kind: 'endTurn', ...payload });
+}
+
+/* Reducer branch. Consumes the parked action turn and steps the cursor to
+   the next seat — advance resumes from there. Allowed after game over (the
+   AI always ends its turn; settling to 'done' rides on it). */
+export function applyEndTurn(
+  state: GameState,
+  payload: EndTurnPayload,
+): GameState {
+  return match(state)
+    .when(
+      (state) => payload.playerId !== state.activeId || !state.awaitingAction,
+      (state) => state,
+    )
+    .otherwise((state) =>
+      chain(cloneDeep(state))
+        .tap((clone) => assign(clone, { awaitingAction: false }))
+        .tap((clone) =>
+          match(clone.cursor)
+            .with({ phase: 'action' }, (cursor) =>
+              assign(clone, {
+                cursor: { ...cursor, seatIdx: cursor.seatIdx + 1 },
+              }),
+            )
+            .otherwise(() => clone),
+        )
+        .value(),
     );
 }

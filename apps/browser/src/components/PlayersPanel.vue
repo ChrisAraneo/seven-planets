@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { getActiveId } from '@seven-planets/game';
-import { getOver } from '@seven-planets/game';
-import { getPlayers } from '@seven-planets/game';
 import { useGameStore } from '@/stores';
 import {
   CARDS,
@@ -35,11 +32,11 @@ function actLine(player: Player): string {
 <template>
   <div id="players-panel">
     <div
-      v-for="player in getPlayers()"
+      v-for="player in game.state.players"
       :key="player.id"
       class="prow"
       :class="{
-        active: player.id === getActiveId() && !getOver(),
+        active: player.id === game.state.activeId && !game.state.over,
         dead: !player.isAlive,
       }"
       :style="{ borderLeftColor: player.color }">

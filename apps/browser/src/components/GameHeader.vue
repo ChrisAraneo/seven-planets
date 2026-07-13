@@ -1,23 +1,22 @@
 <script setup lang="ts">
-import { getOver } from '@seven-planets/game';
-import { getPhase } from '@seven-planets/game';
-import { getTurn } from '@seven-planets/game';
 import { computed } from 'vue';
-import { useEffectsStore, useUiStore } from '@/stores';
+import { useEffectsStore, useGameStore, useUiStore } from '@/stores';
 
 const ui = useUiStore();
+const game = useGameStore();
 const effects = useEffectsStore();
 
 const turnLabel = computed(() => {
-  if (getTurn() === 0) return '—';
-  if (getOver()) return `Turn ${getTurn()} · GAME OVER`;
-  const phase =
-    getPhase() === 'draft'
+  const { turn, over, phase } = game.state;
+  if (turn === 0) return '—';
+  if (over) return `Turn ${turn} · GAME OVER`;
+  const phaseLabel =
+    phase === 'draft'
       ? 'DRAFT PHASE'
-      : getPhase() === 'action'
+      : phase === 'action'
         ? 'ACTION PHASE'
         : '…';
-  return `Turn ${getTurn()} · ${phase}`;
+  return `Turn ${turn} · ${phaseLabel}`;
 });
 
 function newGame(): void {

@@ -1,9 +1,9 @@
 // @vitest-environment node
 // In a Node environment there is no `document`, so the engine's AUTO_HUMAN is
 // True and every seat is played by the AI — letting us run whole games headless.
-// Importing the store creates it and installs the state accessor. The AI's
-// watchers answer every engine suspension on microtask flushes (no DOM → no
-// pacing timers), so each game completes over a chain of microtasks.
+// Importing the store seats the AI's state$ subscriptions, which answer every
+// engine park synchronously (RxJS subjects deliver synchronously; the engine
+// stream's queueScheduler flattens the loop) — games run at pure logic speed.
 import '@/stores';
 
 import { describe, expect, it } from 'vitest';
@@ -21,5 +21,5 @@ describe('headless game simulation', () => {
         expect(result.winner).not.toBeNull();
       }
     }
-  }, 300_000);
+  }, 60_000);
 });

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getPlayers } from '@seven-planets/game';
 import { computed, ref } from 'vue';
 import { useInfluence } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
@@ -151,10 +150,10 @@ function doSteal(
           class="trow"
           @click="doCoup(planet)">
           <div class="tinfo">
-            <b :style="{ color: getPlayers()[planet.ownerId].color }">{{
+            <b :style="{ color: game.state.players[planet.ownerId].color }">{{
               planet.name
             }}</b>
-            — {{ getPlayers()[planet.ownerId].name }}
+            — {{ game.state.players[planet.ownerId].name }}
           </div>
           <div>🪖{{ planet.troops }} {{ coupIcons(planet) }}</div>
         </div>

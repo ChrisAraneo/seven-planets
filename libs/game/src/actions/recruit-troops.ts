@@ -10,31 +10,40 @@ import { log } from '../functions/log';
 import { payCost } from '../functions/pay-cost';
 import { pluralSuffix } from '../functions/plural-suffix';
 import { spendActionCard } from '../functions/spend-action-card';
-import { getGameState, setGameState } from '../game-state';
+import { dispatch } from '../state';
 
 export interface RecruitTroopsPayload {
   playerId: number;
   planetId: number;
 }
 
+/** Recruit troops. Event creator: validation and resolution live in the
+    reducer (applyRecruitTroops). */
 export function recruitTroops(payload: RecruitTroopsPayload): void {
-  return match(cloneDeep(getGameState()))
+  dispatch({ kind: 'recruit', payload });
+}
+
+/* Reducer branch. Resolves the recruitment on a private clone; illegal
+   intents reduce to the unchanged state. */
+export function applyRecruitTroops(
+  state: GameState,
+  payload: RecruitTroopsPayload,
+): GameState {
+  return match(state)
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
-      noop,
+      (state) => state,
     )
     .when(
       (state) => !hasActionCard(state.players[payload.playerId], 'RECRUIT'),
-      noop,
+      (state) => state,
     )
-    .otherwise(
-      (state) =>
-        void chain(state)
-          .tap((state) =>
-            executeRecruit(state, payload.playerId, payload.planetId),
-          )
-          .tap((state) => setGameState(state))
-          .value(),
+    .otherwise((state) =>
+      chain(cloneDeep(state))
+        .tap((clone) =>
+          executeRecruit(clone, payload.playerId, payload.planetId),
+        )
+        .value(),
     );
 }
 
@@ -53,9 +62,7 @@ function executeRecruit(
     )
     .otherwise(
       (planet) =>
-        void chain(
-          assign(state, spendActionCard(state, playerId, 'RECRUIT')),
-        )
+        void chain(assign(state, spendActionCard(state, playerId, 'RECRUIT')))
           .thru((state) =>
             assign(state, payCost(state, playerId, recruitCost(planet))),
           )

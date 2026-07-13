@@ -7,8 +7,6 @@ import { isPacifist } from '@seven-planets/game';
 import { hasActionCard } from '@seven-planets/game';
 import { totalTroops } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
-import { getAwaitingAction } from '@seven-planets/game';
-import { getOver } from '@seven-planets/game';
 import { endTurn, recruitTroops } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import { computed } from 'vue';
@@ -16,7 +14,7 @@ import { computed } from 'vue';
 const game = useGameStore();
 const ui = useUiStore();
 
-const my = computed(() => getAwaitingAction() && !getOver());
+const my = computed(() => game.state.awaitingAction && !game.state.over);
 const human = computed(() => game.state.players[0]);
 
 const hasBarracks = computed(() =>

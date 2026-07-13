@@ -1,5 +1,5 @@
 import type { Phase } from '../interfaces/phase';
-import { getGameState } from '../game-state';
+import { getGameState } from '../state';
 
 export function getPhase(): Phase {
   return getGameState().phase;

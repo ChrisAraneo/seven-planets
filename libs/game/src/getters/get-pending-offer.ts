@@ -1,5 +1,5 @@
 import type { PendingOffer } from '../interfaces/pending-offer';
-import { getGameState } from '../game-state';
+import { getGameState } from '../state';
 
 export function getPendingOffer(): PendingOffer | null {
   return getGameState().pendingOffer;

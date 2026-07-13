@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { getOver } from '@seven-planets/game';
-import { getPendingOffer } from '@seven-planets/game';
 import { computed, onMounted } from 'vue';
 import { useGameStore, useUiStore } from '@/stores';
 import GameHeader from '@/components/GameHeader.vue';
@@ -50,7 +48,7 @@ onMounted(() => ui.start());
   <!-- The difficulty picker opens the game and blocks all other UI. -->
   <DifficultyModal v-if="!difficulty" />
   <!-- Game over takes precedence over everything else. -->
-  <GameOverModal v-else-if="getOver()" />
+  <GameOverModal v-else-if="game.state.over" />
   <template v-else>
     <HelpModal v-if="modal === 'help'" />
     <AttackModal v-else-if="modal === 'attack'" />
@@ -60,6 +58,6 @@ onMounted(() => ui.start());
     <InfluenceModal v-else-if="modal === 'influence'" />
     <!-- Offers between AI seats also pass through pendingOffer now — only
          show the modal for offers addressed to the human seat. -->
-    <TradeOfferModal v-if="getPendingOffer()?.toId === human.id" />
+    <TradeOfferModal v-if="game.state.pendingOffer?.toId === human.id" />
   </template>
 </template>

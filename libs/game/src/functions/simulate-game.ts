@@ -1,13 +1,17 @@
-import { assign } from 'lodash-es';
+import { filter, firstValueFrom } from 'rxjs';
 import { match, P } from 'ts-pattern';
+
 import { getOver } from '../getters/get-over';
 import { getTurn } from '../getters/get-turn';
-import { getGameState, resetGameState } from '../game-state';
 import type { GameOver } from '../interfaces/game-over';
-
+import {
+  dispatch,
+  getGameState,
+  resetGameState,
+  setGameState,
+  state$,
+} from '../state';
 import { assignKamikazes } from './assign-kamikazes';
-import { playTurns } from './play-turns';
-import { startEngine } from './engine-driver';
 
 const { nonNullable } = P;
 
@@ -21,19 +25,22 @@ export async function simulateGame(
   maxTurns = 400,
   opts: { kamikazeCount?: number } = {},
 ): Promise<SimulationResult> {
-  // Each simulated game runs on a fresh state in the store's game module;
-  // every engine/AI function reads it from there. Games run strictly
-  // sequentially, so resetting between games is safe. The state must stay
-  // reactive: the AI drives every seat through its `watch` on inputSeq,
-  // so it only reacts when the engine's mutations are observable.
+  /* Each simulated game runs on a fresh state; games run strictly
+     sequentially, so resetting between games is safe. Headless, every
+     seat is AI-driven: the AI's state$ subscriptions answer each park
+     synchronously (RxJS subjects deliver synchronously; the intent
+     pipeline's queueScheduler flattens the loop), so the cursor rests at
+     'done' by the time dispatch('start') returns. */
   resetGameState();
-  assign(
-    getGameState(),
-    assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
+  setGameState({
+    ...assignKamikazes(getGameState(), opts.kamikazeCount ?? 0),
+    maxTurns,
+  });
+  const done = firstValueFrom(
+    state$.pipe(filter((state) => state.cursor.phase === 'done')),
   );
-  // The engine parks at each seat's input; the AI's watcher answers on
-  // the following flush, so the game completes over a chain of microtasks.
-  await startEngine(() => playTurns(maxTurns));
+  dispatch({ kind: 'start' });
+  await done;
   return gameResult(getOver(), getTurn());
 }
 

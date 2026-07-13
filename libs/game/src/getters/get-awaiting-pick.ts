@@ -1,4 +1,4 @@
-import { getGameState } from '../game-state';
+import { getGameState } from '../state';
 
 export function getAwaitingPick(): boolean {
   return getGameState().awaitingPick;

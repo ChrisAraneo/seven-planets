@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { getPlanets } from '@seven-planets/game';
-import { getPlayers } from '@seven-planets/game';
-import { getTurn } from '@seven-planets/game';
 import { computed, ref, watch } from 'vue';
 import { attackPlanet } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
@@ -41,12 +38,12 @@ const sourceId = ref(
 const selectedId = ref(-1);
 const troopCount = ref(1);
 
-const source = computed(() => getPlanets()[sourceId.value]);
+const source = computed(() => game.state.planets[sourceId.value]);
 const sources = computed(() =>
   ownedPlanets(game.state, human).filter((planet) => planet.buildings.SILO),
 );
 const targets = computed(() =>
-  getPlanets().filter((planet: Planet) => planet.ownerId !== 0),
+  game.state.planets.filter((planet: Planet) => planet.ownerId !== 0),
 );
 const openTargets = computed(() =>
   targets.value.filter((planet: Planet) => !isUnderTruce(planet)),
@@ -73,7 +70,7 @@ watch(
 );
 
 const target = computed(() =>
-  selectedId.value >= 0 ? getPlanets()[selectedId.value] : null,
+  selectedId.value >= 0 ? game.state.planets[selectedId.value] : null,
 );
 const canLaunch = computed(
   () => selectedId.value >= 0 && source.value.troops >= 1,
@@ -166,24 +163,24 @@ function launch(): void {
       :class="{ sel: planet.id === selectedId, truce: isUnderTruce(planet) }"
       @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })">
       <div class="tinfo">
-        <b :style="{ color: getPlayers()[planet.ownerId].color }">{{
+        <b :style="{ color: game.state.players[planet.ownerId].color }">{{
           planet.name
         }}</b>
-        — {{ getPlayers()[planet.ownerId].name }}
+        — {{ game.state.players[planet.ownerId].name }}
         <span v-if="isUnderTruce(planet)" class="dimtx">
-          🕊️ truce ({{ planet.protectedUntil - getTurn() + 1 }} turn{{
-            planet.protectedUntil - getTurn() ? 's' : ''
+          🕊️ truce ({{ planet.protectedUntil - game.state.turn + 1 }} turn{{
+            planet.protectedUntil - game.state.turn ? 's' : ''
           }})
         </span>
       </div>
       <div>
         🪖{{ planet.troops }} {{ '🛡️'.repeat(planet.buildings.SHIELD || 0) }}
         <span
-          v-if="getPlayers()[planet.ownerId].hasPacifistStatus"
+          v-if="game.state.players[planet.ownerId].hasPacifistStatus"
           title="Pacifist — +6 defense"
           >☮️</span
         >
-        🃏{{ handSize(getPlayers()[planet.ownerId]) }}
+        🃏{{ handSize(game.state.players[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">

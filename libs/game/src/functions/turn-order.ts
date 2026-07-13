@@ -1,13 +1,14 @@
 import { chain, range } from 'lodash-es';
-import { getStartIdx } from '../getters/get-start-idx';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 
+// Reads startIdx from ITS argument (never the live snapshot): the reducer
+// calls this on private clones whose startIdx the prelude just rolled.
 export function turnOrder(state: GameState): Player[] {
   return chain(range(state.players.length))
     .map(
       (offset) =>
-        state.players[(getStartIdx() + offset) % state.players.length],
+        state.players[(state.startIdx + offset) % state.players.length],
     )
     .filter((player) => player.isAlive)
     .value();

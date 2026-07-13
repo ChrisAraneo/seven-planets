@@ -1,7 +1,6 @@
 import { assign, chain, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
-import { getOver } from '../getters/get-over';
-import { getSingularityAnnounced } from '../getters/get-singularity-announced';
+
 import {
   ACTION_CARDS_FROM_TURN,
   ADVANCED_FROM_TURN,
@@ -9,25 +8,21 @@ import {
   choice,
   MOVE_CARDS_FROM_TURN,
 } from '../config/constants';
-import { getGameState } from '../game-state';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-
-import { filterAlivePlayers } from './filter-alive-players';
 import { doIncome } from './do-income';
 import { draftOrder } from './draft-order';
+import { filterAlivePlayers } from './filter-alive-players';
 import { isSingularityInPlay } from './is-singularity-in-play';
 import { log } from './log';
 import { makePool } from './make-pool';
-import { runActionPhase } from '../functions/run-action-phase';
-import { runDraft } from '../functions/run-draft';
 import { updatePacifistStatus } from './update-pacifist-status';
-import type { EngineGen } from './engine-driver';
 
-export function* playTurn(): EngineGen {
-  // The prelude is synchronous — no store mutation reassigns the state
-  // object here — so one reference is safe until the first suspension.
-  const state = getGameState();
+/* Everything that happens between turns: bump the turn counter, reset the
+   per-turn player flags, promote pacifists, pay income, refill the pool and
+   announce the turn. Mutates the reducer's private clone in place — the
+   caller (advance) emits it once the game next parks. */
+export function turnPrelude(state: GameState): void {
   assign(state, { turn: state.turn + 1 });
   state.players.forEach((player) => beginPlayerTurn(state, player));
   assign(state, updatePacifistStatus(state));
@@ -46,9 +41,6 @@ export function* playTurn(): EngineGen {
     ),
   );
   assign(state, milestoneLogs(state));
-
-  yield* runDraft();
-  yield* afterDraft();
 }
 
 function beginPlayerTurn(state: GameState, player: Player): void {
@@ -99,7 +91,7 @@ function remainingSkipsSuffix(skipTurns: number): string {
 }
 
 function announceSingularity(state: GameState): void {
-  return match(!getSingularityAnnounced() && isSingularityInPlay(state))
+  return match(!state.singularityAnnounced && isSingularityInPlay(state))
     .with(
       true,
       () =>
@@ -165,25 +157,4 @@ function logWhenTurnIs(state: GameState, turn: number, msg: string): GameState {
   return match(state.turn)
     .with(turn, () => log(state, msg, 'sys'))
     .otherwise(() => state);
-}
-
-// The pick mutations replaced the state object during the draft — re-read it.
-function* afterDraft(): EngineGen {
-  if (getOver()) {
-    return;
-  }
-  // Nobody can hold an action card before they exist, so skip the action phase.
-  if (getGameState().turn < ACTION_CARDS_FROM_TURN) {
-    const state = getGameState();
-    assign(
-      state,
-      log(
-        state,
-        `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
-        'sys',
-      ),
-    );
-    return;
-  }
-  yield* runActionPhase();
 }

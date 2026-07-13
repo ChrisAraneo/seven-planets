@@ -26,7 +26,7 @@ import { homePlanet } from '../functions/home-planet';
 import { log } from '../functions/log';
 import { ownedPlanets } from '../functions/owned-planets';
 import { stealCards } from '../functions/steal-cards';
-import { getGameState, setGameState } from '../game-state';
+import { dispatch } from '../state';
 
 const { nullish } = P;
 
@@ -36,25 +36,35 @@ export interface UseInfluencePayload {
   opts?: InfluenceOpts;
 }
 
+/** Play a held influence card. Event creator: validation and resolution
+    live in the reducer (applyUseInfluence). */
 export function useInfluence(payload: UseInfluencePayload): void {
-  return match(cloneDeep(getGameState()))
+  dispatch({ kind: 'influence', payload });
+}
+
+/* Reducer branch. Resolves the play on a private clone; illegal intents
+   (including refused plays inside playInfluence) reduce to a state with no
+   gameplay change. */
+export function applyUseInfluence(
+  state: GameState,
+  payload: UseInfluencePayload,
+): GameState {
+  return match(state)
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
-      noop,
+      (state) => state,
     )
-    .otherwise(
-      (state) =>
-        void chain(state)
-          .tap((state) =>
-            playInfluence(
-              state,
-              payload.playerId,
-              payload.type,
-              payload.opts ?? {},
-            ),
-          )
-          .tap((state) => setGameState(state))
-          .value(),
+    .otherwise((state) =>
+      chain(cloneDeep(state))
+        .tap((clone) =>
+          playInfluence(
+            clone,
+            payload.playerId,
+            payload.type,
+            payload.opts ?? {},
+          ),
+        )
+        .value(),
     );
 }
 

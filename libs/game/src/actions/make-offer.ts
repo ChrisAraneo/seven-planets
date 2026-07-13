@@ -1,9 +1,9 @@
-import { assign, chain, cloneDeep, noop } from 'lodash-es';
+import { assign, chain, cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-import { getGameState, setGameState } from '../game-state';
+import { dispatch } from '../state';
 
 import { RESOURCE_TYPES, CARDS } from '../config/constants';
 import { setStatus } from '../functions/set-status';
@@ -18,43 +18,48 @@ export interface MakeOfferPayload {
   gets: Cost;
 }
 
-/* Sets pendingOffer on game state and returns immediately. The partner
-   seat (human via TradeOfferModal, or the AI watcher) must answer by
-   dispatching resolveOffer, which executes or declines the trade. */
+/** Open a trade offer. Event creator: validation and application live in
+    the reducer (applyMakeOffer). */
 export function makeOffer(payload: MakeOfferPayload): void {
-  return chain(cloneDeep(getGameState()))
-    .thru((state) => ({
-      state,
-      player: state.players[payload.playerId],
-      partner: state.players[payload.partnerId] as Player | undefined,
-    }))
-    .thru(({ state, player, partner }) =>
-      match({ state, player, partner })
-        .when(
-          ({ state: eachState }) =>
-            payload.playerId !== eachState.activeId || Boolean(eachState.over),
-          noop,
-        )
-        .when(
-          ({ player: eachPlayer, partner: innerPlayer }) =>
-            !innerPlayer ||
-            innerPlayer.id === eachPlayer.id ||
-            !innerPlayer.isAlive,
-          noop,
-        )
-        .when(
-          ({ player: eachPlayer }) => !hasActionCard(eachPlayer, 'TRADE'),
-          noop,
-        )
-        .otherwise(
-          ({ state: eachState, player: eachPlayer, partner: innerPlayer }) =>
-            void (
-              innerPlayer &&
-              sendOffer(eachState, eachPlayer, innerPlayer, payload)
-            ),
-        ),
+  dispatch({ kind: 'offer', payload });
+}
+
+/* Reducer branch. Sets pendingOffer on a private clone — the emission that
+   carries it is the whole notification. The partner seat (human via
+   TradeOfferModal, or the AI watcher) must answer by dispatching
+   resolveOffer, which executes or declines the trade. */
+export function applyMakeOffer(
+  state: GameState,
+  payload: MakeOfferPayload,
+): GameState {
+  return match(state)
+    .when(
+      (state) => payload.playerId !== state.activeId || Boolean(state.over),
+      (state) => state,
     )
-    .value();
+    .when(
+      (state) =>
+        !state.players[payload.partnerId] ||
+        payload.partnerId === payload.playerId ||
+        !state.players[payload.partnerId].isAlive,
+      (state) => state,
+    )
+    .when(
+      (state) => !hasActionCard(state.players[payload.playerId], 'TRADE'),
+      (state) => state,
+    )
+    .otherwise((state) =>
+      chain(cloneDeep(state))
+        .tap((clone) =>
+          sendOffer(
+            clone,
+            clone.players[payload.playerId],
+            clone.players[payload.partnerId],
+            payload,
+          ),
+        )
+        .value(),
+    );
 }
 
 function sendOffer(
@@ -69,15 +74,14 @@ function sendOffer(
     .tap(() => assign(player, { hasTradedCurrentTurn: true }))
     .thru((state) => logSeeking(state, player, gets))
     .thru((state) => statusIfHuman(state, player, partner))
+    // The emitted snapshot IS the notification: the partner seat reacts to
+    // pendingOffer appearing on it (TradeOfferModal for the human, the AI's
+    // watcher for AI seats) and answers by dispatching resolveOffer.
     .thru((state) =>
       assign(state, {
         pendingOffer: { fromId: playerId, toId: partnerId, gives, gets },
       }),
     )
-    // Installing the state IS the notification: the partner seat reacts to
-    // pendingOffer appearing on it (TradeOfferModal for the human, the AI's
-    // watcher for AI seats) and answers by dispatching resolveOffer.
-    .tap((state) => setGameState(state))
     .value();
 }
 

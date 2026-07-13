@@ -7,7 +7,7 @@ import { hasBuilding } from '../functions/has-building';
 import { log } from '../functions/log';
 import { pluralSuffix } from '../functions/plural-suffix';
 import { spendActionCard } from '../functions/spend-action-card';
-import { getGameState, setGameState } from '../game-state';
+import { dispatch } from '../state';
 
 export interface MoveTroopsPayload {
   playerId: number;
@@ -16,24 +16,32 @@ export interface MoveTroopsPayload {
   troops: number;
 }
 
-// Resolves the redeploy SYNCHRONOUSLY; the rocket flight and arrival banner
-// are effect events the presentation layer plays in response.
+/** Redeploy troops. Event creator: validation and resolution live in the
+    reducer (applyMoveTroops). */
 export function moveTroops(payload: MoveTroopsPayload): void {
-  return match(cloneDeep(getGameState()))
+  dispatch({ kind: 'move', payload });
+}
+
+/* Reducer branch. Resolves the redeploy SYNCHRONOUSLY on a private clone;
+   the rocket flight and arrival banner are effect events the presentation
+   layer plays in response. Illegal intents reduce to the unchanged state. */
+export function applyMoveTroops(
+  state: GameState,
+  payload: MoveTroopsPayload,
+): GameState {
+  return match(state)
     .when(
       (state) => payload.playerId !== state.activeId || Boolean(state.over),
-      noop,
+      (state) => state,
     )
     .when(
       (state) => !hasActionCard(state.players[payload.playerId], 'MOVE'),
-      noop,
+      (state) => state,
     )
-    .otherwise(
-      (state) =>
-        void chain(state)
-          .tap((state) => executeMove(state, payload))
-          .tap((state) => setGameState(state))
-          .value(),
+    .otherwise((state) =>
+      chain(cloneDeep(state))
+        .tap((clone) => executeMove(clone, payload))
+        .value(),
     );
 }
 
