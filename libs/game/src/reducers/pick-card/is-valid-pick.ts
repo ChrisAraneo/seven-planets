@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../../utils/chain';
 import type { GameState } from '../../interfaces/game-state';
 import type { PickCardPayload } from '../../actions/pick-card/pick-card';
 import { homePlanet } from '../../functions/home-planet';

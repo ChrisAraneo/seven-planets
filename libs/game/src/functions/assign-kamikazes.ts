@@ -1,4 +1,5 @@
-import { chain, cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 import { shuffleArray } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';

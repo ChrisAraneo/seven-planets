@@ -1,4 +1,5 @@
-import { chain, range } from 'lodash-es';
+import { range } from 'lodash-es';
+import { chain } from '../utils/chain';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 

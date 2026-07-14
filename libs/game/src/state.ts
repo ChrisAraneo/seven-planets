@@ -10,8 +10,7 @@ import {
   queueScheduler,
   Subject,
 } from 'rxjs';
-import { chain } from 'lodash-es';
-
+import { chain } from './utils/chain';
 import { initializeState } from './functions/initialize-state';
 import type { Action } from './actions/action';
 import type { GameState } from './interfaces/game-state';

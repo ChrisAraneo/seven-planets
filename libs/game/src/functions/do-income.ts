@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match, P } from 'ts-pattern';
 import {
   BUILD_ORDER,

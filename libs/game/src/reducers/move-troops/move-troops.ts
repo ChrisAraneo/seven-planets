@@ -1,4 +1,5 @@
-import { assign, chain, cloneDeep, noop } from 'lodash-es';
+import { assign, cloneDeep, noop } from 'lodash-es';
+import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';

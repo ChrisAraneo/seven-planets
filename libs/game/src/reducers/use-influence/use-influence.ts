@@ -1,4 +1,5 @@
-import { assign, chain, cloneDeep, noop } from 'lodash-es';
+import { assign, cloneDeep, noop } from 'lodash-es';
+import { chain } from '../../utils/chain';
 import { match, P } from 'ts-pattern';
 import type { ActionType } from '../../interfaces/action-type';
 import type { GameState } from '../../interfaces/game-state';
