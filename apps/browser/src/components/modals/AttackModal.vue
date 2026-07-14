@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { attackPlanet } from '@seven-planets/game';
+import { createAttackPlanetAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
@@ -121,12 +121,14 @@ function increase(): void {
 function launch(): void {
   if (!canLaunch.value) return;
   ui.closeModal();
-  void attackPlanet({
-    playerId: 0,
-    sourceId: sourceId.value,
-    targetId: selectedId.value,
-    troops: troopCount.value,
-  });
+  dispatch(
+    createAttackPlanetAction({
+      playerId: 0,
+      sourceId: sourceId.value,
+      targetId: selectedId.value,
+      troops: troopCount.value,
+    }),
+  );
 }
 </script>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useInfluence } from '@seven-planets/game';
+import { createUseInfluenceAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import {
@@ -31,7 +31,7 @@ const human = game.state.players[0];
 
 function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
   ui.closeModal();
-  void useInfluence({ playerId: 0, type, opts });
+  dispatch(createUseInfluenceAction({ playerId: 0, type, opts }));
 }
 
 type View = 'main' | 'coup' | 'steal';

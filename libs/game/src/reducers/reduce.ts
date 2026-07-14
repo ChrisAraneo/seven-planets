@@ -1,5 +1,7 @@
-import { assign } from 'lodash-es';
+import { assign, negate } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
+
 import type { Action } from '../actions/action';
 import { ACTION_CARDS_FROM_TURN } from '../config/constants';
 import { applyStart } from '../functions/apply-start';
@@ -17,6 +19,7 @@ import { turnOrder } from '../functions/turn-order';
 import { turnPrelude } from '../functions/turn-prelude';
 import type { EngineCursor } from '../interfaces/engine-cursor';
 import type { GameState } from '../interfaces/game-state';
+import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
 import { applyAttackPlanet } from './attack-planet/attack-planet';
 import { applyEndTurn } from './end-turn/end-turn';
@@ -28,40 +31,44 @@ import { applyResolveOffer } from './resolve-offer/resolve-offer';
 import { applySetPlanetLayout } from './set-planet-layout/set-planet-layout';
 import { applyUseInfluence } from './use-influence/use-influence';
 
-/* The whole game core: apply the intent's own semantics, then advance the
-   game (turn preludes, draft passes, phase transitions) until it next needs
-   input. getGameState() is the fold of this over the intent stream (see state.ts). */
-export function reduce(state: GameState, intent: Action): GameState {
-  return advance(applyIntent(state, intent));
-}
+export const reduce = (state: GameState, action: Action): GameState =>
+  chain(applyAction(state, action)).thru(advance).value();
 
 type DraftCursor = Extract<EngineCursor, { phase: 'draft' }>;
 type ActionCursor = Extract<EngineCursor, { phase: 'action' }>;
 
-function applyIntent(state: GameState, intent: Action): GameState {
-  return match(intent)
-    .with({ kind: 'start' }, () => applyStart(state))
-    .with({ kind: 'pick' }, ({ playerId, idx }) =>
+/* A cursor paired with the state it sits on — the value the draft/action
+   step ladders match over. */
+type DraftFrame = { state: GameState; cursor: DraftCursor };
+type ActionFrame = { state: GameState; cursor: ActionCursor };
+type SeatFrame = DraftFrame | ActionFrame;
+
+function applyAction(state: GameState, action: Action): GameState {
+  return match(action)
+    .with({ kind: 'START' }, () => applyStart(state))
+    .with({ kind: 'PICK_CARD' }, ({ playerId, idx }) =>
       applyPickCard(state, { playerId, idx }),
     )
-    .with({ kind: 'endTurn' }, ({ playerId }) =>
-      applyEndTurn(state, { playerId }),
-    )
-    .with({ kind: 'attack' }, ({ payload }) =>
+    .with({ kind: 'END_TURN' }, ({ payload }) => applyEndTurn(state, payload))
+    .with({ kind: 'ATTACK_PLANET' }, ({ payload }) =>
       applyAttackPlanet(state, payload),
     )
-    .with({ kind: 'move' }, ({ payload }) => applyMoveTroops(state, payload))
-    .with({ kind: 'recruit' }, ({ payload }) =>
+    .with({ kind: 'MOVE_TROOPS' }, ({ payload }) =>
+      applyMoveTroops(state, payload),
+    )
+    .with({ kind: 'RECRUIT_TROOPS' }, ({ payload }) =>
       applyRecruitTroops(state, payload),
     )
-    .with({ kind: 'influence' }, ({ payload }) =>
+    .with({ kind: 'USE_INFLUENCE' }, ({ payload }) =>
       applyUseInfluence(state, payload),
     )
-    .with({ kind: 'offer' }, ({ payload }) => applyMakeOffer(state, payload))
-    .with({ kind: 'resolveOffer' }, ({ payload }) =>
+    .with({ kind: 'MAKE_OFFER' }, ({ payload }) =>
+      applyMakeOffer(state, payload),
+    )
+    .with({ kind: 'RESOLVE_OFFER' }, ({ payload }) =>
       applyResolveOffer(state, payload),
     )
-    .with({ kind: 'layout' }, ({ payload }) =>
+    .with({ kind: 'SET_PLANET_LAYOUT' }, ({ payload }) =>
       applySetPlanetLayout(state, payload),
     )
     .exhaustive();
@@ -70,119 +77,210 @@ function applyIntent(state: GameState, intent: Action): GameState {
 /* THE ENGINE. Advance the game from `state` until it next needs player
    input: run turn preludes, draft passes and phase transitions, then park by
    raising `awaitingPick`/`awaitingAction` and bumping `inputSeq` exactly once.
-   The cursor on the state is the engine's whole position — each loop
-   iteration performs one small cursor transition, so there is no suspended
-   call stack and any emitted snapshot can resume the game by itself.
+   The cursor on the state is the engine's whole position — each recursive
+   step performs one small cursor transition and hands the state straight
+   back to advance, so no suspended call stack outlives an emission and any
+   emitted snapshot can resume the game by itself.
 
-   Mutates its argument in place: apply (see apply-intent.ts) hands it a
-   private clone for every legal intent, and every path that reaches a
-   mutation goes through a legal apply. A state that is already parked,
-   unstarted or finished advances to itself, untouched — so an illegal
-   intent's no-op state passes through unharmed. */
+   Mutates its argument in place: each reducer branch (applyPickCard,
+   applyEndTurn, ...) hands it a private clone for every legal intent, and
+   every path that reaches a mutation goes through a legal apply. A state
+   that is already parked, unstarted or finished advances to itself,
+   untouched — so an illegal intent's no-op state passes through unharmed. */
 export function advance(state: GameState): GameState {
-  for (;;) {
-    if (
-      state.awaitingPick ||
-      state.awaitingAction ||
-      state.cursor.phase === 'setup' ||
-      state.cursor.phase === 'done'
-    ) {
-      return state;
-    }
+  return match(state)
+    .when(isSettled, (state) => state)
     /* Game over settles the cursor wherever it is — including mid-draft,
        where draftPlanetId is deliberately left as-is (§ the old early return). */
-    if (state.over) {
-      return finishGame(state);
-    }
+    .when((state) => state.over !== null, finishGame)
+    .otherwise((state) => advance(stepCursor(state)));
+}
 
-    if (state.cursor.phase === 'draft') {
-      draftStep(state, state.cursor);
-    } else {
-      actionStep(state, state.cursor);
-    }
-  }
+/* Parked on player input, unstarted or finished: advance leaves it untouched. */
+function isSettled(state: GameState): boolean {
+  return (
+    state.awaitingPick ||
+    state.awaitingAction ||
+    state.cursor.phase === 'setup' ||
+    state.cursor.phase === 'done'
+  );
+}
+
+/* One cursor transition. The settled check above guarantees the cursor is
+   mid-game here; the otherwise arm is unreachable. */
+function stepCursor(state: GameState): GameState {
+  return match(state.cursor)
+    .with({ phase: 'draft' }, (cursor) => draftStep(state, cursor))
+    .with({ phase: 'action' }, (cursor) => actionStep(state, cursor))
+    .otherwise(() => state);
 }
 
 /* One draft transition: move to the next seat/slot, enter a slot, pass, or
    park a pick. The seat queue is the draft-order snapshot; a seat's owned
    planets are re-resolved live per slot (conquests mid-draft change what a
    seat drafts for). */
-function draftStep(state: GameState, cursor: DraftCursor): void {
-  if (cursor.seatIdx >= cursor.seatQueue.length) {
-    finishDraft(state);
-    return;
-  }
-  const player = state.players[cursor.seatQueue[cursor.seatIdx]];
-  const owned = ownedPlanets(state, player);
-  if (player.skippedNow || !player.isAlive || cursor.slot >= owned.length) {
-    nextSeat(state, cursor);
-    return;
-  }
-  const slotDone = cursor.picksTotal !== -1 && cursor.pick >= cursor.picksTotal;
-  if (state.pool.length === 0 || slotDone) {
-    nextSlot(state, cursor);
-    return;
-  }
-  if (cursor.picksTotal === -1) {
-    enterSlot(state, cursor, player, owned[cursor.slot].id);
-    return;
-  }
-  const planet = state.planets[state.draftPlanetId];
-  const pickable = state.pool.some((poolType) =>
-    canPickCard(state, player, poolType, planet),
-  );
-  if (!pickable) {
+function draftStep(state: GameState, cursor: DraftCursor): GameState {
+  return match({ state, cursor })
+    .when(isQueueExhausted, ({ state }) => finishDraft(state))
+    .when(isSeatFinished, nextSeat)
+    .when(isSlotFinished, nextSlot)
+    .when(isSlotUnentered, enterSlot)
     // Pass slots do not park: log and move on.
-    passSlot(state, player, planet, humanControlled(player));
-    nextSlot(state, cursor);
-    return;
-  }
-  parkPick(state, cursor, player);
+    .when(negate(hasPickableCard), passAndSkipSlot)
+    .otherwise(parkPick);
+}
+
+function isQueueExhausted({ cursor }: SeatFrame): boolean {
+  return cursor.seatIdx >= cursor.seatQueue.length;
+}
+
+function seatPlayer({ state, cursor }: SeatFrame): Player {
+  return state.players[cursor.seatQueue[cursor.seatIdx]];
+}
+
+/* Skipped, dead or out of owned planets: this seat drafts no further slots. */
+function isSeatFinished(frame: DraftFrame): boolean {
+  return chain(seatPlayer(frame))
+    .thru(
+      (player) =>
+        player.skippedNow ||
+        !player.isAlive ||
+        frame.cursor.slot >= ownedPlanets(frame.state, player).length,
+    )
+    .value();
+}
+
+/* Pool empty, or the entered slot has used all its picks. */
+function isSlotFinished({ state, cursor }: DraftFrame): boolean {
+  return (
+    state.pool.length === 0 ||
+    (cursor.picksTotal !== -1 && cursor.pick >= cursor.picksTotal)
+  );
+}
+
+/** picksTotal stays -1 until enterSlot captures it. */
+function isSlotUnentered({ cursor }: DraftFrame): boolean {
+  return cursor.picksTotal === -1;
+}
+
+function hasPickableCard(frame: DraftFrame): boolean {
+  return chain({ player: seatPlayer(frame), planet: draftPlanet(frame.state) })
+    .thru(({ player, planet }) =>
+      frame.state.pool.some((poolType) =>
+        canPickCard(frame.state, player, poolType, planet),
+      ),
+    )
+    .value();
+}
+
+function draftPlanet(state: GameState): Planet {
+  return state.planets[state.draftPlanetId];
+}
+
+function nextSeat({ state, cursor }: DraftFrame): GameState {
+  return assign(state, {
+    cursor: {
+      ...cursor,
+      seatIdx: cursor.seatIdx + 1,
+      slot: 0,
+      pick: 0,
+      picksTotal: -1,
+    },
+  });
+}
+
+function nextSlot({ state, cursor }: DraftFrame): GameState {
+  return assign(state, {
+    cursor: {
+      ...cursor,
+      slot: cursor.slot + 1,
+      pick: 0,
+      picksTotal: -1,
+    },
+  });
 }
 
 /* Slot entry: capture picksTotal once (mainPicks for slot 0, else 1) and
    point the draft at this slot's planet. */
-function enterSlot(
-  state: GameState,
-  cursor: DraftCursor,
-  player: Player,
-  planetId: number,
-): void {
-  state.cursor = {
-    ...cursor,
-    pick: 0,
-    picksTotal: cursor.slot === 0 ? mainPicks(state, player) : 1,
-  };
-  assign(state, { activeId: player.id, draftPlanetId: planetId });
+function enterSlot(frame: DraftFrame): GameState {
+  return chain(seatPlayer(frame))
+    .thru((player) =>
+      assign(frame.state, {
+        cursor: {
+          ...frame.cursor,
+          pick: 0,
+          picksTotal: slotPicksTotal(frame, player),
+        },
+        activeId: player.id,
+        draftPlanetId: ownedPlanets(frame.state, player)[frame.cursor.slot].id,
+      }),
+    )
+    .value();
+}
+
+/* mainPicks for the seat's first slot; every later slot gets one pick. */
+function slotPicksTotal(frame: DraftFrame, player: Player): number {
+  return match(frame.cursor.slot)
+    .with(0, () => mainPicks(frame.state, player))
+    .otherwise(() => 1);
+}
+
+function passAndSkipSlot(frame: DraftFrame): GameState {
+  return chain(seatPlayer(frame))
+    .tap((player) =>
+      passSlot(
+        frame.state,
+        player,
+        draftPlanet(frame.state),
+        humanControlled(player),
+      ),
+    )
+    .thru(() => nextSlot(frame))
+    .value();
 }
 
 /* PARK: raise awaitingPick and bump inputSeq — the emission that carries
    this snapshot is the whole notification; a `pick` intent answers it. */
-function parkPick(state: GameState, cursor: DraftCursor, player: Player): void {
-  assign(
-    state,
-    setStatus(
-      state,
-      pickStatus(
+function parkPick({ state, cursor }: DraftFrame): GameState {
+  return chain(seatPlayer({ state, cursor }))
+    .tap((player) =>
+      assign(
         state,
-        player.id,
-        state.draftPlanetId,
-        cursor.picksTotal,
-        cursor.pick,
-        cursor.slot,
-        humanControlled(player),
+        setStatus(
+          state,
+          pickStatus(
+            state,
+            player.id,
+            state.draftPlanetId,
+            cursor.picksTotal,
+            cursor.pick,
+            cursor.slot,
+            humanControlled(player),
+          ),
+        ),
       ),
-    ),
-  );
-  assign(state, { awaitingPick: true, inputSeq: state.inputSeq + 1 });
+    )
+    .thru(() =>
+      assign(state, { awaitingPick: true, inputSeq: state.inputSeq + 1 }),
+    )
+    .value();
 }
 
 /* The draft ran to completion (every seat settled — not a game-over abort):
    only now does the draft-planet marker reset. */
-function finishDraft(state: GameState): void {
-  assign(state, { draftPlanetId: -1 });
-  // Nobody can hold an action card before they exist, so skip the action phase.
-  if (state.turn < ACTION_CARDS_FROM_TURN) {
+function finishDraft(state: GameState): GameState {
+  return chain(assign(state, { draftPlanetId: -1 }))
+    .thru((state) =>
+      match(state.turn < ACTION_CARDS_FROM_TURN)
+        .with(true, () => skipActionPhase(state))
+        .otherwise(() => beginActionPhase(state)),
+    )
+    .value();
+}
+
+// Nobody can hold an action card before they exist, so skip the action phase.
+function skipActionPhase(state: GameState): GameState {
+  return chain(
     assign(
       state,
       log(
@@ -190,12 +288,18 @@ function finishDraft(state: GameState): void {
         `🛰️ Fleets hold position — action cards reach the sector on turn ${ACTION_CARDS_FROM_TURN}.`,
         'sys',
       ),
-    );
-    startNextTurn(state);
-    return;
-  }
-  assign(state, { phase: 'action' });
-  state.cursor = {
+    ),
+  )
+    .thru(startNextTurn)
+    .value();
+}
+
+function beginActionPhase(state: GameState): GameState {
+  return assign(state, { phase: 'action', cursor: actionCursor(state) });
+}
+
+function actionCursor(state: GameState): ActionCursor {
+  return {
     phase: 'action',
     seatQueue: turnOrder(state).map((player) => player.id),
     seatIdx: 0,
@@ -204,31 +308,58 @@ function finishDraft(state: GameState): void {
 
 /* One action-phase transition: skip dead/paralysed seats, park the next
    seat's action turn, or — with the queue exhausted — start the next turn. */
-function actionStep(state: GameState, cursor: ActionCursor): void {
-  if (cursor.seatIdx >= cursor.seatQueue.length) {
-    startNextTurn(state);
-    return;
-  }
-  const player = state.players[cursor.seatQueue[cursor.seatIdx]];
-  if (!player.isAlive || player.skippedNow) {
-    state.cursor = { ...cursor, seatIdx: cursor.seatIdx + 1 };
-    return;
-  }
-  // PARK: raise awaitingAction and bump inputSeq — answered by `endTurn`.
-  assign(state, { activeId: player.id });
-  assign(state, setStatus(state, seatStatus(player)));
-  assign(state, { awaitingAction: true, inputSeq: state.inputSeq + 1 });
+function actionStep(state: GameState, cursor: ActionCursor): GameState {
+  return match({ state, cursor })
+    .when(isQueueExhausted, ({ state }) => startNextTurn(state))
+    .when(isSeatSittingOut, skipSeat)
+    .otherwise(parkAction);
+}
+
+/* Dead or paralysed seats take no action turn. */
+function isSeatSittingOut(frame: ActionFrame): boolean {
+  return chain(seatPlayer(frame))
+    .thru((player) => !player.isAlive || player.skippedNow)
+    .value();
+}
+
+function skipSeat({ state, cursor }: ActionFrame): GameState {
+  return assign(state, {
+    cursor: { ...cursor, seatIdx: cursor.seatIdx + 1 },
+  });
+}
+
+/* PARK: raise awaitingAction and bump inputSeq — answered by `endTurn`. */
+function parkAction(frame: ActionFrame): GameState {
+  return chain(seatPlayer(frame))
+    .tap((player) => assign(frame.state, { activeId: player.id }))
+    .tap((player) =>
+      assign(frame.state, setStatus(frame.state, seatStatus(player))),
+    )
+    .thru(() =>
+      assign(frame.state, {
+        awaitingAction: true,
+        inputSeq: frame.state.inputSeq + 1,
+      }),
+    )
+    .value();
 }
 
 // The turn cap stops the game BEFORE a new prelude starts (never mid-turn).
-function startNextTurn(state: GameState): void {
-  if (state.turn >= state.maxTurns) {
-    finishGame(state);
-    return;
-  }
-  turnPrelude(state);
-  assign(state, { phase: 'draft' });
-  state.cursor = {
+function startNextTurn(state: GameState): GameState {
+  return match(state)
+    .when((state) => state.turn >= state.maxTurns, finishGame)
+    .otherwise((state) =>
+      chain(state)
+        .tap(turnPrelude)
+        .thru((state) =>
+          assign(state, { phase: 'draft', cursor: draftCursor(state) }),
+        )
+        .value(),
+    );
+}
+
+function draftCursor(state: GameState): DraftCursor {
+  return {
     phase: 'draft',
     seatQueue: draftOrder(state).map((player) => player.id),
     seatIdx: 0,
@@ -241,30 +372,18 @@ function startNextTurn(state: GameState): void {
 /* Terminal settle (game over or turn cap): clear the parked-input flags and
    the seat marker; the cursor rests at 'done'. */
 function finishGame(state: GameState): GameState {
-  assign(state, { awaitingPick: false, awaitingAction: false, activeId: -1 });
-  state.cursor = { phase: 'done' };
-  return state;
+  return assign(state, {
+    awaitingPick: false,
+    awaitingAction: false,
+    activeId: -1,
+    cursor: doneCursor(),
+  });
+}
+
+function doneCursor(): EngineCursor {
+  return { phase: 'done' };
 }
 
 function humanControlled(player: Player): boolean {
   return player.isHuman && !AUTO_HUMAN;
-}
-
-function nextSeat(state: GameState, cursor: DraftCursor): void {
-  state.cursor = {
-    ...cursor,
-    seatIdx: cursor.seatIdx + 1,
-    slot: 0,
-    pick: 0,
-    picksTotal: -1,
-  };
-}
-
-function nextSlot(state: GameState, cursor: DraftCursor): void {
-  state.cursor = {
-    ...cursor,
-    slot: cursor.slot + 1,
-    pick: 0,
-    picksTotal: -1,
-  };
 }

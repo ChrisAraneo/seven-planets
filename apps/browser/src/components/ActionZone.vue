@@ -7,7 +7,11 @@ import { isPacifist } from '@seven-planets/game';
 import { hasActionCard } from '@seven-planets/game';
 import { totalTroops } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
-import { endTurn, recruitTroops } from '@seven-planets/game';
+import {
+  createEndTurnAction,
+  dispatch,
+  recruitTroops,
+} from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import { computed } from 'vue';
 
@@ -141,7 +145,7 @@ function onRecruit(): void {
       class="btn action end"
       id="btn-end"
       :disabled="!my"
-      @click="endTurn({ playerId: 0 })">
+      @click="dispatch(createEndTurnAction({ playerId: 0 }))">
       ⏭️ End Turn
     </button>
   </div>

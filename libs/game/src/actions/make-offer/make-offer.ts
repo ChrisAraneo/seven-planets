@@ -11,5 +11,5 @@ export interface MakeOfferPayload {
 /** Open a trade offer. Event creator: validation and application live in
     the reducer (applyMakeOffer). */
 export function makeOffer(payload: MakeOfferPayload): void {
-  dispatch({ kind: 'offer', payload });
+  dispatch({ kind: 'MAKE_OFFER', payload });
 }

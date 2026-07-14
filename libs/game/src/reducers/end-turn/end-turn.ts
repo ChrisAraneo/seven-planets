@@ -1,7 +1,7 @@
 import { cloneDeep, assign } from 'lodash-es';
 import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
-import type { EndTurnPayload } from '../../actions/end-turn/end-turn';
+import type { EndTurnPayload } from '../../actions/end-turn';
 import type { GameState } from '../../interfaces/game-state';
 
 /* Reducer branch. Consumes the parked action turn and steps the cursor to

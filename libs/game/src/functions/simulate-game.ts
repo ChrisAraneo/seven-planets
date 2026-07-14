@@ -39,7 +39,7 @@ export async function simulateGame(
   const done = firstValueFrom(
     getGameState().pipe(filter((state) => state.cursor.phase === 'done')),
   );
-  dispatch({ kind: 'start' });
+  dispatch({ kind: 'START' });
   await done;
   return gameResult(getGameOverObject(), getTurn());
 }

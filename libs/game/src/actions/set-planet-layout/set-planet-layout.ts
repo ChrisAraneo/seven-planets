@@ -11,5 +11,5 @@ export interface PlanetLayout {
     booms, floating text) read the same coordinates off the planets in
     state. Event creator: application lives in the reducer. */
 export function setPlanetLayout(layout: readonly PlanetLayout[]): void {
-  dispatch({ kind: 'layout', payload: layout });
+  dispatch({ kind: 'SET_PLANET_LAYOUT', payload: layout });
 }

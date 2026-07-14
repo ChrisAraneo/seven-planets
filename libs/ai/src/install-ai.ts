@@ -16,14 +16,15 @@ import {
 import { canPickCard } from '@seven-planets/game';
 import { homePlanet } from '@seven-planets/game';
 import {
-  attackPlanet,
-  endTurn,
+  createAttackPlanetAction,
+  createEndTurnAction,
+  createUseInfluenceAction,
+  dispatch,
   makeOffer,
   moveTroops,
   pickCard,
   recruitTroops,
   resolveOffer,
-  useInfluence,
 } from '@seven-planets/game';
 
 import { mastermindAction } from './functions/mastermind-action';
@@ -81,19 +82,23 @@ type Decision = NonNullable<ReturnType<typeof mastermindAction>>;
 function performDecision(playerId: number, decision: Decision): void {
   switch (decision.kind) {
     case 'influence':
-      useInfluence({
-        playerId,
-        type: decision.type as InfluenceType,
-        opts: decision.opts as InfluenceOpts,
-      });
+      dispatch(
+        createUseInfluenceAction({
+          playerId,
+          type: decision.type as InfluenceType,
+          opts: decision.opts as InfluenceOpts,
+        }),
+      );
       return;
     case 'attack':
-      attackPlanet({
-        playerId,
-        sourceId: decision.source.id,
-        targetId: decision.target.id,
-        troops: decision.n,
-      });
+      dispatch(
+        createAttackPlanetAction({
+          playerId,
+          sourceId: decision.source.id,
+          targetId: decision.target.id,
+          troops: decision.n,
+        }),
+      );
       return;
     case 'recruit':
       recruitTroops({ playerId, planetId: decision.planet.id });
@@ -180,7 +185,7 @@ function headlessTurnStep(snapshot: GameState): void {
   // The AI always ends its turn — even a game-ending action must be
   // followed by endTurn so the engine can settle the cursor to 'done'.
   if (snapshot.over) {
-    endTurn({ playerId: snapshot.activeId });
+    dispatch(createEndTurnAction({ playerId: snapshot.activeId }));
     return;
   }
   if (snapshot.inputSeq !== headlessTurnKey) {
@@ -193,7 +198,7 @@ function headlessTurnStep(snapshot: GameState): void {
       return;
     }
   }
-  endTurn({ playerId: snapshot.activeId });
+  dispatch(createEndTurnAction({ playerId: snapshot.activeId }));
 }
 
 /** Browser version of the same turn, paced with timers so the AI's play
@@ -206,7 +211,7 @@ function aiTakeTurnPaced(playerId: number, remaining = 12): void {
         aiTakeTurnPaced(playerId, remaining - 1);
         return;
       }
-      endTurn({ playerId });
+      dispatch(createEndTurnAction({ playerId }));
     },
     remaining === 12 ? TURN_START_DELAY : BETWEEN_ACTIONS_DELAY,
   );

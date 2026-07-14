@@ -27,7 +27,7 @@ import { homePlanet } from '../../functions/home-planet';
 import { log } from '../../functions/log';
 import { ownedPlanets } from '../../functions/owned-planets';
 import { stealCards } from '../../functions/steal-cards';
-import type { UseInfluencePayload } from '../../actions/use-influence/use-influence';
+import type { UseInfluencePayload } from '../../actions/use-influence';
 
 const { nullish } = P;
 

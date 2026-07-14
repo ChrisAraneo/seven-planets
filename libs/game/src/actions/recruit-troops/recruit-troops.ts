@@ -8,5 +8,5 @@ export interface RecruitTroopsPayload {
 /** Recruit troops. Event creator: validation and resolution live in the
     reducer (applyRecruitTroops). */
 export function recruitTroops(payload: RecruitTroopsPayload): void {
-  dispatch({ kind: 'recruit', payload });
+  dispatch({ kind: 'RECRUIT_TROOPS', payload });
 }

@@ -8,5 +8,5 @@ export interface PickCardPayload {
 /** Answer a parked draft pick with the chosen pool index. Event creator:
     validation and application live in the reducer (applyPickCard). */
 export function pickCard(payload: PickCardPayload): void {
-  dispatch({ kind: 'pick', ...payload });
+  dispatch({ kind: 'PICK_CARD', ...payload });
 }

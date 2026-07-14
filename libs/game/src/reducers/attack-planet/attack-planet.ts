@@ -30,7 +30,7 @@ import { isUnderTruce } from '../../functions/is-under-truce';
 import { ownedPlanets } from '../../functions/owned-planets';
 import { pacifistDefBonus } from '../../functions/pacifist-def-bonus';
 import { spendActionCard } from '../../functions/spend-action-card';
-import type { AttackPlanetPayload } from '../../actions/attack-planet/attack-planet';
+import type { AttackPlanetPayload } from '../../actions/attack-planet';
 
 interface BattleContext {
   source: Planet;

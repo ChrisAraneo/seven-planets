@@ -10,5 +10,5 @@ export interface MoveTroopsPayload {
 /** Redeploy troops. Event creator: validation and resolution live in the
     reducer (applyMoveTroops). */
 export function moveTroops(payload: MoveTroopsPayload): void {
-  dispatch({ kind: 'move', payload });
+  dispatch({ kind: 'MOVE_TROOPS', payload });
 }

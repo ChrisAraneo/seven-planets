@@ -12,7 +12,7 @@ import { advance, reduce } from '../reducers/reduce';
 
 /** Start a fresh game and return it parked at turn 1's first draft pick. */
 function parkedAtFirstPick(): GameState {
-  return reduce(initializeState(), { kind: 'start' });
+  return reduce(initializeState(), { kind: 'START' });
 }
 
 function firstPickableIdx(state: GameState): number {
@@ -41,7 +41,7 @@ describe('reduce/advance invariants', () => {
     expect(state.cursor).toMatchObject({ phase: 'draft', picksTotal: 2 });
     const seatId = state.activeId;
     const afterPick = reduce(state, {
-      kind: 'pick',
+      kind: 'PICK_CARD',
       playerId: seatId,
       idx: firstPickableIdx(state),
     });
@@ -79,7 +79,7 @@ describe('reduce/advance invariants', () => {
     const crafted = cloneDeep(parked);
     crafted.over = { winner: crafted.players[0], reason: 'conquest' };
     const resumed = reduce(crafted, {
-      kind: 'pick',
+      kind: 'PICK_CARD',
       playerId: crafted.activeId,
       idx: firstPickableIdx(crafted),
     });
@@ -97,18 +97,18 @@ describe('reduce/advance invariants', () => {
     const wrongSeat = (state.activeId + 1) % state.players.length;
     /* Not this seat's pick; not an action turn; invalid pick index; attack
        during the draft; a second 'start'. */
-    expect(reduce(state, { kind: 'pick', playerId: wrongSeat, idx: 0 })).toBe(
-      state,
-    );
-    expect(reduce(state, { kind: 'endTurn', playerId: state.activeId })).toBe(
+    expect(reduce(state, { kind: 'PICK_CARD', playerId: wrongSeat, idx: 0 })).toBe(
       state,
     );
     expect(
-      reduce(state, { kind: 'pick', playerId: state.activeId, idx: 99 }),
+      reduce(state, { kind: 'END_TURN', payload: { playerId: state.activeId } }),
+    ).toBe(state);
+    expect(
+      reduce(state, { kind: 'PICK_CARD', playerId: state.activeId, idx: 99 }),
     ).toBe(state);
     expect(
       reduce(state, {
-        kind: 'attack',
+        kind: 'ATTACK_PLANET',
         payload: {
           playerId: wrongSeat,
           sourceId: 0,
@@ -117,6 +117,6 @@ describe('reduce/advance invariants', () => {
         },
       }),
     ).toBe(state);
-    expect(reduce(state, { kind: 'start' })).toBe(state);
+    expect(reduce(state, { kind: 'START' })).toBe(state);
   });
 });
