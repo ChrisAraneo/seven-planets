@@ -1,4 +1,5 @@
-import { assign, chain } from 'lodash-es';
+import { assign } from 'lodash-es';
+import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
 
 import { CARDS, INFLUENCE_CARDS } from '../../config/constants';

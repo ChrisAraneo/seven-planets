@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 import {
   PACIFIST_DEF_BONUS,

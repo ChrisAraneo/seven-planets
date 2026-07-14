@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 import {
   ACTION_CARDS_FROM_TURN,

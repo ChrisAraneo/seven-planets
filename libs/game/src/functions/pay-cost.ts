@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../utils/chain';
 import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
 import type { Hand } from '../interfaces/hand';

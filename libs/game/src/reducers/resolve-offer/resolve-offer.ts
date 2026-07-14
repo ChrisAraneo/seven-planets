@@ -1,4 +1,5 @@
-import { assign, chain, cloneDeep } from 'lodash-es';
+import { assign, cloneDeep } from 'lodash-es';
+import { chain } from '../../utils/chain';
 import { match, P } from 'ts-pattern';
 
 import { fmtCards } from '../../config/constants';

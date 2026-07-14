@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match, P } from 'ts-pattern';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';

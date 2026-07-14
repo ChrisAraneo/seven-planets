@@ -1,4 +1,5 @@
-import { chain, fromPairs } from 'lodash-es';
+import { fromPairs } from 'lodash-es';
+import { chain } from '../utils/chain';
 import {
   CARD_TYPES,
   INFLUENCE_TYPES,

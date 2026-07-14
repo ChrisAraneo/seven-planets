@@ -3,7 +3,8 @@
    Ported from the original vanilla-JS game.js.
    ===================================================================== */
 
-import { assign, chain, fromPairs, mapValues } from 'lodash-es';
+import { assign, fromPairs, mapValues } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 import type { ActionType } from '../interfaces/action-type';
 import type { BuildingDef } from '../interfaces/building-def';

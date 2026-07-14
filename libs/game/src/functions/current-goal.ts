@@ -1,4 +1,4 @@
-import { chain } from 'lodash-es';
+import { chain } from '../utils/chain';
 import { match, P } from 'ts-pattern';
 import { buildingCost, maxLevel, PRIORITIES } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
