@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { canAfford, INFLUENCE_TYPES } from '@seven-planets/game';
+import { INFLUENCE_TYPES } from '@seven-planets/game';
 import { hasBuilding } from '@seven-planets/game';
-import { ownedPlanets } from '@seven-planets/game';
-import { recruitCost } from '@seven-planets/game';
+import { getOwnedPlanets } from '@seven-planets/game';
+import { computeRecruitableTroops } from '@seven-planets/game';
 import { isPacifist } from '@seven-planets/game';
 import { hasActionCard } from '@seven-planets/game';
-import { totalTroops } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
-import {
-  createEndTurnAction,
-  dispatch,
-  recruitTroops,
-} from '@seven-planets/game';
+import { createEndTurnAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import { computed } from 'vue';
 
@@ -30,17 +25,26 @@ const hasPort = computed(() =>
 const hasEmbassy = computed(() =>
   hasBuilding(game.state, human.value, 'EMBASSY'),
 );
+// Partial recruits are legal: 1⛏️ payable on any Barracks planet is enough.
 const canRecruitSomewhere = computed(() =>
-  ownedPlanets(game.state, human.value).some(
+  getOwnedPlanets(game.state, human.value).some(
     (pl) =>
-      pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl)),
+      pl.buildings.BARRACKS &&
+      computeRecruitableTroops(pl, human.value.hand) >= 1,
   ),
 );
 const isPeaceful = computed(() => isPacifist(human.value));
 const canLaunchSomewhere = computed(() =>
-  ownedPlanets(game.state, human.value).some(
+  getOwnedPlanets(game.state, human.value).some(
     (pl) => pl.buildings.SILO && pl.troops >= 1,
   ),
+);
+const canMoveSomewhere = computed(
+  () =>
+    getOwnedPlanets(game.state, human.value).length >= 2 &&
+    getOwnedPlanets(game.state, human.value).some(
+      (pl) => pl.buildings.SPACEPORT && pl.troops >= 1,
+    ),
 );
 const heldInf = computed(() =>
   INFLUENCE_TYPES.reduce((s, t) => s + (human.value.hand[t] || 0), 0),
@@ -48,7 +52,7 @@ const heldInf = computed(() =>
 
 const recruitTitle = computed(() =>
   hasBarracks.value
-    ? 'Spends one 🪖 Recruit card + 1⛏️ per troop. Yields troops equal to the Barracks yield (1/2/4) on the chosen planet.'
+    ? 'Spends one 🪖 Recruit card + 1⛏️ per troop. Yields troops equal to the Barracks yield (1/2/4) on the chosen planet — short on ⛏️, you recruit as many as you can pay for.'
     : 'Requires a 🎖️ Barracks — you cannot recruit without one.',
 );
 const attackTitle = computed(() =>
@@ -60,8 +64,8 @@ const attackTitle = computed(() =>
 );
 const moveTitle = computed(() =>
   hasPort.value
-    ? 'Spends one 🛸 Move card to redeploy troops between your planets. Spaceport L2: +1 free Move card every 3 turns.'
-    : 'Requires a 🛰️ Spaceport — you cannot redeploy troops without one.',
+    ? 'Spends one 🛸 Move card to redeploy troops — only FROM a planet that has a 🛰️ Spaceport. Spaceport L2: +1 free Move card every 3 turns.'
+    : 'Requires a 🛰️ Spaceport — troops can only be redeployed from a planet that has one.',
 );
 const tradeTitle = computed(() =>
   hasEmbassy.value
@@ -74,19 +78,10 @@ const influenceTitle = computed(() =>
     : 'No influence cards in hand — draft them from the pool (turn 30+) by paying their ⭐ cost.',
 );
 
-function recruit(planetId: number): void {
-  ui.closeModal();
-  void recruitTroops({ playerId: 0, planetId });
-}
-
+// Always open the planet picker — the player chooses where to recruit,
+// even when only one planet currently qualifies.
 function onRecruit(): void {
-  const pls = ownedPlanets(game.state, human.value).filter(
-    (pl) =>
-      pl.buildings.BARRACKS && canAfford(human.value.hand, recruitCost(pl)),
-  );
-  if (!pls.length) return;
-  if (pls.length === 1) recruit(pls[0].id);
-  else ui.openModal('recruit');
+  if (canRecruitSomewhere.value) ui.openModal('recruit');
 }
 </script>
 
@@ -98,27 +93,21 @@ function onRecruit(): void {
       :disabled="
         !my || !hasActionCard(human, 'RECRUIT') || !canRecruitSomewhere
       "
-      :title="recruitTitle"
+      v-tooltip="recruitTitle"
       @click="onRecruit">
       🪖 Recruit ×{{ human.hand.RECRUIT }}
     </button>
     <button
       class="btn action"
       :disabled="!my || !hasActionCard(human, 'ATTACK') || !canLaunchSomewhere"
-      :title="attackTitle"
+      v-tooltip="attackTitle"
       @click="ui.openModal('attack')">
       ⚔️ Attack ×{{ human.hand.ATTACK }}
     </button>
     <button
       class="btn action"
-      :disabled="
-        !my ||
-        !hasActionCard(human, 'MOVE') ||
-        !hasPort ||
-        game.state.planets.filter((pl) => pl.ownerId === human.id).length < 2 ||
-        totalTroops(game.state, human) < 1
-      "
-      :title="moveTitle"
+      :disabled="!my || !hasActionCard(human, 'MOVE') || !canMoveSomewhere"
+      v-tooltip="moveTitle"
       @click="ui.openModal('move')">
       🛸 Move ×{{ human.hand.MOVE }}
     </button>
@@ -130,14 +119,14 @@ function onRecruit(): void {
         !hasEmbassy ||
         filterAlivePlayers(game.state).length < 2
       "
-      :title="tradeTitle"
+      v-tooltip="tradeTitle"
       @click="ui.openModal('trade')">
       🔁 Trade ×{{ human.hand.TRADE }}
     </button>
     <button
       class="btn action"
       :disabled="!my || heldInf < 1"
-      :title="influenceTitle"
+      v-tooltip="influenceTitle"
       @click="ui.openModal('influence')">
       ⭐ Influence ×{{ heldInf }}
     </button>

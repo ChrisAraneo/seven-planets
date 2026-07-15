@@ -1,11 +1,10 @@
 import { getGameStateLastValue } from '@seven-planets/game';
 import { getAiState } from '../state';
-import { canAfford } from '@seven-planets/game';
-import { recruitYield } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
+import { computeRecruitableTroops } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
 import type {
   Cost,
-  InfluenceOpts,
+  InfluenceOptions,
   InfluenceType,
   Planet,
   Player,
@@ -23,7 +22,7 @@ import { planFor } from './plan-for';
 import { planTradeOffer } from './plan-trade-offer';
 
 export type MastermindDecision =
-  | { kind: 'influence'; type: InfluenceType; opts: InfluenceOpts }
+  | { kind: 'influence'; type: InfluenceType; options: InfluenceOptions }
   | { kind: 'attack'; source: Planet; target: Planet; n: number }
   | { kind: 'recruit'; planet: Planet }
   | { kind: 'move'; from: Planet; to: Planet; n: number }
@@ -37,7 +36,7 @@ export function mastermindAction(player: Player): MastermindDecision | null {
   // 1. Influence cards
   const inf = influencePlay(player);
   if (inf) {
-    return { kind: 'influence', type: inf.type, opts: inf.opts };
+    return { kind: 'influence', type: inf.type, options: inf.options };
   }
 
   // 2. Strike
@@ -55,9 +54,11 @@ export function mastermindAction(player: Player): MastermindDecision | null {
 
   // 3. Recruit
   if ((player.hand.RECRUIT || 0) > 0) {
+    // Partial recruits are legal (short Ore musters fewer troops), so any
+    // Barracks planet with 1⛏️ payable is worth an order.
     const affordable = (planet: Planet) =>
       (planet.buildings.BARRACKS || 0) > 0 &&
-      canAfford(player.hand, { ORE: recruitYield(planet) });
+      computeRecruitableTroops(planet, player.hand) >= 1;
     const danger = pls
       .filter(
         (planet) =>
@@ -135,12 +136,13 @@ export function mastermindAction(player: Player): MastermindDecision | null {
         .filter(
           (planet) =>
             planet !== dest &&
+            (planet.buildings.SPACEPORT || 0) > 0 &&
             planet.troops > floor + 2 &&
             immediateFallProb(player, planet) < 0.2,
         )
         .sort((planet, eachPlanet) => eachPlanet.troops - planet.troops)[0];
       if (donor) {
-        const count = Math.min(rocketCap(donor), donor.troops - floor);
+        const count = Math.min(getRocketCapacity(donor), donor.troops - floor);
         if (count >= 1) {
           return { kind: 'move', from: donor, to: dest, n: count };
         }
@@ -156,10 +158,18 @@ export function mastermindAction(player: Player): MastermindDecision | null {
       staging.troops < Math.max(plan.troopsNeeded, floor + 4)
     ) {
       const donor = pls
-        .filter((planet) => planet !== staging && planet.troops > floor + 2)
+        .filter(
+          (planet) =>
+            planet !== staging &&
+            (planet.buildings.SPACEPORT || 0) > 0 &&
+            planet.troops > floor + 2,
+        )
         .sort((planet, eachPlanet) => eachPlanet.troops - planet.troops)[0];
       if (donor) {
-        const eachCount = Math.min(rocketCap(donor), donor.troops - floor);
+        const eachCount = Math.min(
+          getRocketCapacity(donor),
+          donor.troops - floor,
+        );
         if (eachCount >= 2) {
           return { kind: 'move', from: donor, to: staging, n: eachCount };
         }

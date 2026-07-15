@@ -8,10 +8,10 @@ import { weightedDraw } from './weighted-draw';
 
 // Draw one action card. Attack/Recruit/Trade from turn 10; Move from turn 20.
 export function drawActionCard(state: GameState): PoolType {
-  return weightedDraw(drawableActionTypes(state), 'ATTACK');
+  return weightedDraw(getDrawableActionTypes(state), 'ATTACK');
 }
 
-function drawableActionTypes(state: GameState): ActionType[] {
+function getDrawableActionTypes(state: GameState): ActionType[] {
   return match(state.turn)
     .when(
       (turn) => turn >= MOVE_CARDS_FROM_TURN,

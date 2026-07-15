@@ -41,10 +41,10 @@ export async function simulateGame(
   );
   dispatch({ kind: 'START' });
   await done;
-  return gameResult(getGameOverObject(), getTurn());
+  return getGameResult(getGameOverObject(), getTurn());
 }
 
-function gameResult(
+function getGameResult(
   over: GameOver | undefined,
   turns: number,
 ): SimulationResult {

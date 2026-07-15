@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
-import { buildingCount } from '@seven-planets/game';
-import { totalTroops } from '@seven-planets/game';
+import { getBuildingCount } from '@seven-planets/game';
+import { computeTotalTroops } from '@seven-planets/game';
 
 const game = useGameStore();
 const ui = useUiStore();
@@ -40,8 +40,8 @@ const sub = computed(() => {
       {{ sub }}<br /><br />
       Turns played: {{ game.state.turn }} · Planets held:
       {{ game.state.planets.filter((pl) => pl.ownerId === human.id).length }} ·
-      Buildings: {{ buildingCount(game.state, human) }} · Troops:
-      {{ totalTroops(game.state, human) }}
+      Buildings: {{ getBuildingCount(game.state, human) }} · Troops:
+      {{ computeTotalTroops(game.state, human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
       <button class="btn" @click="ui.newGame()">🔄 Play Again</button>

@@ -1,12 +1,8 @@
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
-import {
-  COMBAT,
-  HOME_FIELD,
-  PACIFIST_DEF_BONUS,
-  SHIELD_DEFENSE,
-} from '@seven-planets/game';
-import { singularityDefBonus } from '@seven-planets/game';
+import { COMBAT, HOME_FIELD, PACIFIST_DEF_BONUS } from '@seven-planets/game';
+import { computeShieldDefense } from '@seven-planets/game';
+import { computeSingularityDefenseBonus } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
 
 import { actionDrawProb } from './action-draw-prob';
@@ -29,8 +25,7 @@ export function holdProbability(
   const reinforce =
     recruitRate(owner) * (planet.buildings.BARRACKS ? 0.7 : 0.25);
   const shield =
-    (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    singularityDefBonus(planet);
+    computeShieldDefense(planet) + computeSingularityDefenseBonus(planet);
   const pacBonus = owner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0;
   for (const player of getAlivePlayers()) {
     if (player.id === owner.id || player.hasPacifistStatus) {

@@ -2,7 +2,7 @@ import { distinctUntilChanged, distinctUntilKeyChanged, map } from 'rxjs';
 
 import type {
   GameState,
-  InfluenceOpts,
+  InfluenceOptions,
   InfluenceType,
   Cost,
 } from '@seven-planets/game';
@@ -14,7 +14,7 @@ import {
   getPlayers,
 } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
-import { homePlanet } from '@seven-planets/game';
+import { getHomePlanet } from '@seven-planets/game';
 import {
   createAttackPlanetAction,
   createEndTurnAction,
@@ -86,7 +86,7 @@ function performDecision(playerId: number, decision: Decision): void {
         createUseInfluenceAction({
           playerId,
           type: decision.type as InfluenceType,
-          opts: decision.opts as InfluenceOpts,
+          options: decision.options as InfluenceOptions,
         }),
       );
       return;
@@ -128,7 +128,7 @@ function aiPickCard(playerId: number): void {
   const state = getGameStateLastValue();
   const player = state.players[playerId];
   const planet =
-    state.planets[state.draftPlanetId] ?? homePlanet(state, player);
+    state.planets[state.draftPlanetId] ?? getHomePlanet(state, player);
   const pickable = state.pool.map((poolType) =>
     canPickCard(state, player, poolType, planet),
   );
@@ -138,7 +138,7 @@ function aiPickCard(playerId: number): void {
     // the first legal card rather than leave the draft stuck.
     index = pickable.indexOf(true);
   }
-  pickCard({ playerId, idx: index });
+  pickCard({ playerId, index: index });
 }
 
 /** Decide and perform one action, returning false when the turn is done. */

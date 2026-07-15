@@ -2,14 +2,14 @@ import { assign, cloneDeep, noop } from 'lodash-es';
 import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
 import type { GameState } from '../../interfaces/game-state';
+import type { Planet } from '../../interfaces/planet';
 import { emitEffect } from '../../functions/emit-effect';
 import { hasActionCard } from '../../functions/has-action-card';
-import { recruitCost } from '../../functions/recruit-cost';
-import { canAfford } from '../../config/constants';
-import { recruitYield } from '../../functions/recruit-yield';
+import { computeRecruitableTroops } from '../../functions/compute-recruitable-troops';
+import { computeRecruitYield } from '../../functions/compute-recruit-yield';
 import { log } from '../../functions/log';
 import { payCost } from '../../functions/pay-cost';
-import { pluralSuffix } from '../../functions/plural-suffix';
+import { getPluralSuffix } from '../../functions/get-plural-suffix';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { RecruitTroopsPayload } from '../../actions/recruit-troops/recruit-troops';
 
@@ -47,16 +47,25 @@ function executeRecruit(
   return match(state.planets[planetId])
     .when((planet) => !planet.buildings.BARRACKS, noop)
     .when(
-      (planet) => !canAfford(state.players[playerId].hand, recruitCost(planet)),
+      // Not a single troop payable (1⛏️ each, relics stand in): no-op.
+      (planet) =>
+        computeRecruitableTroops(planet, state.players[playerId].hand) < 1,
       noop,
     )
     .otherwise(
       (planet) =>
-        void chain(assign(state, spendActionCard(state, playerId, 'RECRUIT')))
-          .thru((state) =>
-            assign(state, payCost(state, playerId, recruitCost(planet))),
-          )
-          .thru((state) => ({ s: state, n: recruitYield(planet) }))
+        // Short on Ore, the Barracks still musters what the hand CAN pay.
+        void chain(
+          computeRecruitableTroops(planet, state.players[playerId].hand),
+        )
+          .thru((count) => ({
+            s: assign(state, spendActionCard(state, playerId, 'RECRUIT')),
+            n: count,
+          }))
+          .thru(({ s: state, n: count }) => ({
+            s: assign(state, payCost(state, playerId, { ORE: count })),
+            n: count,
+          }))
           .tap(({ s: state, n: count }) =>
             assign(state.planets[planetId], {
               troops: state.planets[planetId].troops + count,
@@ -67,7 +76,7 @@ function executeRecruit(
               state,
               log(
                 state,
-                `🪖 ${state.players[playerId].name} recruits ${count} troop${pluralSuffix(count)} on ${planet.name} (garrison now ${state.planets[planetId].troops})`,
+                `🪖 ${state.players[playerId].name} recruits ${count} troop${getPluralSuffix(count)}${getOreLimitedSuffix(planet, count)} on ${planet.name} (garrison now ${state.planets[planetId].troops})`,
                 'build',
               ),
             ),
@@ -85,4 +94,14 @@ function executeRecruit(
           )
           .value(),
     );
+}
+
+// "(ore-limited, Barracks yields 4)" when the hand couldn't pay the full yield.
+function getOreLimitedSuffix(planet: Planet, count: number): string {
+  return match(count < computeRecruitYield(planet))
+    .with(
+      true,
+      () => ` (ore-limited, Barracks yields ${computeRecruitYield(planet)})`,
+    )
+    .otherwise(() => '');
 }

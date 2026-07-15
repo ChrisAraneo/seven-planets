@@ -58,7 +58,7 @@ const influence = computed(() =>
         class="card"
         :class="{ dim: card.count === 0, action: card.action }"
         :style="{ borderColor: card.color }"
-        :title="card.title">
+        v-tooltip="card.title">
         <div class="ic">{{ card.icon }}</div>
         <div class="nm">{{ card.name }}</div>
         <div class="ct">{{ card.count }}</div>
@@ -68,7 +68,7 @@ const influence = computed(() =>
         :key="card.cardType"
         class="card action"
         :style="{ borderColor: card.color }"
-        :title="card.title">
+        v-tooltip="card.title">
         <div class="ic">{{ card.icon }}</div>
         <div class="nm">{{ card.name }}</div>
         <div class="ct">{{ card.count }}</div>

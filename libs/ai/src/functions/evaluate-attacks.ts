@@ -3,7 +3,7 @@ import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index'
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import { COMBAT, CONQUEST_TRUCE } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
 
 import { attackBaseOf } from './attack-base-of';
@@ -61,7 +61,7 @@ export function evaluateAttacks(player: Player): AttackPlan[] {
         continue;
       }
       const maxN = Math.min(
-        rocketCap(source),
+        getRocketCapacity(source),
         source.troops - aiState.W.reserveTroops,
       );
       if (maxN < 2) {

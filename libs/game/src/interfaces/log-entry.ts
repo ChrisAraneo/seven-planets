@@ -1,4 +1,4 @@
 export interface LogEntry {
-  msg: string;
-  cls: string;
+  message: string;
+  cssClass: string;
 }

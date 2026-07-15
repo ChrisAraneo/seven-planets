@@ -8,7 +8,7 @@ import type { Planet } from '../../interfaces/planet';
 import { checkWin } from '../../functions/check-win';
 import {
   CONQUEST_TRUCE,
-  fmtCards,
+  formatCards,
   CARD_TYPES,
   INFLUENCE_TYPES,
   choice,
@@ -16,19 +16,19 @@ import {
   HOME_FIELD,
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
-  randInt,
-  SHIELD_DEFENSE,
+  randomInt,
   TAUNTS,
 } from '../../config/constants';
 import { emitEffect } from '../../functions/emit-effect';
-import { handSize } from '../../functions/hand-size';
+import { getHandSize } from '../../functions/get-hand-size';
 import { log } from '../../functions/log';
 import { stealCards } from '../../functions/steal-cards';
-import { siloBonus } from '../../functions/silo-bonus';
-import { singularityDefBonus } from '../../functions/singularity-def-bonus';
+import { computeShieldDefense } from '../../functions/compute-shield-defense';
+import { computeSiloBonus } from '../../functions/compute-silo-bonus';
+import { computeSingularityDefenseBonus } from '../../functions/compute-singularity-defense-bonus';
 import { isUnderTruce } from '../../functions/is-under-truce';
-import { ownedPlanets } from '../../functions/owned-planets';
-import { pacifistDefBonus } from '../../functions/pacifist-def-bonus';
+import { getOwnedPlanets } from '../../functions/get-owned-planets';
+import { computePacifistDefenseBonus } from '../../functions/compute-pacifist-defense-bonus';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { AttackPlanetPayload } from '../../actions/attack-planet';
 
@@ -153,16 +153,17 @@ function breakPacifistVow(state: GameState, attackerId: number): void {
             ),
           )
           .tap((state) =>
-            ownedPlanets(state, state.players[attackerId]).forEach((planet) =>
-              assign(
-                state,
-                emitEffect(state, {
-                  kind: 'floatText',
-                  planetId: planet.id,
-                  text: '⚔️ VOW BROKEN',
-                  color: '#ff6b6b',
-                }),
-              ),
+            getOwnedPlanets(state, state.players[attackerId]).forEach(
+              (planet) =>
+                assign(
+                  state,
+                  emitEffect(state, {
+                    kind: 'floatText',
+                    planetId: planet.id,
+                    text: '⚔️ VOW BROKEN',
+                    color: '#ff6b6b',
+                  }),
+                ),
             ),
           )
           .value(),
@@ -207,15 +208,15 @@ function resolveBattle(
       defenderId,
       attackPower:
         COMBAT.attackPerTroop * troops +
-        siloBonus(source) +
-        randInt(0, COMBAT.attackRoll),
+        computeSiloBonus(source) +
+        randomInt(0, COMBAT.attackRoll),
       defensePower:
         COMBAT.defensePerTroop * target.troops +
-        (target.buildings.SHIELD || 0) * SHIELD_DEFENSE + // Shields stack
-        pacifistDefBonus(state, target) +
-        singularityDefBonus(target) +
+        computeShieldDefense(target) + // 0/+4/+8/+16 (an unpowered L3 gives +8)
+        computePacifistDefenseBonus(state, target) +
+        computeSingularityDefenseBonus(target) +
         HOME_FIELD +
-        randInt(0, COMBAT.defenseRoll),
+        randomInt(0, COMBAT.defenseRoll),
     }))
     .thru((context) => ({
       ...context,
@@ -224,7 +225,7 @@ function resolveBattle(
     .thru(
       (context): BattleContext => ({
         ...context,
-        ...battleLosses(context.win, troops, context.target.troops),
+        ...computeBattleLosses(context.win, troops, context.target.troops),
       }),
     )
     .tap(({ target, defLoss }) =>
@@ -234,14 +235,17 @@ function resolveBattle(
       assign(state, emitEffect(state, { kind: 'boom', planetId: targetId })),
     )
     .tap((battle) =>
-      assign(state, log(state, battleLine(state, battle, attackerId), 'war')),
+      assign(
+        state,
+        log(state, getBattleLine(state, battle, attackerId), 'war'),
+      ),
     )
     .tap((battle) => applyOutcome(state, battle, attackerId, targetId, troops))
     .thru(() => assign(state, checkWin(state)))
     .value();
 }
 
-function battleLosses(
+function computeBattleLosses(
   win: boolean,
   troops: number,
   targetTroops: number,
@@ -267,7 +271,7 @@ function battleLosses(
     }));
 }
 
-function battleLine(
+function getBattleLine(
   state: GameState,
   {
     target,
@@ -392,7 +396,7 @@ function resolveDefenderFate(
   attackerId: number,
   defenderId: number,
 ): void {
-  return match(ownedPlanets(state, state.players[defenderId]).length)
+  return match(getOwnedPlanets(state, state.players[defenderId]).length)
     .with(0, () => eliminateDefender(state, attackerId, defenderId))
     .otherwise(
       () =>
@@ -400,9 +404,9 @@ function resolveDefenderFate(
           state,
           defenderId,
           attackerId,
-          Math.min(5, Math.ceil(handSize(state.players[defenderId]) / 2)),
+          Math.min(5, Math.ceil(getHandSize(state.players[defenderId]) / 2)),
           (taken) =>
-            `💰 ${state.players[attackerId].name} seizes ${fmtCards(taken)} from the fleeing ${state.players[defenderId].name}!`,
+            `💰 ${state.players[attackerId].name} seizes ${formatCards(taken)} from the fleeing ${state.players[defenderId].name}!`,
         ),
     );
 }
@@ -418,9 +422,9 @@ function eliminateDefender(
         state,
         defenderId,
         attackerId,
-        Math.min(6, handSize(state.players[defenderId])),
+        Math.min(6, getHandSize(state.players[defenderId])),
         (taken) =>
-          `💰 ${state.players[attackerId].name} salvages ${fmtCards(taken)} from the ruins!`,
+          `💰 ${state.players[attackerId].name} salvages ${formatCards(taken)} from the ruins!`,
       ),
     )
     .tap((state) =>

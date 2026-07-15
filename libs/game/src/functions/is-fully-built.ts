@@ -1,4 +1,4 @@
-import { BUILD_ORDER, maxLevel } from '../config/constants';
+import { BUILD_ORDER, getMaxLevel } from '../config/constants';
 import type { Planet } from '../interfaces/planet';
 
 // A planet is FULLY BUILT once every building except the Singularity sits at its
@@ -11,6 +11,6 @@ export function isFullyBuilt(planet: Planet): boolean {
       (building === 'SINGULARITY' &&
         (planet.buildings.SINGULARITY || 0) >= 3) ||
       (building !== 'SINGULARITY' &&
-        (planet.buildings[building] || 0) >= maxLevel(building)),
+        (planet.buildings[building] || 0) >= getMaxLevel(building)),
   );
 }

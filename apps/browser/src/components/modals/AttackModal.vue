@@ -7,17 +7,18 @@ import {
   COMBAT,
   CONQUEST_TRUCE,
   HOME_FIELD,
-  SHIELD_DEFENSE,
+  PACIFIST_DEF_BONUS,
 } from '@seven-planets/game';
+import { computeShieldDefense } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 import { battleWinProb } from '@seven-planets/ai';
-import { handSize } from '@seven-planets/game';
+import { getHandSize } from '@seven-planets/game';
 import { isPacifist } from '@seven-planets/game';
-import { ownedPlanets } from '@seven-planets/game';
-import { pacifistDefBonus } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
-import { siloBonus } from '@seven-planets/game';
-import { singularityDefBonus } from '@seven-planets/game';
+import { getOwnedPlanets } from '@seven-planets/game';
+import { computePacifistDefenseBonus } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
+import { computeSiloBonus } from '@seven-planets/game';
+import { computeSingularityDefenseBonus } from '@seven-planets/game';
 import { isUnderTruce } from '@seven-planets/game';
 
 const game = useGameStore();
@@ -27,7 +28,7 @@ const human = game.state.players[0];
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPlanets = ownedPlanets(game.state, human).filter(
+const siloPlanets = getOwnedPlanets(game.state, human).filter(
   (planet) => planet.buildings.SILO && planet.troops >= 1,
 );
 const sourceId = ref(
@@ -40,7 +41,7 @@ const troopCount = ref(1);
 
 const source = computed(() => game.state.planets[sourceId.value]);
 const sources = computed(() =>
-  ownedPlanets(game.state, human).filter((planet) => planet.buildings.SILO),
+  getOwnedPlanets(game.state, human).filter((planet) => planet.buildings.SILO),
 );
 const targets = computed(() =>
   game.state.planets.filter((planet: Planet) => planet.ownerId !== 0),
@@ -49,7 +50,7 @@ const openTargets = computed(() =>
   targets.value.filter((planet: Planet) => !isUnderTruce(planet)),
 );
 const capacity = computed(() =>
-  Math.min(rocketCap(source.value), source.value.troops),
+  Math.min(getRocketCapacity(source.value), source.value.troops),
 );
 
 // Keep the selected target valid and the troop count within capacity.
@@ -78,12 +79,12 @@ const canLaunch = computed(
 
 const preview = computed(() => {
   if (!target.value) return null;
-  const attackPower = 2 * troopCount.value + siloBonus(source.value);
+  const attackPower = 2 * troopCount.value + computeSiloBonus(source.value);
   const defensePower =
     2 * target.value.troops +
-    (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    pacifistDefBonus(game.state, target.value) +
-    singularityDefBonus(target.value) +
+    computeShieldDefense(target.value) +
+    computePacifistDefenseBonus(game.state, target.value) +
+    computeSingularityDefenseBonus(target.value) +
     HOME_FIELD;
   // exact P(win), same math the dice roll
   const winProbability = battleWinProb(attackPower, defensePower);
@@ -106,7 +107,7 @@ const preview = computed(() => {
 });
 
 function capacityLabel(planet = source.value): string {
-  const cap = rocketCap(planet);
+  const cap = getRocketCapacity(planet);
   return cap === Infinity ? '∞ (all troops)' : String(cap);
 }
 function selectTarget(planet: { id: number; truce: boolean }): void {
@@ -179,10 +180,10 @@ function launch(): void {
         🪖{{ planet.troops }} {{ '🛡️'.repeat(planet.buildings.SHIELD || 0) }}
         <span
           v-if="game.state.players[planet.ownerId].hasPacifistStatus"
-          title="Pacifist — +6 defense"
+          v-tooltip="`Pacifist — +${PACIFIST_DEF_BONUS} defense`"
           >☮️</span
         >
-        🃏{{ handSize(game.state.players[planet.ownerId]) }}
+        🃏{{ getHandSize(game.state.players[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">

@@ -1,4 +1,4 @@
-import { recruitYield } from '@seven-planets/game';
+import { computeRecruitYield } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
 
 import { actionDrawProb } from './action-draw-prob';
@@ -8,7 +8,7 @@ import { owned } from './owned';
 export function recruitRate(player: Player): number {
   let bestYield = 0;
   for (const planet of owned(player)) {
-    bestYield = Math.max(bestYield, recruitYield(planet));
+    bestYield = Math.max(bestYield, computeRecruitYield(planet));
   }
   if (!bestYield) {
     return 0;

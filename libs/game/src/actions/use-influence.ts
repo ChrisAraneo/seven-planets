@@ -1,5 +1,5 @@
 import type { InfluenceType } from '../interfaces/influence-type';
-import type { InfluenceOpts } from '../interfaces/influence-opts';
+import type { InfluenceOptions } from '../interfaces/influence-options';
 
 export interface UseInfluenceAction {
   kind: 'USE_INFLUENCE';
@@ -9,7 +9,7 @@ export interface UseInfluenceAction {
 export interface UseInfluencePayload {
   playerId: number;
   type: InfluenceType;
-  opts?: InfluenceOpts;
+  options?: InfluenceOptions;
 }
 
 export const createUseInfluenceAction = (

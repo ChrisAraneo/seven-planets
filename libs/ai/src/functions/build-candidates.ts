@@ -1,5 +1,5 @@
 import { getAiState } from '../state';
-import { BUILD_ORDER, buildingCost } from '@seven-planets/game';
+import { BUILD_ORDER, computeBuildingCost } from '@seven-planets/game';
 import type { BuildingType, Cost, Planet, Player } from '@seven-planets/game';
 
 import { affordEta } from './afford-eta';
@@ -26,7 +26,7 @@ export function buildCandidates(player: Player): BuildCandidate[] {
       if (!level) {
         continue;
       }
-      const cost = buildingCost(id, level);
+      const cost = computeBuildingCost(id, level);
       const worth = buildingWorth(player, id, planet, level);
       if (worth <= 0) {
         continue;

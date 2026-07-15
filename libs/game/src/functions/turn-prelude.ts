@@ -12,11 +12,12 @@ import {
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 import { doIncome } from './do-income';
-import { draftOrder } from './draft-order';
+import { doShieldUpkeep } from './do-shield-upkeep';
+import { getDraftOrder } from './get-draft-order';
 import { filterAlivePlayers } from './filter-alive-players';
 import { isSingularityInPlay } from './is-singularity-in-play';
 import { log } from './log';
-import { makePool } from './make-pool';
+import { createPool } from './create-pool';
 import { updatePacifistStatus } from './update-pacifist-status';
 
 /* Everything that happens between turns: bump the turn counter, reset the
@@ -28,20 +29,21 @@ export function turnPrelude(state: GameState): void {
   state.players.forEach((player) => beginPlayerTurn(state, player));
   assign(state, updatePacifistStatus(state));
   assign(state, doIncome(state));
+  assign(state, doShieldUpkeep(state));
   announceSingularity(state);
   assign(state, {
-    pool: makePool(state),
+    pool: createPool(state),
     startIdx: choice(filterAlivePlayers(state)).id,
   });
   assign(
     state,
     log(
       state,
-      `— TURN ${state.turn} — ${draftOrder(state)[0].name} drafts first${turnFlavor(state.turn)}`,
+      `— TURN ${state.turn} — ${getDraftOrder(state)[0].name} drafts first${getTurnFlavor(state.turn)}`,
       'sys',
     ),
   );
-  assign(state, milestoneLogs(state));
+  assign(state, getMilestoneLogs(state));
 }
 
 function beginPlayerTurn(state: GameState, player: Player): void {
@@ -75,14 +77,14 @@ function logParalysis(state: GameState, player: Player): void {
           state,
           log(
             state,
-            `⏭️ ${player.name} is paralysed and sits this turn out${remainingSkipsSuffix(player.skipTurns)}`,
+            `⏭️ ${player.name} is paralysed and sits this turn out${getRemainingSkipsSuffix(player.skipTurns)}`,
             'sys',
           ),
         ),
     );
 }
 
-function remainingSkipsSuffix(skipTurns: number): string {
+function getRemainingSkipsSuffix(skipTurns: number): string {
   return match(skipTurns)
     .when(
       (count) => count > 0,
@@ -108,7 +110,7 @@ function announceSingularity(state: GameState): void {
     .otherwise(noop);
 }
 
-function turnFlavor(turn: number): string {
+function getTurnFlavor(turn: number): string {
   return match(turn)
     .when(
       (total) => total >= ACTION_CARDS_FROM_TURN,
@@ -121,7 +123,7 @@ function turnFlavor(turn: number): string {
     .otherwise(() => '');
 }
 
-function milestoneLogs(state: GameState): GameState {
+function getMilestoneLogs(state: GameState): GameState {
   return chain(state)
     .thru((state) =>
       logWhenTurnIs(
@@ -154,8 +156,12 @@ function milestoneLogs(state: GameState): GameState {
     .value();
 }
 
-function logWhenTurnIs(state: GameState, turn: number, msg: string): GameState {
+function logWhenTurnIs(
+  state: GameState,
+  turn: number,
+  message: string,
+): GameState {
   return match(state.turn)
-    .with(turn, () => log(state, msg, 'sys'))
+    .with(turn, () => log(state, message, 'sys'))
     .otherwise(() => state);
 }

@@ -19,6 +19,7 @@ function pickByRoll<T extends PoolType>(
 ): T | undefined {
   return types.find(
     (type, index) =>
-      roll < sumBy(types.slice(0, index + 1), (t2) => CARDS[t2].weight),
+      roll <
+      sumBy(types.slice(0, index + 1), (eachType) => CARDS[eachType].weight),
   );
 }

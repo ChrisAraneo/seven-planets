@@ -38,7 +38,7 @@ export function applyPickCard(
         .tap((clone) =>
           applyPick(
             clone,
-            payload.idx,
+            payload.index,
             payload.playerId,
             clone.cursor.phase === 'draft' ? clone.cursor.slot : 0,
           ),

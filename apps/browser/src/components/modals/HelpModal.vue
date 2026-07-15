@@ -8,14 +8,14 @@ import {
   BUILDINGS,
   BUILDINGS_FROM_TURN,
   CONQUEST_TRUCE,
-  costLabel,
+  getCostLabel,
   PACIFIST_TURNS,
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
   INFLUENCE_CARDS,
   INFLUENCE_CARDS_FROM_TURN,
   INFLUENCE_TYPES,
-  maxLevel,
+  getMaxLevel,
   MOVE_CARDS_FROM_TURN,
 } from '@seven-planets/game';
 
@@ -108,15 +108,19 @@ const ui = useUiStore();
         <b>Armies belong to planets:</b> each planet garrisons its own troops.
         <b>Recruiting requires a 🎖️ Barracks</b> on the planet, yields troops
         equal to its yield (1/2/4 at L1/L2/L3) and costs
-        <b>1⛏️ Ore per troop</b> (no energy). 🛸 Move redeploys troops between
-        your planets.
+        <b>1⛏️ Ore per troop</b> (no energy) — short on Ore, you
+        <b>recruit as many as you can pay for</b>. 🛸 Move redeploys troops
+        between your planets — but only
+        <b>from a planet that has a 🛰️ Spaceport</b>.
       </li>
       <li>
         <b>Combat:</b> <b>attacking requires a 🚀 Rocket Silo</b> — rockets
         launch only from your Silo planets, using that planet's own army. Rocket
         capacity = 3, <b>doubled per Silo level</b> (L1 → 6, L3 → unlimited).
         Strike = 2×troops (+2 per Silo level) + luck. Defense = 2×troops
-        (+4/+8/+12 per 🛡️ Shield level) + luck.
+        <b>+2 home-field</b> (+4/+8/+16 at 🛡️ Shield L1/L2/L3 — an
+        <b>L3 shield drains 2💎 upkeep every turn</b>; unpaid, it projects only
+        +8 that turn) + luck.
         <b>Buildings are never destroyed.</b>
       </li>
       <li>
@@ -139,12 +143,13 @@ const ui = useUiStore();
         <b>Tech 3</b>.
       </li>
       <li>
-        <b>Trading requires a 🤝 Embassy.</b> Propose <b>resource-only</b> swaps
-        to any rival — <b>action cards cannot be traded</b>; the initiator
-        spends a 🔁 Trade card and
-        <b>earns +1 ⭐ Influence per accepted deal</b>. AI rivals will openly
-        announce what resource they seek and will only accept your offer freely
-        if it provides that resource — for anything else they demand very
+        <b>Trading requires a 🤝 Embassy</b>, which can only be built on a
+        planet that already has a 🛰️ <b>Spaceport</b>. Propose
+        <b>resource-only</b> swaps to any rival —
+        <b>action cards cannot be traded</b>; the initiator spends a 🔁 Trade
+        card and <b>earns +1 ⭐ Influence per accepted deal</b>. AI rivals will
+        openly announce what resource they seek and will only accept your offer
+        freely if it provides that resource — for anything else they demand very
         favourable terms. Rivals are
         <b>less willing to trade with the current leader.</b>
       </li>
@@ -181,8 +186,8 @@ const ui = useUiStore();
           <li v-for="id in BUILD_ORDER" :key="id">
             {{ BUILDINGS[id].icon }} <b>{{ BUILDINGS[id].name }}</b>
             <span class="dimtx"
-              >({{ costLabel(BUILDINGS[id].cost) }} at L1 — level N costs N×
-              that, max L{{ maxLevel(id) }})</span
+              >({{ getCostLabel(BUILDINGS[id].cost) }} at L1 — level N costs N×
+              that, max L{{ getMaxLevel(id) }})</span
             >
             — {{ BUILDINGS[id].desc }}
           </li>

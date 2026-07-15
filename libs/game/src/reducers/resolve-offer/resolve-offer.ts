@@ -2,7 +2,7 @@ import { assign, cloneDeep } from 'lodash-es';
 import { chain } from '../../utils/chain';
 import { match, P } from 'ts-pattern';
 
-import { fmtCards } from '../../config/constants';
+import { formatCards } from '../../config/constants';
 import { log } from '../../functions/log';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { Cost } from '../../interfaces/cost';
@@ -83,7 +83,7 @@ function execTrade(
         state,
         log(
           state,
-          `🔁 ${state.players[aId].name} trades ${fmtCards(aGives)} to ${state.players[bId].name} for ${fmtCards(bGives)}  [+1⭐ influence]`,
+          `🔁 ${state.players[aId].name} trades ${formatCards(aGives)} to ${state.players[bId].name} for ${formatCards(bGives)}  [+1⭐ influence]`,
           'trade',
         ),
       ),

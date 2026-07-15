@@ -9,7 +9,7 @@ import type { UseInfluenceAction } from './use-influence';
 
 export type Action =
   | { kind: 'START' }
-  | { kind: 'PICK_CARD'; playerId: number; idx: number }
+  | { kind: 'PICK_CARD'; playerId: number; index: number }
   | EndTurnAction
   | AttackPlanetAction
   | { kind: 'MOVE_TROOPS'; payload: MoveTroopsPayload }

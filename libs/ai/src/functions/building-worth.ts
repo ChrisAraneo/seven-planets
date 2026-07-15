@@ -3,18 +3,18 @@ import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import {
   BASE_ROCKET_CAP,
-  buildingCost,
+  computeBuildingCost,
   BUILDINGS,
   CARDS,
-  handValue,
-  incomeAmount,
-  maxLevel,
+  computeHandValue,
+  computeIncomeAmount,
+  getMaxLevel,
   SHIELD_DEFENSE,
   SILO_HIT_BONUS,
   SINGULARITY_DEF_BONUS,
 } from '@seven-planets/game';
-import { recruitYield } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
+import { computeRecruitYield } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
 import type { BuildingType, Planet, Player } from '@seven-planets/game';
 
 import { avgResourceCardValue } from './avg-resource-card-value';
@@ -23,7 +23,7 @@ import { holdProbability } from './hold-probability';
 import { minTroopsToConquer } from './min-troops-to-conquer';
 import { owned } from './owned';
 import { planetValue } from './planet-value';
-import { totalTroops } from './total-troops';
+import { computeTotalTroops } from './compute-total-troops';
 import { isUnderTruce } from './is-under-truce';
 import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 
@@ -35,13 +35,13 @@ export function buildingWorth(
 ): number {
   const aiState = getAiState();
   const H = aiState.W.buildRoiHorizon;
-  const costVal = handValue(buildingCost(id, level));
+  const costVal = computeHandValue(computeBuildingCost(id, level));
   let gross = 0;
   const inc = BUILDINGS[id].income;
   if (inc) {
     const liquidity = inc === 'SPICE' ? (hasB(player, 'LAB') ? 0.6 : 0.3) : 1;
     gross +=
-      (incomeAmount(id, level) - incomeAmount(id, level - 1)) *
+      (computeIncomeAmount(id, level) - computeIncomeAmount(id, level - 1)) *
       CARDS[inc].value *
       H *
       liquidity;
@@ -54,8 +54,8 @@ export function buildingWorth(
         gross += 3;
       } else {
         const delta =
-          recruitYield({ ...planet, buildings: { BARRACKS: level } }) -
-          recruitYield(planet);
+          computeRecruitYield({ ...planet, buildings: { BARRACKS: level } }) -
+          computeRecruitYield(planet);
         gross += delta * H * 0.5;
       }
       if (planet.buildings.SILO) {
@@ -88,7 +88,7 @@ export function buildingWorth(
         const newCap = level >= 3 ? Infinity : BASE_ROCKET_CAP * 2 ** level;
         if (
           minNeed !== Infinity &&
-          rocketCap(planet) < minNeed &&
+          getRocketCapacity(planet) < minNeed &&
           newCap >= minNeed
         ) {
           gross += 7;
@@ -98,7 +98,10 @@ export function buildingWorth(
     }
     case 'SHIELD': {
       const risk = 1 - holdProbability(player, planet, planet.troops);
-      gross += SHIELD_DEFENSE * 0.35 + risk * planetValue(planet) * 0.6;
+      // Marginal defense of THIS level-up (+4/+4/+8 for L1/L2/L3).
+      gross +=
+        (SHIELD_DEFENSE[level] - SHIELD_DEFENSE[level - 1]) * 0.35 +
+        risk * planetValue(planet) * 0.6;
       break;
     }
     case 'SPACEPORT': {
@@ -110,7 +113,7 @@ export function buildingWorth(
             (candidate, planet) => Math.max(candidate, planet.troops),
             0,
           );
-          gross += Math.min(6, (totalTroops(player) - staged) * 0.4);
+          gross += Math.min(6, (computeTotalTroops(player) - staged) * 0.4);
         }
       }
       break;
@@ -121,7 +124,7 @@ export function buildingWorth(
       break;
     }
     case 'LAB': {
-      gross += level <= maxLevel('SINGULARITY') ? 6 + level : 1;
+      gross += level <= getMaxLevel('SINGULARITY') ? 6 + level : 1;
       break;
     }
     case 'SINGULARITY': {

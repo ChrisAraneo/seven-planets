@@ -3,16 +3,26 @@ import { computed, ref, watch } from 'vue';
 import { moveTroops } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
-import { ownedPlanets } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
+import { getOwnedPlanets } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
 
 const game = useGameStore();
 const ui = useUiStore();
 
 const human = game.state.players[0];
 
+// Troops launch only FROM a Spaceport planet — those are the valid origins.
+const sources = computed(() =>
+  getOwnedPlanets(game.state, human).filter(
+    (planet) => planet.buildings.SPACEPORT,
+  ),
+);
+
 const fromId = ref(
-  ownedPlanets(game.state, human).reduce((strongest, planet) =>
+  (sources.value.length
+    ? sources.value
+    : getOwnedPlanets(game.state, human)
+  ).reduce((strongest, planet) =>
     strongest.troops >= planet.troops ? strongest : planet,
   ).id,
 );
@@ -20,12 +30,12 @@ const toId = ref(-1);
 const troopCount = ref(1);
 
 const from = computed(() => game.state.planets[fromId.value]);
-const owned = computed(() => ownedPlanets(game.state, human));
+const owned = computed(() => getOwnedPlanets(game.state, human));
 const dests = computed(() =>
   owned.value.filter((planet) => planet.id !== fromId.value),
 );
 const capacity = computed(() =>
-  Math.min(rocketCap(from.value), from.value.troops),
+  Math.min(getRocketCapacity(from.value), from.value.troops),
 );
 
 watch(
@@ -42,9 +52,9 @@ watch(
 );
 
 const capacityLabel = computed(() =>
-  rocketCap(from.value) === Infinity
+  getRocketCapacity(from.value) === Infinity
     ? '∞ (all troops)'
-    : String(rocketCap(from.value)),
+    : String(getRocketCapacity(from.value)),
 );
 
 function decrease(): void {
@@ -74,9 +84,9 @@ function doMove(): void {
       {{ human.hand.MOVE }}).
     </p>
     <p>
-      From:
+      From (🛰️ Spaceport planets only):
       <button
-        v-for="planet in owned"
+        v-for="planet in sources"
         :key="planet.id"
         class="tab"
         :class="{ active: planet.id === fromId }"

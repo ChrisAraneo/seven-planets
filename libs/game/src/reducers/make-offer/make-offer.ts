@@ -60,7 +60,7 @@ function sendOffer(
     // (nothing restricts the human's seat, matching the original behavior).
     .tap(() => assign(player, { hasTradedCurrentTurn: true }))
     .thru((state) => logSeeking(state, player, gets))
-    .thru((state) => statusIfHuman(state, player, partner))
+    .thru((state) => getStatusIfHuman(state, player, partner))
     // The emitted snapshot IS the notification: the partner seat reacts to
     // pendingOffer appearing on it (TradeOfferModal for the human, the AI's
     // watcher for AI seats) and answers by dispatching resolveOffer.
@@ -94,7 +94,7 @@ function logSeeking(
     .otherwise(() => state);
 }
 
-function statusIfHuman(
+function getStatusIfHuman(
   state: GameState,
   player: Player,
   partner: Player,

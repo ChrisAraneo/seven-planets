@@ -2,7 +2,7 @@ import {
   BUILD_ORDER,
   BUILDINGS,
   CARDS,
-  incomeAmount,
+  computeIncomeAmount,
 } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 
@@ -16,7 +16,8 @@ export function planetValue(planet: Planet): number {
     eachValue += lvl * 1.5;
     const inc = BUILDINGS[buildingType].income;
     if (inc) {
-      eachValue += incomeAmount(buildingType, lvl) * CARDS[inc].value * 3;
+      eachValue +=
+        computeIncomeAmount(buildingType, lvl) * CARDS[inc].value * 3;
     }
   }
   eachValue +=

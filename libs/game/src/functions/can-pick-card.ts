@@ -1,13 +1,13 @@
 import { match, P } from 'ts-pattern';
 import {
-  buildingCost,
+  computeBuildingCost,
   canAfford,
   CARDS,
   INFLUENCE_CARDS,
-  maxLevel,
+  getMaxLevel,
 } from '../config/constants';
 import { isSingularityLabOk } from './is-singularity-lab-ok';
-import { ownedPlanets } from './owned-planets';
+import { getOwnedPlanets } from './get-owned-planets';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 import type { InfluenceType } from '../interfaces/influence-type';
@@ -17,7 +17,7 @@ import type { PoolType } from '../interfaces/pool-type';
 
 import { hasBuilding } from './has-building';
 import { getTechLevel } from './get-tech-level';
-import { totalTroops } from './total-troops';
+import { computeTotalTroops } from './compute-total-troops';
 
 const { nullish } = P;
 
@@ -41,14 +41,15 @@ export function canPickCard(
     .with(
       'ATTACK',
       () =>
-        hasBuilding(state, player, 'SILO') && totalTroops(state, player) >= 1,
+        hasBuilding(state, player, 'SILO') &&
+        computeTotalTroops(state, player) >= 1,
     )
     .with(
       'MOVE',
       () =>
         hasBuilding(state, player, 'SPACEPORT') &&
-        ownedPlanets(state, player).length >= 2 &&
-        totalTroops(state, player) >= 1,
+        getOwnedPlanets(state, player).length >= 2 &&
+        computeTotalTroops(state, player) >= 1,
     )
     .with('RECRUIT', () => hasBuilding(state, player, 'BARRACKS'))
     .with('TRADE', () => hasBuilding(state, player, 'EMBASSY'))
@@ -66,7 +67,7 @@ function canPickBuilding(
     .otherwise((planet) =>
       match((planet.buildings[buildingType] || 0) + 1)
         .when(
-          (next) => next > maxLevel(buildingType),
+          (next) => next > getMaxLevel(buildingType),
           () => false,
         )
         .when(
@@ -79,8 +80,13 @@ function canPickBuilding(
             buildingType === 'SINGULARITY' && !isSingularityLabOk(planet, next),
           () => false,
         )
+        .when(
+          // An Embassy needs a Spaceport already standing on the same planet.
+          () => buildingType === 'EMBASSY' && !planet.buildings.SPACEPORT,
+          () => false,
+        )
         .otherwise((next) =>
-          canAfford(player.hand, buildingCost(buildingType, next)),
+          canAfford(player.hand, computeBuildingCost(buildingType, next)),
         ),
     );
 }

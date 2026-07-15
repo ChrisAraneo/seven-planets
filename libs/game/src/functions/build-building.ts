@@ -1,6 +1,6 @@
 import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
-import { buildingCost, BUILDINGS } from '../config/constants';
+import { computeBuildingCost, BUILDINGS } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 
@@ -24,7 +24,7 @@ export function buildBuilding(
       currentTech,
       level,
       state: updatePlanet(
-        payCost(state, playerId, buildingCost(buildingType, level)),
+        payCost(state, playerId, computeBuildingCost(buildingType, level)),
         planetId,
         (planet) => ({
           ...planet,
@@ -37,7 +37,7 @@ export function buildBuilding(
       level,
       state: log(
         built,
-        `🏗️ ${built.players[playerId].name} ${buildVerb(buildingType, level)} on ${built.planets[planetId].name}`,
+        `🏗️ ${built.players[playerId].name} ${getBuildVerb(buildingType, level)} on ${built.planets[planetId].name}`,
         'build',
       ),
     }))
@@ -46,7 +46,7 @@ export function buildBuilding(
       state: emitEffect(logged, {
         kind: 'floatText',
         planetId,
-        text: `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${levelSuffix(level)}`,
+        text: `${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}${getLevelSuffix(level)}`,
         color: '#7dff8a',
       }),
     }))
@@ -56,7 +56,7 @@ export function buildBuilding(
     .value();
 }
 
-function buildVerb(buildingType: BuildingType, level: number): string {
+function getBuildVerb(buildingType: BuildingType, level: number): string {
   return match(level)
     .when(
       (level) => level > 1,
@@ -69,7 +69,7 @@ function buildVerb(buildingType: BuildingType, level: number): string {
     );
 }
 
-function levelSuffix(level: number): string {
+function getLevelSuffix(level: number): string {
   return match(level)
     .when(
       (level) => level > 1,

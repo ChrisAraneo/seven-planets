@@ -14,11 +14,11 @@ export function passSlot(
   state: GameState,
   player: Player,
   planet: Planet,
-  humanControlled: boolean,
+  isHumanControlled: boolean,
 ): void {
   return chain(state)
     .tap((state) =>
-      match(humanControlled)
+      match(isHumanControlled)
         .with(
           true,
           () =>

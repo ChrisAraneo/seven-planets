@@ -9,7 +9,7 @@ import { planFor } from './plan-for';
 
 export function mastermindDraftPick(
   player: Player,
-  draftPlanet: Planet,
+  getDraftPlanet: Planet,
   pickable: boolean[],
 ): number {
   const aiState = getAiState();
@@ -44,7 +44,7 @@ export function mastermindDraftPick(
       (poolType) => poolType === poolType,
     ).length;
     const score =
-      ownDraftValue(player, draftPlanet, poolType, plan) +
+      ownDraftValue(player, getDraftPlanet, poolType, plan) +
       (denialValue(player, poolType) / copies) * aiState.W.denialWeight +
       Math.random() * 0.05;
     if (score > bestScore) {

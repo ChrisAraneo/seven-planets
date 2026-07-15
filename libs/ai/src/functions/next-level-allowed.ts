@@ -1,4 +1,4 @@
-import { maxLevel } from '@seven-planets/game';
+import { getMaxLevel } from '@seven-planets/game';
 import { isSingularityLabOk } from '@seven-planets/game';
 import type { BuildingType, Planet, Player } from '@seven-planets/game';
 
@@ -10,7 +10,7 @@ export function nextLevelAllowed(
   id: BuildingType,
 ): number {
   const next = (planet.buildings[id] || 0) + 1;
-  if (next > maxLevel(id)) {
+  if (next > getMaxLevel(id)) {
     return 0;
   }
   if (next > techLevel(player)) {

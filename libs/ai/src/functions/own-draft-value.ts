@@ -1,7 +1,7 @@
 import { getTurn } from '@seven-planets/game';
 import { getAiState } from '../state';
 import { canAfford, CARDS, RESOURCE_TYPES } from '@seven-planets/game';
-import { buildingCost } from '@seven-planets/game';
+import { computeBuildingCost } from '@seven-planets/game';
 import type {
   InfluenceType,
   Planet,
@@ -16,7 +16,7 @@ import { influenceDraftValue } from './influence-draft-value';
 import { nextLevelAllowed } from './next-level-allowed';
 import { owned } from './owned';
 import type { Plan } from './plan-types';
-import { totalTroops } from './total-troops';
+import { computeTotalTroops } from './compute-total-troops';
 
 function garrisonFloor(): number {
   return 2 + Math.min(8, Math.floor(getTurn() / 4));
@@ -24,18 +24,18 @@ function garrisonFloor(): number {
 
 export function ownDraftValue(
   player: Player,
-  draftPlanet: Planet,
+  getDraftPlanet: Planet,
   poolType: PoolType,
   plan: Plan,
 ): number {
   const def = CARDS[poolType];
   if (def.building) {
     const id = poolType as Parameters<typeof nextLevelAllowed>[2];
-    const level = nextLevelAllowed(player, draftPlanet, id);
+    const level = nextLevelAllowed(player, getDraftPlanet, id);
     if (!level) {
       return -1;
     }
-    const worth = buildingWorth(player, id, draftPlanet, level);
+    const worth = buildingWorth(player, id, getDraftPlanet, level);
     let eachValue = 1.5 + worth / 6;
     if (plan.buildQueue[0]?.id === id) {
       eachValue += 2;
@@ -46,7 +46,7 @@ export function ownDraftValue(
     }
     const head = plan.buildQueue[0];
     if (head && head.id !== id && canAfford(player.hand, head.cost)) {
-      const after = handAfterCost(player.hand, buildingCost(id, level));
+      const after = handAfterCost(player.hand, computeBuildingCost(id, level));
       if (!canAfford(after, head.cost)) {
         eachValue -= 2;
       }
@@ -70,7 +70,7 @@ export function ownDraftValue(
     if (
       (player.hand.ATTACK || 0) === 0 &&
       hasB(player, 'SILO') &&
-      totalTroops(player) >= 4
+      computeTotalTroops(player) >= 4
     ) {
       innerValue += 1;
     }

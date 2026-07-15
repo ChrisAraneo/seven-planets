@@ -25,10 +25,15 @@ export function triggerGameOver(
       (state) => Boolean(state.over),
       (state) => state,
     )
-    .otherwise((state) => endGame(state, winnerFor(state, winnerId), reason));
+    .otherwise((state) =>
+      endGame(state, getWinnerFor(state, winnerId), reason),
+    );
 }
 
-function winnerFor(state: GameState, winnerId: number | null): Player | null {
+function getWinnerFor(
+  state: GameState,
+  winnerId: number | null,
+): Player | null {
   return match(winnerId)
     .with(null, (): Player | null => null)
     .otherwise((id) => state.players[id]);
@@ -41,7 +46,7 @@ function endGame(
 ): GameState {
   return chain({ ...state, over: { winner, reason } } as GameState)
     .thru((state) => logOutcome(state, winner, reason))
-    .thru((state) => setStatus(state, statusLine(winner, reason)))
+    .thru((state) => setStatus(state, getStatusLine(winner, reason)))
     .thru((state) => ({ ...state, pendingOffer: null }) as GameState)
     .value();
 }
@@ -69,7 +74,7 @@ function logOutcome(
     .otherwise(() => state);
 }
 
-function statusLine(winner: Player | null, reason: GameOverReason): string {
+function getStatusLine(winner: Player | null, reason: GameOverReason): string {
   return match(winner)
     .with(
       nonNullable,

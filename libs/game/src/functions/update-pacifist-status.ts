@@ -10,7 +10,7 @@ import type { Player } from '../interfaces/player';
 
 import { emitEffect } from './emit-effect';
 import { log } from './log';
-import { ownedPlanets } from './owned-planets';
+import { getOwnedPlanets } from './get-owned-planets';
 import { updatePlayer } from './update-player';
 
 // Promote any player who has gone PACIFIST_TURNS without attacking. A player who
@@ -52,7 +52,7 @@ function promoteIfVowKept(
           ),
         )
         .thru((logged) =>
-          ownedPlanets(logged, player).reduce(
+          getOwnedPlanets(logged, player).reduce(
             (eachState, planet) =>
               emitEffect(eachState, {
                 kind: 'floatText',

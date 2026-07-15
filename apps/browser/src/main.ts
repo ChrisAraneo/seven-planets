@@ -6,6 +6,7 @@ import { distinctUntilKeyChanged } from 'rxjs';
 import App from './App.vue';
 import { installEffects, playNewEffects } from '@seven-planets/effects';
 import { getGameState } from '@seven-planets/game';
+import { vTooltip } from './directives/tooltip';
 import { pinia, useEffectsStore } from './stores';
 
 // Composition root: hook the graphical effects into the app, with the
@@ -27,5 +28,7 @@ getGameState()
 const app = createApp(App);
 
 app.use(pinia);
+// Floating-ui tooltips: v-tooltip="text" replaces the native title attribute.
+app.directive('tooltip', vTooltip);
 
 app.mount('#app');

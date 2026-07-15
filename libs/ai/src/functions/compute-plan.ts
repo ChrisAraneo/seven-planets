@@ -9,10 +9,10 @@ import {
   HOME_FIELD,
   INFLUENCE_CARDS,
   PACIFIST_DEF_BONUS,
-  SHIELD_DEFENSE,
 } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
-import { singularityDefBonus } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
+import { computeShieldDefense } from '@seven-planets/game';
+import { computeSingularityDefenseBonus } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
 
 import { battleWinProb } from './battle-win-prob';
@@ -65,8 +65,8 @@ export function computePlan(
   const staging =
     silos.length > 0
       ? silos.reduce((planet, eachPlanet) =>
-          rocketCap(eachPlanet) > rocketCap(planet) ||
-          (rocketCap(eachPlanet) === rocketCap(planet) &&
+          getRocketCapacity(eachPlanet) > getRocketCapacity(planet) ||
+          (getRocketCapacity(eachPlanet) === getRocketCapacity(planet) &&
             eachPlanet.troops > planet.troops)
             ? eachPlanet
             : planet,
@@ -97,9 +97,9 @@ export function computePlan(
       let need = minTroopsToConquer(futureDef);
       const defB =
         COMBAT.defensePerTroop * futureDef +
-        (target.buildings.SHIELD || 0) * SHIELD_DEFENSE +
+        computeShieldDefense(target) +
         (defOwner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0) +
-        singularityDefBonus(target) +
+        computeSingularityDefenseBonus(target) +
         HOME_FIELD;
       while (
         need < 80 &&
@@ -110,7 +110,7 @@ export function computePlan(
       }
       if (
         staging &&
-        rocketCap(staging) < need &&
+        getRocketCapacity(staging) < need &&
         (staging.buildings.SILO || 0) < 2
       ) {
         continue;

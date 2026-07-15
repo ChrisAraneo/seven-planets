@@ -7,13 +7,13 @@ import { assign, fromPairs, mapValues } from 'lodash-es';
 import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 import type { ActionType } from '../interfaces/action-type';
-import type { BuildingDef } from '../interfaces/building-def';
+import type { BuildingDefinition } from '../interfaces/building-definition';
 import type { BuildingType } from '../interfaces/building-type';
-import type { CardDef } from '../interfaces/card-def';
+import type { CardDefinition } from '../interfaces/card-definition';
 import type { CardType } from '../interfaces/card-type';
 import type { Cost } from '../interfaces/cost';
 import type { Hand } from '../interfaces/hand';
-import type { InfluenceCardDef } from '../interfaces/influence-card-def';
+import type { InfluenceCardDefinition } from '../interfaces/influence-card-definition';
 import type { InfluenceType } from '../interfaces/influence-type';
 import type { PlanetStyle } from '../interfaces/planet-style';
 import type { PoolType } from '../interfaces/pool-type';
@@ -40,7 +40,7 @@ export const MOVE_CARDS_FROM_TURN = 20; // 🛸 Move cards join the action deck 
 export const ADVANCED_FROM_TURN = 10; // The Research Lab card is dealt from turn 10
 export const INFLUENCE_CARDS_FROM_TURN = 30;
 
-export const CARDS: Record<string, CardDef> = {
+export const CARDS: Record<string, CardDefinition> = {
   ORE: { name: 'Ore', icon: '⛏️', color: '#c98f5a', weight: 30, value: 1 },
   CRYSTAL: {
     name: 'Crystal',
@@ -100,7 +100,7 @@ export const CARDS: Record<string, CardDef> = {
 };
 
 // Every building has up to 3 LEVELS — picking its card again upgrades it.
-export const BUILDINGS: Record<BuildingType, BuildingDef> = {
+export const BUILDINGS: Record<BuildingType, BuildingDefinition> = {
   MINE: {
     name: 'Ore Mine',
     icon: '⚒️',
@@ -145,7 +145,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     name: 'Barracks',
     icon: '🎖️',
     cost: { ORE: 1, CRYSTAL: 1, ENERGY: 1 },
-    desc: 'REQUIRED to recruit on this planet — yields 1/2/4 troops at L1/L2/L3, costing 1⛏️ per troop',
+    desc: 'REQUIRED to recruit on this planet — yields 1/2/4 troops at L1/L2/L3, costing 1⛏️ per troop (short on ⛏️? you recruit as many as you can pay for)',
     cardWeight: 6,
     cardColor: '#ff9e3d',
     short: 'recruit 1/2/4',
@@ -154,10 +154,10 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     name: 'Shield Generator',
     icon: '🛡️',
     cost: { CRYSTAL: 3, ENERGY: 1 },
-    desc: '+4 defense per level (L1: +4 · L2: +8 · L3: +12). Never destroyed by attacks',
+    desc: '+4/+8/+16 defense at L1/L2/L3. The L3 shield drains 2💎 upkeep every turn — unpaid, it projects only +8 that turn. Never destroyed by attacks',
     cardWeight: 5,
     cardColor: '#ff9e3d',
-    short: '+4/+8/+12 def',
+    short: '+4/+8/+16 def',
   },
   SILO: {
     name: 'Rocket Silo',
@@ -172,7 +172,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     name: 'Spaceport',
     icon: '🛰️',
     cost: { ORE: 1, CRYSTAL: 1, ENERGY: 1 },
-    desc: 'ENABLES the 🛸 Move card — troops cannot be redeployed without one. L2: +1 free 🛸 Move card every 3 turns',
+    desc: 'ENABLES the 🛸 Move card — troops can only be redeployed FROM a planet that has one. L2: +1 free 🛸 Move card every 3 turns',
     cardWeight: 5,
     cardColor: '#6da2ff',
     short: 'move hub',
@@ -181,7 +181,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDef> = {
     name: 'Embassy',
     icon: '🤝',
     cost: { ORE: 1, CRYSTAL: 1, ENERGY: 1 },
-    desc: 'ENABLES trading. L2: +1 ⭐ Influence every turn',
+    desc: 'ENABLES trading. Requires a 🛰️ Spaceport already built on the same planet. L2: +1 ⭐ Influence every turn',
     cardWeight: 5,
     cardColor: '#ffd23d',
     short: 'trade hub',
@@ -230,12 +230,12 @@ const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   EMBASSY: 2,
   SINGULARITY: 4, // L4 is the apex, unlocked only by TECHNOLOGY 4 (a fully-built planet)
 };
-export function maxLevel(id: BuildingType): number {
+export function getMaxLevel(id: BuildingType): number {
   return BUILDING_MAX_LEVEL[id] || 3;
 }
 
 // Level N of a building costs N× its base cost.
-export function buildingCost(id: BuildingType, level: number): Cost {
+export function computeBuildingCost(id: BuildingType, level: number): Cost {
   return match(level)
     .when(
       (level) => level <= 1,
@@ -247,7 +247,7 @@ export function buildingCost(id: BuildingType, level: number): Cost {
 }
 
 // Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
-export function incomeAmount(id: BuildingType, lvl: number): number {
+export function computeIncomeAmount(id: BuildingType, lvl: number): number {
   return match({ id, lvl })
     .when(
       (candidate) => candidate.id === 'MINE' && candidate.lvl >= 2,
@@ -275,7 +275,7 @@ assign(
 );
 
 // INFLUENCE CARDS — dealt into the pool from turn 30.
-export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDef> = {
+export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDefinition> = {
   SKIP_ARMY: {
     name: 'Sabotage',
     icon: '🕵️',
@@ -344,8 +344,11 @@ export const POOL_TYPES: PoolType[] = [
 
 export const BASE_ROCKET_CAP = 3; // Each Silo LEVEL doubles it: 3 → 6 → 12 → 24
 export const SILO_HIT_BONUS = 2; // ...and adds +2 strike per level
-export const SHIELD_DEFENSE = 4; // Per shield level (L1:+4, L2:+8, L3:+12)
-export const HOME_FIELD = 1; // Flat defense bonus for defenders
+export const SHIELD_DEFENSE = [0, 4, 8, 16] as const; // Defense by shield level (L1:+4, L2:+8, L3:+16)
+export const SHIELD_UPKEEP_LEVEL = 3; // From this level the shield needs upkeep...
+export const SHIELD_UPKEEP_CRYSTAL = 2; // ...draining this many 💎 every turn
+export const SHIELD_UNPOWERED_DEFENSE = 8; // An L3 shield that missed its upkeep falls back to this
+export const HOME_FIELD = 2; // Flat defense bonus for defenders
 export const SINGULARITY_DEF_BONUS = 8; // A level-4 Singularity warps local space: +8 planet defense
 
 // COMBAT MATH — the single source of truth for battle resolution, shared by
@@ -355,8 +358,8 @@ export const SINGULARITY_DEF_BONUS = 8; // A level-4 Singularity warps local spa
 export const COMBAT = {
   attackPerTroop: 2, // Strike power contributed by each attacking troop
   defensePerTroop: 2, // Defense contributed by each defending troop
-  attackRoll: 4, // Attacker adds randInt(0, attackRoll) to the strike (more swing)
-  defenseRoll: 4, // Defender adds randInt(0, defenseRoll) to the defense (more swing)
+  attackRoll: 4, // Attacker adds randomInt(0, attackRoll) to the strike (more swing)
+  defenseRoll: 4, // Defender adds randomInt(0, defenseRoll) to the defense (more swing)
   winDefLoss: { num: 1, den: 2 }, // Win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
   winAttLoss: { num: 1, den: 3 }, // Win: attackers lose floor(n/3)
   loseAttLoss: { num: 3, den: 4 }, // Loss: attackers lose ceil(3n/4)
@@ -520,22 +523,22 @@ export const TAUNTS: string[] = [
 
 /* ---------------- pure numeric / formatting helpers ---------------- */
 
-export function randInt(first: number, building: number): number {
-  return first + Math.floor(Math.random() * (building - first + 1));
+export function randomInt(minimum: number, maximum: number): number {
+  return minimum + Math.floor(Math.random() * (maximum - minimum + 1));
 }
-export function choice<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+export function choice<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
 // Uniform shuffle (sort by random keys) — returns a NEW array, does not mutate input.
-export function shuffleArray<T>(arr: T[]): T[] {
-  return chain(arr.map((item) => ({ item, key: Math.random() })))
+export function shuffleArray<T>(items: T[]): T[] {
+  return chain(items.map((item) => ({ item, key: Math.random() })))
     .sortBy(({ key }) => key)
     .map(({ item }) => item)
     .value();
 }
 
-export function handValue(map: Hand | Cost): number {
+export function computeHandValue(map: Hand | Cost): number {
   return CARD_TYPES.reduce(
     (sum, cardType) => sum + (map[cardType] || 0) * CARDS[cardType].value,
     0,
@@ -554,16 +557,16 @@ export function canAfford(hand: Hand, cost: Cost): boolean {
   );
 }
 
-export function costLabel(cost: Cost): string {
+export function getCostLabel(cost: Cost): string {
   return Object.keys(cost)
     .map((type) => `${cost[type]}${CARDS[type].icon}`)
     .join(' ');
 }
 
-export function fmtCards(map: Hand | Cost): string {
+export function formatCards(cards: Hand | Cost): string {
   return match(
-    CARD_TYPES.filter((cardType) => (map[cardType] || 0) > 0).map(
-      (cardType) => `${map[cardType]}${CARDS[cardType].icon}`,
+    CARD_TYPES.filter((cardType) => (cards[cardType] || 0) > 0).map(
+      (cardType) => `${cards[cardType]}${CARDS[cardType].icon}`,
     ),
   )
     .when(

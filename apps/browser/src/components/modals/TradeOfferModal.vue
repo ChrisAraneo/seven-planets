@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { resolveOffer as resolveGameOffer } from '@seven-planets/game';
 import { useGameStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
-import { fmtCards } from '@seven-planets/game';
+import { formatCards } from '@seven-planets/game';
 
 const game = useGameStore();
 
@@ -24,10 +24,10 @@ function resolveOffer(accept: boolean): void {
       <b :style="{ color: from.color }">{{ from.name }}</b> proposes a trade:
     </p>
     <p>
-      They give you: <b>{{ fmtCards(offer.gives) }}</b>
+      They give you: <b>{{ formatCards(offer.gives) }}</b>
     </p>
     <p>
-      They want: <b>{{ fmtCards(offer.gets) }}</b>
+      They want: <b>{{ formatCards(offer.gets) }}</b>
     </p>
     <div class="mbtns">
       <button class="btn" @click="resolveOffer(true)">Accept</button>

@@ -6,9 +6,9 @@ import {
   ACTION_TYPES,
   INFLUENCE_TYPES,
 } from '@seven-planets/game';
-import { buildingCount } from '@seven-planets/game';
+import { getBuildingCount } from '@seven-planets/game';
 import { getTechLevel } from '@seven-planets/game';
-import { totalTroops } from '@seven-planets/game';
+import { computeTotalTroops } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
 
 const game = useGameStore();
@@ -49,9 +49,9 @@ function actLine(player: Player): string {
             .length
         }}
         🔬T{{ getTechLevel(game.state, player) }} 🦵{{
-          totalTroops(game.state, player)
+          computeTotalTroops(game.state, player)
         }}
-        🏛️{{ buildingCount(game.state, player) }} ⭐{{ player.influence
+        🏛️{{ getBuildingCount(game.state, player) }} ⭐{{ player.influence
         }}{{ player.skipTurns > 0 || player.skippedNow ? ' ⏭️' : '' }} ·
         {{ resLine(player) }}
       </div>

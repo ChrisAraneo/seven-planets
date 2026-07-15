@@ -1,5 +1,5 @@
-import { rocketCap } from '@seven-planets/game';
-import { siloBonus } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
+import { computeSiloBonus } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
 
 import { owned } from './owned';
@@ -17,11 +17,11 @@ export function projectedStrike(
       continue;
     }
     const count = Math.min(
-      rocketCap(planet),
+      getRocketCapacity(planet),
       Math.floor(planet.troops + growth) - 1,
     );
     if (count > best.n) {
-      best = { n: count, bonus: siloBonus(planet) };
+      best = { n: count, bonus: computeSiloBonus(planet) };
     }
   }
   return best;

@@ -96,7 +96,7 @@ function applyCardPick(
         state,
         log(
           state,
-          `🃏 ${player.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${planetTurnSuffix(planet, slot)}`,
+          `🃏 ${player.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${getPlanetTurnSuffix(planet, slot)}`,
           'draft',
         ),
       ),
@@ -104,7 +104,7 @@ function applyCardPick(
     .value();
 }
 
-function planetTurnSuffix(planet: Planet, slot: number): string {
+function getPlanetTurnSuffix(planet: Planet, slot: number): string {
   return match(slot)
     .when(
       (count) => count > 0,

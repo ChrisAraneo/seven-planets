@@ -1,4 +1,8 @@
-import { BUILD_ORDER, BUILDINGS, incomeAmount } from '@seven-planets/game';
+import {
+  BUILD_ORDER,
+  BUILDINGS,
+  computeIncomeAmount,
+} from '@seven-planets/game';
 import type { Cost, Player } from '@seven-planets/game';
 
 import { owned } from './owned';
@@ -11,7 +15,7 @@ export function incomePerTurn(player: Player): Cost {
       if (res && planet.buildings[buildingType]) {
         inc[res] =
           (inc[res] || 0) +
-          incomeAmount(buildingType, planet.buildings[buildingType]);
+          computeIncomeAmount(buildingType, planet.buildings[buildingType]);
       }
     }
   }

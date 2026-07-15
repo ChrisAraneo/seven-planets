@@ -3,7 +3,7 @@ import type { InfluenceType, Player } from '@seven-planets/game';
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { owned } from './owned';
 import { techLevel } from './tech-level';
-import { totalTroops } from './total-troops';
+import { computeTotalTroops } from './compute-total-troops';
 
 export function skipTarget(
   player: Player,
@@ -15,7 +15,9 @@ export function skipTarget(
   }
   if (influenceType === 'SKIP_ARMY') {
     return rivals.reduce((player, eachPlayer) =>
-      totalTroops(eachPlayer) > totalTroops(player) ? eachPlayer : player,
+      computeTotalTroops(eachPlayer) > computeTotalTroops(player)
+        ? eachPlayer
+        : player,
     );
   }
   if (influenceType === 'SKIP_PLANETS') {

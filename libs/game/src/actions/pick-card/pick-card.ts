@@ -2,7 +2,7 @@ import { dispatch } from '../../state';
 
 export interface PickCardPayload {
   playerId: number;
-  idx: number;
+  index: number;
 }
 
 /** Answer a parked draft pick with the chosen pool index. Event creator:

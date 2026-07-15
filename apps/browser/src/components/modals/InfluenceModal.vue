@@ -13,12 +13,12 @@ import {
   INFLUENCE_TYPES,
 } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
-import { coupTargets } from '@seven-planets/game';
-import { influenceTarget } from '@seven-planets/game';
+import { getCoupTargets } from '@seven-planets/game';
+import { getInfluenceTarget } from '@seven-planets/game';
 import { isPacifist } from '@seven-planets/game';
 import type {
   BuildingType,
-  InfluenceOpts,
+  InfluenceOptions,
   InfluenceType,
   Planet,
   Player,
@@ -29,9 +29,12 @@ const ui = useUiStore();
 
 const human = game.state.players[0];
 
-function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
+function playInfluence(
+  type: InfluenceType,
+  options: InfluenceOptions = {},
+): void {
   ui.closeModal();
-  dispatch(createUseInfluenceAction({ playerId: 0, type, opts }));
+  dispatch(createUseInfluenceAction({ playerId: 0, type, options }));
 }
 
 type View = 'main' | 'coup' | 'steal';
@@ -42,7 +45,7 @@ const held = computed(() =>
     (influenceType) => (human.hand[influenceType] || 0) > 0,
   ),
 );
-const coupList = computed(() => coupTargets(game.state, human));
+const coupList = computed(() => getCoupTargets(game.state, human));
 // A Pacifist may coup a rival's last planet (their only path to a win); everyone
 // else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
@@ -52,7 +55,7 @@ const rivals = computed(() =>
 
 function skipTarget(influenceType: InfluenceType): Player | null {
   return influenceType.startsWith('SKIP_')
-    ? influenceTarget(game.state, human, influenceType)
+    ? getInfluenceTarget(game.state, human, influenceType)
     : null;
 }
 

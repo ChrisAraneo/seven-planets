@@ -1,12 +1,12 @@
-import { BUILD_ORDER, BUILDINGS, handValue } from '@seven-planets/game';
+import { BUILD_ORDER, BUILDINGS, computeHandValue } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
 
 import { owned } from './owned';
-import { totalTroops } from './total-troops';
+import { computeTotalTroops } from './compute-total-troops';
 
 export function playerStrength(player: Player): number {
-  const resources = handValue(player.hand);
-  const military = totalTroops(player) * 1.5;
+  const resources = computeHandValue(player.hand);
+  const military = computeTotalTroops(player) * 1.5;
   const territory = owned(player).length * 8;
   const income = owned(player).reduce(
     (sum, planet) =>

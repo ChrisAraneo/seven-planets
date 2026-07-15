@@ -1,5 +1,9 @@
 import { getAiState } from '../state';
-import type { InfluenceOpts, InfluenceType, Player } from '@seven-planets/game';
+import type {
+  InfluenceOptions,
+  InfluenceType,
+  Player,
+} from '@seven-planets/game';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { avgStrength } from './avg-strength';
@@ -15,13 +19,13 @@ import { isUnderTruce } from './is-under-truce';
 
 export function influencePlay(
   player: Player,
-): { type: InfluenceType; opts: InfluenceOpts; ev: number } | null {
+): { type: InfluenceType; options: InfluenceOptions; ev: number } | null {
   const aiState = getAiState();
   const plan = planFor(player);
   if ((player.hand.COUP || 0) > 0) {
     const tgt = bestCoupTarget(player);
     if (tgt && tgt.value >= aiState.W.coupValueFloor) {
-      return { type: 'COUP', opts: { planet: tgt.planet }, ev: tgt.value };
+      return { type: 'COUP', options: { planet: tgt.planet }, ev: tgt.value };
     }
   }
   if ((player.hand.PEACE || 0) > 0) {
@@ -30,7 +34,7 @@ export function influencePlay(
       ...owned(player).map((planet) => immediateFallProb(player, planet)),
     );
     if (worst >= aiState.W.peaceThreatFloor) {
-      return { type: 'PEACE', opts: {}, ev: worst * 10 };
+      return { type: 'PEACE', options: {}, ev: worst * 10 };
     }
   }
   const avg = avgStrength();
@@ -52,7 +56,7 @@ export function influencePlay(
       isImminentAttacker(player, target) ||
       getAlivePlayers().length === 2;
     if (scary) {
-      return { type: influenceType, opts: {}, ev: 3 };
+      return { type: influenceType, options: {}, ev: 3 };
     }
   }
   if ((player.hand.STEAL_ACTION || 0) > 0) {
@@ -67,7 +71,7 @@ export function influencePlay(
     if (danger.length > 0) {
       return {
         type: 'STEAL_ACTION',
-        opts: { target: danger[0], cardType: 'ATTACK' },
+        options: { target: danger[0], cardType: 'ATTACK' },
         ev: 3,
       };
     }
@@ -82,7 +86,7 @@ export function influencePlay(
       if (holder) {
         return {
           type: 'STEAL_ACTION',
-          opts: { target: holder, cardType: 'ATTACK' },
+          options: { target: holder, cardType: 'ATTACK' },
           ev: 2.5,
         };
       }
@@ -104,7 +108,7 @@ export function influencePlay(
       if (holder) {
         return {
           type: 'STEAL_ACTION',
-          opts: { target: holder, cardType: first },
+          options: { target: holder, cardType: first },
           ev: 2,
         };
       }

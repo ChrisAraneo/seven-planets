@@ -6,16 +6,16 @@ import { cloneDeep } from 'lodash-es';
 import { describe, expect, it } from 'vitest';
 
 import { canPickCard } from '../functions/can-pick-card';
-import { initializeState } from '../functions/initialize-state';
+import { createInitialGameState } from '../functions/create-initial-game-state';
 import type { GameState } from '../interfaces/game-state';
 import { advance, reduce } from '../reducers/reduce';
 
 /** Start a fresh game and return it parked at turn 1's first draft pick. */
-function parkedAtFirstPick(): GameState {
-  return reduce(initializeState(), { kind: 'START' });
+function isParkedAtFirstPick(): GameState {
+  return reduce(createInitialGameState(), { kind: 'START' });
 }
 
-function firstPickableIdx(state: GameState): number {
+function getFirstPickableIndex(state: GameState): number {
   const player = state.players[state.activeId];
   const planet = state.planets[state.draftPlanetId];
   return state.pool.findIndex((poolType) =>
@@ -25,7 +25,7 @@ function firstPickableIdx(state: GameState): number {
 
 describe('reduce/advance invariants', () => {
   it("parks turn 1's first pick with exactly one inputSeq bump", () => {
-    const state = parkedAtFirstPick();
+    const state = isParkedAtFirstPick();
     expect(state.turn).toBe(1);
     expect(state.phase).toBe('draft');
     expect(state.cursor).toMatchObject({ phase: 'draft', slot: 0, pick: 0 });
@@ -36,14 +36,14 @@ describe('reduce/advance invariants', () => {
   });
 
   it('a multi-pick slot parks once per pick (picksTotal captured at entry)', () => {
-    const state = parkedAtFirstPick();
-    // Slot 0 drafts mainPicks = 2 cards at game start.
+    const state = isParkedAtFirstPick();
+    // Slot 0 drafts getMainPicks = 2 cards at game start.
     expect(state.cursor).toMatchObject({ phase: 'draft', picksTotal: 2 });
     const seatId = state.activeId;
     const afterPick = reduce(state, {
       kind: 'PICK_CARD',
       playerId: seatId,
-      idx: firstPickableIdx(state),
+      index: getFirstPickableIndex(state),
     });
     // Same seat, same slot, second pick — one fresh park, one fresh bump.
     expect(afterPick.activeId).toBe(seatId);
@@ -54,7 +54,7 @@ describe('reduce/advance invariants', () => {
   });
 
   it('pass slots do not park: an unpickable pool drains the draft without bumps', () => {
-    const parked = parkedAtFirstPick();
+    const parked = isParkedAtFirstPick();
     const crafted = cloneDeep(parked);
     /* Influence cards nobody can afford (everyone starts at 0⭐): nothing
        is pickable for any seat, so every slot passes. */
@@ -69,19 +69,19 @@ describe('reduce/advance invariants', () => {
     expect(resumed.inputSeq).toBe(parked.inputSeq + 1);
     expect(
       resumed.log.some((entry) =>
-        entry.msg.includes('passes (nothing pickable'),
+        entry.message.includes('passes (nothing pickable'),
       ),
     ).toBe(true);
   });
 
   it('a mid-draft game over aborts without resetting draftPlanetId', () => {
-    const parked = parkedAtFirstPick();
+    const parked = isParkedAtFirstPick();
     const crafted = cloneDeep(parked);
     crafted.over = { winner: crafted.players[0], reason: 'conquest' };
     const resumed = reduce(crafted, {
       kind: 'PICK_CARD',
       playerId: crafted.activeId,
-      idx: firstPickableIdx(crafted),
+      index: getFirstPickableIndex(crafted),
     });
     /* The park is consumed but the answer is discarded (no card applied),
        and the draft-planet marker survives the abort (§ the old early return). */
@@ -93,18 +93,21 @@ describe('reduce/advance invariants', () => {
   });
 
   it('illegal intents are no-ops (unchanged state identity)', () => {
-    const state = parkedAtFirstPick();
+    const state = isParkedAtFirstPick();
     const wrongSeat = (state.activeId + 1) % state.players.length;
     /* Not this seat's pick; not an action turn; invalid pick index; attack
        during the draft; a second 'start'. */
-    expect(reduce(state, { kind: 'PICK_CARD', playerId: wrongSeat, idx: 0 })).toBe(
-      state,
-    );
     expect(
-      reduce(state, { kind: 'END_TURN', payload: { playerId: state.activeId } }),
+      reduce(state, { kind: 'PICK_CARD', playerId: wrongSeat, index: 0 }),
     ).toBe(state);
     expect(
-      reduce(state, { kind: 'PICK_CARD', playerId: state.activeId, idx: 99 }),
+      reduce(state, {
+        kind: 'END_TURN',
+        payload: { playerId: state.activeId },
+      }),
+    ).toBe(state);
+    expect(
+      reduce(state, { kind: 'PICK_CARD', playerId: state.activeId, index: 99 }),
     ).toBe(state);
     expect(
       reduce(state, {

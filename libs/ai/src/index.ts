@@ -60,6 +60,6 @@ export * from './functions/should-mastermind-accept-trade';
 export * from './functions/skip-target';
 export * from './functions/survivors-after-win';
 export * from './functions/tech-level';
-export * from './functions/total-troops';
+export * from './functions/compute-total-troops';
 export * from './state';
 export * from './weights';

@@ -4,9 +4,8 @@ import { match } from 'ts-pattern';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { emitEffect } from '../../functions/emit-effect';
-import { hasBuilding } from '../../functions/has-building';
 import { log } from '../../functions/log';
-import { pluralSuffix } from '../../functions/plural-suffix';
+import { getPluralSuffix } from '../../functions/get-plural-suffix';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { MoveTroopsPayload } from '../../actions/move-troops/move-troops';
 
@@ -39,7 +38,9 @@ function executeMove(
   state: GameState,
   { playerId, fromId, toId, troops }: MoveTroopsPayload,
 ): void {
-  return match(hasBuilding(state, state.players[playerId], 'SPACEPORT'))
+  // Troops can only be redeployed FROM a planet that has a Spaceport —
+  // the launch pad, mirroring how rockets launch only from Silo planets.
+  return match(Boolean(state.planets[fromId].buildings.SPACEPORT))
     .with(false, noop)
     .otherwise(
       () =>
@@ -59,7 +60,7 @@ function executeMove(
               state,
               log(
                 state,
-                `🛸 ${state.players[playerId].name} redeploys ${troops} troop${pluralSuffix(troops)} from ${state.planets[fromId].name} to ${state.planets[toId].name}`,
+                `🛸 ${state.players[playerId].name} redeploys ${troops} troop${getPluralSuffix(troops)} from ${state.planets[fromId].name} to ${state.planets[toId].name}`,
                 'build',
               ),
             ),

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildingCost, canAfford } from '../config/constants';
-import { initializeState } from '../functions/initialize-state';
+import { computeBuildingCost, canAfford } from '../config/constants';
+import { createInitialGameState } from '../functions/create-initial-game-state';
 
 describe('Seven Planets engine', () => {
   it('builds a fresh 7-seat galaxy', () => {
-    const state = initializeState();
+    const state = createInitialGameState();
     expect(state.players).toHaveLength(7);
     expect(state.planets).toHaveLength(7);
     expect(state.players[0].isHuman).toBe(true);
@@ -15,8 +15,8 @@ describe('Seven Planets engine', () => {
   });
 
   it('scales building cost by level (N× base)', () => {
-    expect(buildingCost('MINE', 1)).toEqual({ CRYSTAL: 1, ENERGY: 1 });
-    expect(buildingCost('MINE', 2)).toEqual({ CRYSTAL: 2, ENERGY: 2 });
+    expect(computeBuildingCost('MINE', 1)).toEqual({ CRYSTAL: 1, ENERGY: 1 });
+    expect(computeBuildingCost('MINE', 2)).toEqual({ CRYSTAL: 2, ENERGY: 2 });
   });
 
   it('treats relics as wildcards when paying costs', () => {

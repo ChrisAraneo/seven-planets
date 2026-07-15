@@ -1,4 +1,8 @@
-import { buildingCost, maxLevel, PRIORITIES } from '@seven-planets/game';
+import {
+  computeBuildingCost,
+  getMaxLevel,
+  PRIORITIES,
+} from '@seven-planets/game';
 import type { BuildingType, Cost, Player } from '@seven-planets/game';
 
 import { owned } from './owned';
@@ -12,12 +16,15 @@ export function rivalGoalBuilding(
     if (id === 'SINGULARITY') {
       continue;
     }
-    const cap = Math.min(maxLevel(id), tech);
+    const cap = Math.min(getMaxLevel(id), tech);
     const planet = owned(player).find(
       (planet) => (planet.buildings[id] || 0) < cap,
     );
     if (planet) {
-      return { id, cost: buildingCost(id, (planet.buildings[id] || 0) + 1) };
+      return {
+        id,
+        cost: computeBuildingCost(id, (planet.buildings[id] || 0) + 1),
+      };
     }
   }
   return null;

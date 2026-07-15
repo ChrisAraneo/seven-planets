@@ -3,7 +3,7 @@ import { chain } from '../../utils/chain';
 import { match, P } from 'ts-pattern';
 import type { ActionType } from '../../interfaces/action-type';
 import type { GameState } from '../../interfaces/game-state';
-import type { InfluenceOpts } from '../../interfaces/influence-opts';
+import type { InfluenceOptions } from '../../interfaces/influence-options';
 import type { InfluenceType } from '../../interfaces/influence-type';
 import type { Player } from '../../interfaces/player';
 
@@ -12,20 +12,20 @@ import {
   CARD_TYPES,
   CARDS,
   CONQUEST_TRUCE,
-  fmtCards,
+  formatCards,
   INFLUENCE_CARDS,
   INFLUENCE_TYPES,
   PEACE_TRUCE,
   SKIP_TURNS,
 } from '../../config/constants';
 import { emitEffect } from '../../functions/emit-effect';
-import { influenceTarget } from '../../functions/influence-target';
+import { getInfluenceTarget } from '../../functions/get-influence-target';
 import { checkWin } from '../../functions/check-win';
-import { coupTargets } from '../../functions/coup-targets';
-import { handSize } from '../../functions/hand-size';
-import { homePlanet } from '../../functions/home-planet';
+import { getCoupTargets } from '../../functions/get-coup-targets';
+import { getHandSize } from '../../functions/get-hand-size';
+import { getHomePlanet } from '../../functions/get-home-planet';
 import { log } from '../../functions/log';
-import { ownedPlanets } from '../../functions/owned-planets';
+import { getOwnedPlanets } from '../../functions/get-owned-planets';
 import { stealCards } from '../../functions/steal-cards';
 import type { UseInfluencePayload } from '../../actions/use-influence';
 
@@ -50,7 +50,7 @@ export function applyUseInfluence(
             clone,
             payload.playerId,
             payload.type,
-            payload.opts ?? {},
+            payload.options ?? {},
           ),
         )
         .value(),
@@ -58,13 +58,13 @@ export function applyUseInfluence(
 }
 
 // Applies pure engine results onto the private clone via assign and reads
-// entities by id (opts carry frozen selector clones — we use only their ids), so the
+// entities by id (options carry frozen selector clones — we use only their ids), so the
 // whole play resolves consistently on the state that gets written back.
 function playInfluence(
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-  opts: InfluenceOpts,
+  options: InfluenceOptions,
 ): boolean {
   return match(state.players[playerId].hand[influenceType] || 0)
     .when(
@@ -78,9 +78,9 @@ function playInfluence(
           (influenceType) => playSkip(state, playerId, influenceType),
         )
         .with('STEAL_ACTION', (type) =>
-          playStealAction(state, playerId, type, opts),
+          playStealAction(state, playerId, type, options),
         )
-        .with('COUP', (type) => playCoup(state, playerId, type, opts))
+        .with('COUP', (type) => playCoup(state, playerId, type, options))
         .with('PEACE', (type) => playPeace(state, playerId, type))
         .otherwise(() => false),
     );
@@ -91,7 +91,9 @@ function playSkip(
   playerId: number,
   influenceType: InfluenceType,
 ): boolean {
-  return match(influenceTarget(state, state.players[playerId], influenceType))
+  return match(
+    getInfluenceTarget(state, state.players[playerId], influenceType),
+  )
     .with(nullish, () => false)
     .otherwise((target) =>
       chain(state)
@@ -121,7 +123,7 @@ function playSkip(
             state,
             emitEffect(state, {
               kind: 'floatText',
-              planetId: homePlanet(state, state.players[target.id]).id,
+              planetId: getHomePlanet(state, state.players[target.id]).id,
               text: '⏭️ SKIPPED',
               color: '#ffb0d8',
             }),
@@ -136,9 +138,9 @@ function playStealAction(
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-  opts: InfluenceOpts,
+  options: InfluenceOptions,
 ): boolean {
-  return match(stealContext(state, opts))
+  return match(getStealContext(state, options))
     .with(nullish, () => false)
     .otherwise(({ cardType, target }) =>
       chain(state)
@@ -168,7 +170,7 @@ function playStealAction(
             state,
             emitEffect(state, {
               kind: 'floatText',
-              planetId: homePlanet(state, state.players[target.id]).id,
+              planetId: getHomePlanet(state, state.players[target.id]).id,
               text: `−1${CARDS[cardType].icon}`,
               color: '#ffb0d8',
             }),
@@ -181,13 +183,13 @@ function playStealAction(
 
 // The play is only legal against an alive rival holding at least one copy of a
 // real action card; anything else yields no context and the play is refused.
-function stealContext(
+function getStealContext(
   state: GameState,
-  opts: InfluenceOpts,
+  options: InfluenceOptions,
 ): { cardType: ActionType; target: Player } | undefined {
   return match({
-    cardType: opts.cardType,
-    target: opts.target && state.players[opts.target.id],
+    cardType: options.cardType,
+    target: options.target && state.players[options.target.id],
   })
     .when(
       ({ cardType, target }) =>
@@ -210,12 +212,13 @@ function playCoup(
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-  opts: InfluenceOpts,
+  options: InfluenceOptions,
 ): boolean {
-  return match(opts.planet && state.planets[opts.planet.id])
+  return match(options.planet && state.planets[options.planet.id])
     .with(nullish, () => false)
     .when(
-      (planet) => !coupTargets(state, state.players[playerId]).includes(planet),
+      (planet) =>
+        !getCoupTargets(state, state.players[playerId]).includes(planet),
       () => false,
     )
     .otherwise((planet) =>
@@ -267,7 +270,7 @@ function maybeToppleRegime(
   playerId: number,
   defId: number,
 ): void {
-  return match(ownedPlanets(state, state.players[defId]).length)
+  return match(getOwnedPlanets(state, state.players[defId]).length)
     .when((owned) => owned > 0, noop)
     .otherwise(
       () =>
@@ -307,7 +310,7 @@ function lootToppledRegime(
   playerId: number,
   defId: number,
 ): void {
-  return match(Math.min(6, handSize(state.players[defId])))
+  return match(Math.min(6, getHandSize(state.players[defId])))
     .when((lootN) => lootN <= 0, noop)
     .otherwise(
       (lootN) =>
@@ -318,7 +321,7 @@ function lootToppledRegime(
               state,
               log(
                 state,
-                `💰 ${state.players[playerId].name} salvages ${fmtCards(taken)} from the toppled regime!`,
+                `💰 ${state.players[playerId].name} salvages ${formatCards(taken)} from the toppled regime!`,
                 'war',
               ),
             ),
@@ -336,7 +339,7 @@ function playPeace(
     .tap((state) => spendInfluenceCard(state, playerId, influenceType))
     .tap((state) => logPlay(state, playerId, influenceType, 'sys'))
     .tap((state) =>
-      ownedPlanets(state, state.players[playerId]).forEach((planet) =>
+      getOwnedPlanets(state, state.players[playerId]).forEach((planet) =>
         assign(planet, {
           protectedUntil: Math.max(
             planet.protectedUntil,
@@ -377,14 +380,14 @@ function logPlay(
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-  cls: string,
+  cssClass: string,
 ): void {
   return void assign(
     state,
     log(
       state,
       `⭐ ${state.players[playerId].name} plays ${CARDS[influenceType].icon} ${INFLUENCE_CARDS[influenceType].name}`,
-      cls,
+      cssClass,
     ),
   );
 }

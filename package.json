@@ -20,6 +20,7 @@
     "format": "prettier --write --experimental-cli apps/ libs/ scripts/"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
     "@vueuse/rxjs": "^14.3.0",
     "lodash-es": "^4.18.1",
     "pinia": "^3.0.4",

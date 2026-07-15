@@ -3,8 +3,8 @@ import { match, P } from 'ts-pattern';
 import {
   BUILD_ORDER,
   BUILDINGS,
-  fmtCards,
-  incomeAmount,
+  formatCards,
+  computeIncomeAmount,
   PACIFIST_INFLUENCE,
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
@@ -80,7 +80,7 @@ function addBuildingIncome(
           { level: number.positive(), income: string },
           ({ level, income }) =>
             // Scales with level (Mine L2: 3)
-            chain(incomeAmount(buildingType, level))
+            chain(computeIncomeAmount(buildingType, level))
               .thru((amount) => ({
                 ...tally,
                 handAdd: bumpNested(tally.handAdd, ownerId, income, amount),
@@ -169,7 +169,7 @@ function logIncome(state: GameState, tally: IncomeTally): GameState {
         (acc, [id, produced]) =>
           log(
             acc,
-            `⚙️ ${acc.players[Number(id)].name} produces ${fmtCards(produced)}`,
+            `⚙️ ${acc.players[Number(id)].name} produces ${formatCards(produced)}`,
             'draft',
           ),
         state,

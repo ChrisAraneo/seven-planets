@@ -3,22 +3,38 @@ import { computed } from 'vue';
 import { recruitTroops } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
-import { canAfford, costLabel } from '@seven-planets/game';
-import { ownedPlanets } from '@seven-planets/game';
-import { recruitCost } from '@seven-planets/game';
-import { recruitYield } from '@seven-planets/game';
+import { getOwnedPlanets } from '@seven-planets/game';
+import { computeRecruitableTroops } from '@seven-planets/game';
+import { computeRecruitYield } from '@seven-planets/game';
 
 const game = useGameStore();
 const ui = useUiStore();
 
+// Partial recruits are legal: any Barracks planet with 1⛏️ payable qualifies.
 const barracksPls = computed(() => {
   const state = game.state;
   const human = state.players[0];
-  return ownedPlanets(state, human).filter(
+  return getOwnedPlanets(state, human).filter(
     (planet) =>
-      planet.buildings.BARRACKS && canAfford(human.hand, recruitCost(planet)),
+      planet.buildings.BARRACKS &&
+      computeRecruitableTroops(planet, human.hand) >= 1,
   );
 });
+
+function troopsFor(planetId: number): number {
+  return computeRecruitableTroops(
+    game.state.planets[planetId],
+    game.state.players[0].hand,
+  );
+}
+
+function shortWarning(planetId: number): string {
+  const planet = game.state.planets[planetId];
+  const affordable = troopsFor(planetId);
+  return affordable < computeRecruitYield(planet)
+    ? ` ⚠️ only enough ⛏️ for ${affordable} of ${computeRecruitYield(planet)} troops`
+    : '';
+}
 
 function recruit(planetId: number): void {
   ui.closeModal();
@@ -31,7 +47,8 @@ function recruit(planetId: number): void {
     <h2>🪖 RECRUIT</h2>
     <p class="dimtx">
       Recruiting needs a 🎖️ Barracks — each recruitment yields troops equal to
-      its yield (1/2/4) and costs 1⛏️ per troop, plus one 🪖 card.
+      its yield (1/2/4) and costs 1⛏️ per troop, plus one 🪖 card. Short on ⛏️,
+      you recruit as many troops as you can pay for.
     </p>
     <div
       v-for="planet in barracksPls"
@@ -42,9 +59,11 @@ function recruit(planetId: number): void {
         <b>{{ planet.name }}</b>
         <span class="dimtx"
           >🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
-            recruitYield(planet)
+            troopsFor(planet.id)
           }}
-          troops for {{ costLabel(recruitCost(planet)) }}</span
+          troops for {{ troopsFor(planet.id) }}⛏️{{
+            shortWarning(planet.id)
+          }}</span
         >
       </div>
       <div>🪖{{ planet.troops }}</div>

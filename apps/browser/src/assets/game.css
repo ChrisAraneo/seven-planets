@@ -360,6 +360,32 @@ footer {
   color: #ffb3c0;
 }
 
+/* ---------- floating-ui tooltips (v-tooltip) ---------- */
+.fui-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 200; /* above modals (50) and the scanline overlay (99) */
+  max-width: 320px;
+  width: max-content;
+  pointer-events: none;
+  background: #0c1428;
+  border: 1px solid rgba(61, 240, 255, 0.45);
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  color: #cfe3ff;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 9px;
+}
+.fui-tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: #0c1428;
+}
+
 /* ---------- modals ---------- */
 #modal-root {
   position: fixed;

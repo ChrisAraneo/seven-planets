@@ -11,13 +11,13 @@ import {
   Subject,
 } from 'rxjs';
 import { chain } from './utils/chain';
-import { initializeState } from './functions/initialize-state';
+import { createInitialGameState } from './functions/create-initial-game-state';
 import type { GameState } from './interfaces/game-state';
 import { reduce } from './reducers/reduce';
 import type { Action } from './actions/action';
 
 const actionSubject = new Subject<Action>();
-const stateSubject = new BehaviorSubject<GameState>(initializeState());
+const stateSubject = new BehaviorSubject<GameState>(createInitialGameState());
 
 actionSubject
   .pipe(
@@ -58,5 +58,5 @@ export function setGameState(state: GameState): void {
 }
 
 export function resetGameState(): void {
-  stateSubject.next(initializeState());
+  stateSubject.next(createInitialGameState());
 }

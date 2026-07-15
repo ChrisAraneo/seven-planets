@@ -1,11 +1,7 @@
 import { getGameStateLastValue } from '@seven-planets/game';
-import {
-  COMBAT,
-  HOME_FIELD,
-  PACIFIST_DEF_BONUS,
-  SHIELD_DEFENSE,
-} from '@seven-planets/game';
-import { singularityDefBonus } from '@seven-planets/game';
+import { COMBAT, HOME_FIELD, PACIFIST_DEF_BONUS } from '@seven-planets/game';
+import { computeShieldDefense } from '@seven-planets/game';
+import { computeSingularityDefenseBonus } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 
@@ -15,9 +11,9 @@ export function defenseBaseOf(planet: Planet, troops = planet.troops): number {
     : 0;
   return (
     COMBAT.defensePerTroop * troops +
-    (planet.buildings.SHIELD || 0) * SHIELD_DEFENSE +
+    computeShieldDefense(planet) +
     pac +
-    singularityDefBonus(planet) +
+    computeSingularityDefenseBonus(planet) +
     HOME_FIELD
   );
 }
