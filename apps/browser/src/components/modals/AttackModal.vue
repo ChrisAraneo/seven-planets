@@ -11,7 +11,7 @@ import {
 } from '@seven-planets/game';
 import { computeShieldDefense } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
-import { battleWinProb } from '@seven-planets/ai';
+import { computeBattleWinProbability } from '@seven-planets/ai';
 import { getHandSize } from '@seven-planets/game';
 import { isPacifist } from '@seven-planets/game';
 import { getOwnedPlanets } from '@seven-planets/game';
@@ -87,7 +87,7 @@ const preview = computed(() => {
     computeSingularityDefenseBonus(target.value) +
     HOME_FIELD;
   // exact P(win), same math the dice roll
-  const winProbability = battleWinProb(attackPower, defensePower);
+  const winProbability = computeBattleWinProbability(attackPower, defensePower);
   const winPercent = Math.round(winProbability * 100);
   const note =
     winProbability >= 0.6

@@ -27,8 +27,8 @@ import {
   resolveOffer,
 } from '@seven-planets/game';
 
-import { mastermindAction } from './functions/mastermind-action';
-import { mastermindDraftPick } from './functions/mastermind-draft-pick';
+import { getMastermindDecision } from './functions/get-mastermind-decision';
+import { computeMastermindDraftPick } from './functions/compute-mastermind-draft-pick';
 import { shouldAcceptTrade } from './functions/should-accept-trade';
 import { getPlayerByIndex } from '../../game/src/getters/get-player-by-index';
 
@@ -77,7 +77,7 @@ export function isAiSeat(seatId: number): boolean {
   return !players[seatId].isHuman || AUTO_HUMAN;
 }
 
-type Decision = NonNullable<ReturnType<typeof mastermindAction>>;
+type Decision = NonNullable<ReturnType<typeof getMastermindDecision>>;
 
 function performDecision(playerId: number, decision: Decision): void {
   switch (decision.kind) {
@@ -132,7 +132,7 @@ function aiPickCard(playerId: number): void {
   const pickable = state.pool.map((poolType) =>
     canPickCard(state, player, poolType, planet),
   );
-  let index = mastermindDraftPick(player, planet, pickable);
+  let index = computeMastermindDraftPick(player, planet, pickable);
   if (index < 0 || !pickable[index]) {
     // The engine only parks when something is pickable — fall back to
     // the first legal card rather than leave the draft stuck.
@@ -153,7 +153,7 @@ function takeOneAction(playerId: number): boolean {
     return false;
   }
 
-  const mastermindDecision = mastermindAction(player);
+  const mastermindDecision = getMastermindDecision(player);
 
   if (!mastermindDecision) {
     return false;

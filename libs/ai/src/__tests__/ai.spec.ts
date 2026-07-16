@@ -7,16 +7,16 @@ import '@/stores';
 
 import { describe, expect, it } from 'vitest';
 
-import { battleWinProb } from '../functions/battle-win-prob';
-import { bestAttackNow } from '../functions/best-attack-now';
-import { buildCandidates } from '../functions/build-candidates';
-import { evaluateAttacks } from '../functions/evaluate-attacks';
-import { holdProbability } from '../functions/hold-probability';
-import { mastermindDraftPick } from '../functions/mastermind-draft-pick';
-import { minTroopsToConquer } from '../functions/min-troops-to-conquer';
-import { planFor } from '../functions/plan-for';
+import { computeBattleWinProbability } from '../functions/compute-battle-win-probability';
+import { getBestAttackNow } from '../functions/get-best-attack-now';
+import { getBuildCandidates } from '../functions/get-build-candidates';
+import { getAttackPlans } from '../functions/get-attack-plans';
+import { computeHoldProbability } from '../functions/compute-hold-probability';
+import { computeMastermindDraftPick } from '../functions/compute-mastermind-draft-pick';
+import { computeMinimumTroopsToConquer } from '../functions/compute-minimum-troops-to-conquer';
+import { getPlan } from '../functions/get-plan';
 import { resetAiWeights } from '../functions/reset-ai-weights';
-import { survivorsAfterWin } from '../functions/survivors-after-win';
+import { computeSurvivorsAfterWin } from '../functions/compute-survivors-after-win';
 import { COMBAT } from '@seven-planets/game';
 import { simulateGame } from '@seven-planets/game';
 import type { GameState } from '@seven-planets/game';
@@ -33,15 +33,17 @@ function midGameState(): GameState {
 
 describe('mastermind combat analytics', () => {
   it('computes exact battle win probabilities', () => {
-    expect(battleWinProb(100, 10)).toBe(1); // Overwhelming force
-    expect(battleWinProb(0, 100)).toBe(0); // Hopeless
+    expect(computeBattleWinProbability(100, 10)).toBe(1); // Overwhelming force
+    expect(computeBattleWinProbability(0, 100)).toBe(0); // Hopeless
     // Equal bases: attacker needs a strictly higher roll — with two uniform
     // Rolls of 0..R the exact probability is R(R+1)/2 / (R+1)^2.
     const R = COMBAT.attackRoll;
     const exact = (R * (R + 1)) / 2 / ((R + 1) * (COMBAT.defenseRoll + 1));
-    expect(battleWinProb(10, 10)).toBeCloseTo(exact, 10);
+    expect(computeBattleWinProbability(10, 10)).toBeCloseTo(exact, 10);
     // Monotonic in attacker strength.
-    expect(battleWinProb(12, 10)).toBeGreaterThan(battleWinProb(10, 10));
+    expect(computeBattleWinProbability(12, 10)).toBeGreaterThan(
+      computeBattleWinProbability(10, 10),
+    );
   });
 
   it('derives the minimum conquering force from the casualty fractions', () => {
@@ -53,38 +55,38 @@ describe('mastermind combat analytics', () => {
       while (Math.ceil((count * num) / den) < troops) {
         count++;
       }
-      expect(minTroopsToConquer(troops)).toBe(count);
+      expect(computeMinimumTroopsToConquer(troops)).toBe(count);
     }
   });
 
   it('counts survivors after a winning strike', () => {
     const { num, den } = COMBAT.winAttLoss;
     for (const count of [2, 5, 6, 9, 17]) {
-      expect(survivorsAfterWin(count)).toBe(
+      expect(computeSurvivorsAfterWin(count)).toBe(
         count - Math.floor((count * num) / den),
       );
     }
   });
 });
 
-describe('mastermind retention forecast (holdProbability)', () => {
+describe('mastermind retention forecast (computeHoldProbability)', () => {
   it('stays within [0,1] and drops when a rival grows stronger', () => {
     resetAiWeights();
     const state = midGameState();
     const player = getGameStateLastValue().players[0];
     const mine = getGameStateLastValue().planets[0];
     // No rival has a silo yet — nobody can attack, we surely hold.
-    expect(holdProbability(player, mine, 5)).toBe(1);
+    expect(computeHoldProbability(player, mine, 5)).toBe(1);
     // Arm a rival heavily: retention must drop, but stay a probability.
     getGameStateLastValue().planets[1].buildings.SILO = 2;
     getGameStateLastValue().planets[1].buildings.BARRACKS = 2;
     getGameStateLastValue().planets[1].troops = 20;
     getGameStateLastValue().players[1].hand.ATTACK = 2;
-    const threatened = holdProbability(player, mine, 5);
+    const threatened = computeHoldProbability(player, mine, 5);
     expect(threatened).toBeLessThan(1);
     expect(threatened).toBeGreaterThanOrEqual(0);
     // A bigger garrison holds better (or at least no worse).
-    expect(holdProbability(player, mine, 15)).toBeGreaterThanOrEqual(
+    expect(computeHoldProbability(player, mine, 15)).toBeGreaterThanOrEqual(
       threatened,
     );
   });
@@ -99,17 +101,17 @@ describe('mastermind attack planning', () => {
     getGameStateLastValue().planets[0].troops = 14;
     getGameStateLastValue().planets[1].troops = 2; // Soft target
     player.hand.ATTACK = 1;
-    const plans = evaluateAttacks(player);
+    const plans = getAttackPlans(player);
     expect(plans.length).toBeGreaterThan(0);
     const best = plans[0];
     expect(best.conquers).toBe(true);
     expect(best.pWin).toBeGreaterThan(0.6);
     expect(best.n).toBeGreaterThanOrEqual(
-      minTroopsToConquer(getGameStateLastValue().planets[1].troops),
+      computeMinimumTroopsToConquer(getGameStateLastValue().planets[1].troops),
     );
     expect(best.holdProb).toBeGreaterThanOrEqual(0);
     expect(best.holdProb).toBeLessThanOrEqual(1);
-    const now = bestAttackNow(player);
+    const now = getBestAttackNow(player);
     expect(now).not.toBeNull();
     // Never commits more troops than the source can spare or the rocket holds.
     expect(now!.n).toBeLessThanOrEqual(
@@ -124,8 +126,8 @@ describe('mastermind attack planning', () => {
     getGameStateLastValue().planets[0].buildings.SILO = 3;
     getGameStateLastValue().planets[0].troops = 30;
     player.hand.ATTACK = 3;
-    expect(evaluateAttacks(player)).toHaveLength(0);
-    expect(bestAttackNow(player)).toBeNull();
+    expect(getAttackPlans(player)).toHaveLength(0);
+    expect(getBestAttackNow(player)).toBeNull();
   });
 });
 
@@ -137,18 +139,18 @@ describe('mastermind build planning and strategy', () => {
     player.hand.ORE = 3;
     player.hand.CRYSTAL = 3;
     player.hand.ENERGY = 3;
-    const cands = buildCandidates(player);
+    const cands = getBuildCandidates(player);
     expect(cands.length).toBeGreaterThan(0);
     for (const buildCandidate of cands) {
       expect(buildCandidate.worth).toBeGreaterThan(0);
       expect(buildCandidate.pComplete).toBeGreaterThan(0);
       expect(buildCandidate.pComplete).toBeLessThanOrEqual(1);
     }
-    const plan = planFor(player);
+    const plan = getPlan(player);
     expect(plan.buildQueue.length).toBeGreaterThan(0);
     expect(plan.scores[plan.kind]).toBeGreaterThan(0);
     // The plan is cached for the turn (draft picks reuse one plan).
-    expect(planFor(player)).toBe(plan);
+    expect(getPlan(player)).toBe(plan);
   });
 });
 
@@ -159,7 +161,7 @@ describe('mastermind drafting', () => {
     const player = getGameStateLastValue().players[0];
     state.pool = ['ORE', 'CRYSTAL', 'ENERGY', 'ATTACK', 'RELIC'];
     const all = getGameStateLastValue().pool.map(() => true);
-    const index = mastermindDraftPick(
+    const index = computeMastermindDraftPick(
       player,
       getGameStateLastValue().planets[0],
       all,
@@ -168,7 +170,7 @@ describe('mastermind drafting', () => {
     expect(index).toBeLessThan(getGameStateLastValue().pool.length);
     // Nothing pickable → pass.
     expect(
-      mastermindDraftPick(
+      computeMastermindDraftPick(
         player,
         getGameStateLastValue().planets[0],
         getGameStateLastValue().pool.map(() => false),
@@ -177,7 +179,11 @@ describe('mastermind drafting', () => {
     // Only slot 2 pickable → must take slot 2.
     const onlyTwo = getGameStateLastValue().pool.map((_, index) => index === 2);
     expect(
-      mastermindDraftPick(player, getGameStateLastValue().planets[0], onlyTwo),
+      computeMastermindDraftPick(
+        player,
+        getGameStateLastValue().planets[0],
+        onlyTwo,
+      ),
     ).toBe(2);
   });
 });
@@ -194,7 +200,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     kami.hand.ATTACK = 1;
     getGameStateLastValue().planets[0].troops = 2; // Human — the ONLY legal target
     getGameStateLastValue().planets[2].troops = 2; // Rival AI — juicy but forbidden
-    const plans = evaluateAttacks(kami);
+    const plans = getAttackPlans(kami);
     expect(plans.length).toBeGreaterThan(0);
     expect(
       plans.every(
@@ -202,7 +208,7 @@ describe('kamikaze (Hard mode) targeting', () => {
           getGameStateLastValue().planets[attackPlan.target.id].ownerId === 0,
       ),
     ).toBe(true);
-    const now = bestAttackNow(kami);
+    const now = getBestAttackNow(kami);
     expect(now).not.toBeNull();
     expect(getGameStateLastValue().planets[now!.target.id].ownerId).toBe(0); // Struck the human
   });
@@ -220,7 +226,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     getGameStateLastValue().planets[1].troops = 1;
     getGameStateLastValue().planets[0].troops = 8; // Human, better defended
     getGameStateLastValue().planets[3].troops = 8; // Another rival
-    const plans = evaluateAttacks(normal);
+    const plans = getAttackPlans(normal);
     // It may attack the human or other rivals, but NEVER the kamikaze (id 1).
     expect(
       plans.every(
@@ -242,7 +248,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     kami.hand.ATTACK = 3;
     // With ONLY the kamikaze armed, a rival AI's planet is perfectly safe…
     expect(
-      holdProbability(
+      computeHoldProbability(
         getGameStateLastValue().players[2],
         getGameStateLastValue().planets[2],
         getGameStateLastValue().planets[2].troops,
@@ -250,7 +256,7 @@ describe('kamikaze (Hard mode) targeting', () => {
     ).toBe(1);
     // …but the human's planet is not.
     expect(
-      holdProbability(
+      computeHoldProbability(
         getGameStateLastValue().players[0],
         getGameStateLastValue().planets[0],
         getGameStateLastValue().planets[0].troops,

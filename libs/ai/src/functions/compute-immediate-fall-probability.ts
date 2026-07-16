@@ -1,23 +1,32 @@
 import { COMBAT } from '@seven-planets/game';
-import type { Player } from '@seven-planets/game';
+import type { Planet, Player } from '@seven-planets/game';
 
+import { computeAggression } from './compute-aggression';
+import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { computeBattleWinProbability } from './compute-battle-win-probability';
 import { computeDefenseBase } from './compute-defense-base';
 import { canTarget } from './can-target';
 import { computeMinimumTroopsToConquer } from './compute-minimum-troops-to-conquer';
-import { getOwnedPlanets } from './get-owned-planets';
 import { computeProjectedStrike } from './compute-projected-strike';
 import { isUnderTruce } from './is-under-truce';
 
-export function isImminentAttacker(owner: Player, attacker: Player): boolean {
-  if (attacker.hasPacifistStatus || (attacker.hand.ATTACK || 0) < 1) {
-    return false;
+export function computeImmediateFallProbability(
+  owner: Player,
+  planet: Planet,
+): number {
+  if (isUnderTruce(planet)) {
+    return 0;
   }
-  if (!canTarget(attacker, owner)) {
-    return false;
-  }
-  for (const planet of getOwnedPlanets(owner)) {
-    if (isUnderTruce(planet)) {
+  let safeProbability = 1;
+  for (const attacker of getAlivePlayers()) {
+    if (
+      attacker.id === owner.id ||
+      attacker.hasPacifistStatus ||
+      (attacker.hand.ATTACK || 0) < 1
+    ) {
+      continue;
+    }
+    if (!canTarget(attacker, owner)) {
       continue;
     }
     const strike = computeProjectedStrike(attacker, 0, planet.id);
@@ -28,9 +37,7 @@ export function isImminentAttacker(owner: Player, attacker: Player): boolean {
       COMBAT.attackPerTroop * strike.n + strike.bonus,
       computeDefenseBase(planet),
     );
-    if (winProbability >= 0.35) {
-      return true;
-    }
+    safeProbability *= 1 - winProbability * computeAggression(attacker);
   }
-  return false;
+  return 1 - safeProbability;
 }
