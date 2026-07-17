@@ -33,18 +33,29 @@ const sub = computed(() => {
 
 <template>
   <ModalShell v-if="over">
-    <div class="gameover-title" :class="humanWon ? 'win' : 'lose'">
+    <div
+      class="gameover-title"
+      :class="humanWon ? 'win' : 'lose'"
+    >
       {{ title }}
     </div>
     <div class="gostats">
-      {{ sub }}<br /><br />
+      {{ sub }}<br><br>
       Turns played: {{ game.state.turn }} · Planets held:
       {{ game.state.planets.filter((pl) => pl.ownerId === human.id).length }} ·
       Buildings: {{ getBuildingCount(game.state, human) }} · Troops:
       {{ computeTotalTroops(game.state, human) }}
     </div>
-    <div class="mbtns" style="justify-content: center">
-      <button class="btn" @click="ui.restartGame()">🔄 Play Again</button>
+    <div
+      class="mbtns"
+      style="justify-content: center"
+    >
+      <button
+        class="btn"
+        @click="ui.restartGame()"
+      >
+        🔄 Play Again
+      </button>
     </div>
   </ModalShell>
 </template>

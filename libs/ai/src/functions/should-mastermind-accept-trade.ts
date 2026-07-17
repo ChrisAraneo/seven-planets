@@ -9,12 +9,12 @@ import { computePlayerStrength } from './compute-player-strength';
 import type { BuildCandidate } from './get-build-candidates';
 import { getPlan } from './get-plan';
 
-export function shouldMastermindAcceptTrade(
+export const shouldMastermindAcceptTrade = (
   aiPlayer: Player,
   gives: Cost,
   gets: Cost,
   proposer: Player | null,
-): boolean {
+): boolean => {
   activateWeightsFor(aiPlayer);
   const head = getPlan(aiPlayer).buildQueue.at(0);
   const valueIn = computeValueIn(aiPlayer, gets, head);
@@ -33,14 +33,14 @@ export function shouldMastermindAcceptTrade(
     return valueIn >= valueOut * 1.5;
   }
   return valueIn >= valueOut * getAiState().W.tradeAcceptRatio;
-}
+};
 
-function computeValueIn(
+const computeValueIn = (
   aiPlayer: Player,
   gets: Cost,
   head: BuildCandidate | undefined,
-): number {
-  return Object.entries(gets).reduce(
+): number =>
+  Object.entries(gets).reduce(
     (sum, [resourceType, amount]) =>
       sum +
       amount *
@@ -51,14 +51,13 @@ function computeValueIn(
           : 1),
     0,
   );
-}
 
-function wouldBlockGoal(
+const wouldBlockGoal = (
   aiPlayer: Player,
   head: BuildCandidate | undefined,
   gives: Cost,
   gets: Cost,
-): boolean {
+): boolean => {
   if (!head || !canAfford(aiPlayer.hand, head.cost)) {
     return false;
   }
@@ -70,4 +69,4 @@ function wouldBlockGoal(
       (remainingWithGets[resourceType] || 0) + amount;
   }
   return !canAfford(remainingWithGets, head.cost);
-}
+};

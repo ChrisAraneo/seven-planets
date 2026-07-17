@@ -22,16 +22,13 @@ interface InfluencePlay {
   ev: number;
 }
 
-export function getInfluencePlay(player: Player): InfluencePlay | null {
-  return (
-    getCoupPlay(player) ??
-    getPeacePlay(player) ??
-    getSkipPlay(player) ??
-    getStealPlay(player)
-  );
-}
+export const getInfluencePlay = (player: Player): InfluencePlay | null =>
+  getCoupPlay(player) ??
+  getPeacePlay(player) ??
+  getSkipPlay(player) ??
+  getStealPlay(player);
 
-function getCoupPlay(player: Player): InfluencePlay | null {
+const getCoupPlay = (player: Player): InfluencePlay | null => {
   if ((player.hand.COUP || 0) < 1) {
     return null;
   }
@@ -44,9 +41,9 @@ function getCoupPlay(player: Player): InfluencePlay | null {
     };
   }
   return null;
-}
+};
 
-function getPeacePlay(player: Player): InfluencePlay | null {
+const getPeacePlay = (player: Player): InfluencePlay | null => {
   if ((player.hand.PEACE || 0) < 1) {
     return null;
   }
@@ -60,9 +57,9 @@ function getPeacePlay(player: Player): InfluencePlay | null {
     return { type: 'PEACE', options: {}, ev: worstFall * 10 };
   }
   return null;
-}
+};
 
-function getSkipPlay(player: Player): InfluencePlay | null {
+const getSkipPlay = (player: Player): InfluencePlay | null => {
   const averageStrength = computeAverageStrength();
   for (const influenceType of [
     'SKIP_ARMY',
@@ -83,9 +80,9 @@ function getSkipPlay(player: Player): InfluencePlay | null {
     }
   }
   return null;
-}
+};
 
-function getStealPlay(player: Player): InfluencePlay | null {
+const getStealPlay = (player: Player): InfluencePlay | null => {
   if ((player.hand.STEAL_ACTION || 0) < 1) {
     return null;
   }
@@ -121,13 +118,13 @@ function getStealPlay(player: Player): InfluencePlay | null {
     }
   }
   return getWantedCardSteal(player, rivals, byDescendingStrength);
-}
+};
 
-function getWantedCardSteal(
+const getWantedCardSteal = (
   player: Player,
   rivals: Player[],
   byDescendingStrength: (firstRival: Player, secondRival: Player) => number,
-): InfluencePlay | null {
+): InfluencePlay | null => {
   const averageStrength = computeAverageStrength();
   const wantedCardTypes: ('RECRUIT' | 'TRADE')[] = [];
   if (hasBuilding(player, 'BARRACKS') && (player.hand.RECRUIT || 0) === 0) {
@@ -154,4 +151,4 @@ function getWantedCardSteal(
     }
   }
   return null;
-}
+};

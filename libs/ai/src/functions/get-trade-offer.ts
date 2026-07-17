@@ -7,10 +7,10 @@ import { computePlayerStrength } from './compute-player-strength';
 import type { BuildCandidate } from './get-build-candidates';
 import type { Plan } from './plan-types';
 
-export function getTradeOffer(
+export const getTradeOffer = (
   player: Player,
   plan: Plan,
-): { partner: Player; gives: Cost; gets: Cost } | null {
+): { partner: Player; gives: Cost; gets: Cost } | null => {
   const head = plan.buildQueue.at(0);
   const wantedResource = findWantedResource(player, plan, head);
   if (!wantedResource) {
@@ -25,13 +25,13 @@ export function getTradeOffer(
     return null;
   }
   return { partner, gives, gets: { [wantedResource]: 1 } };
-}
+};
 
-function findWantedResource(
+const findWantedResource = (
   player: Player,
   plan: Plan,
   head: BuildCandidate | undefined,
-): string | null {
+): string | null => {
   const goalShortfall = head
     ? (RESOURCE_TYPES.find(
         (resourceType) =>
@@ -46,13 +46,13 @@ function findWantedResource(
     (player.hand.ORE || 0) < 3
     ? 'ORE'
     : null;
-}
+};
 
-function collectSurplus(
+const collectSurplus = (
   player: Player,
   head: BuildCandidate | undefined,
   wantedResource: string,
-): string[] {
+): string[] => {
   const reserved: Cost = { ...head?.cost };
   const surplus: string[] = [];
   for (const resourceType of RESOURCE_TYPES) {
@@ -67,13 +67,13 @@ function collectSurplus(
   return surplus.toSorted(
     (firstType, secondType) => CARDS[firstType].value - CARDS[secondType].value,
   );
-}
+};
 
-function buildGives(
+const buildGives = (
   player: Player,
   head: BuildCandidate | undefined,
   wantedResource: string,
-): Cost | null {
+): Cost | null => {
   const gives: Cost = {};
   let givenValue = 0;
   const targetValue = CARDS[wantedResource].value * 1.25;
@@ -85,9 +85,9 @@ function buildGives(
     givenValue += CARDS[resourceType].value;
   }
   return givenValue < targetValue ? null : gives;
-}
+};
 
-function findPartner(player: Player, wantedResource: string): Player | null {
+const findPartner = (player: Player, wantedResource: string): Player | null => {
   const averageStrength = computeAverageStrength();
   const partners = getAlivePlayers()
     .filter(
@@ -105,4 +105,4 @@ function findPartner(player: Player, wantedResource: string): Player | null {
     partners.at(0) ??
     null
   );
-}
+};

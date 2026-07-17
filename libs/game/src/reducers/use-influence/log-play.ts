@@ -5,13 +5,13 @@ import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceType } from '../../interfaces/influence-type';
 
-export function logPlay(
+export const logPlay = (
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
   cssClass: string,
-): void {
-  return void assign(
+): void =>
+  void assign(
     state,
     log(
       state,
@@ -19,4 +19,3 @@ export function logPlay(
       cssClass,
     ),
   );
-}

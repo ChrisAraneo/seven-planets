@@ -2,7 +2,7 @@ import type { Cost, Player } from '@seven-planets/game';
 
 import { computeIncomePerTurn } from './compute-income-per-turn';
 
-export function computeTurnsToAfford(player: Player, cost: Cost): number {
+export const computeTurnsToAfford = (player: Player, cost: Cost): number => {
   const income = computeIncomePerTurn(player);
   let wildcards = (player.hand.RELIC || 0) - (cost.RELIC || 0);
   let turns = 0;
@@ -19,4 +19,4 @@ export function computeTurnsToAfford(player: Player, cost: Cost): number {
     }
   }
   return turns;
-}
+};

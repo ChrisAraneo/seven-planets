@@ -1,6 +1,5 @@
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import type { Planet } from '../interfaces/planet';
-import { getGameStateLastValue } from '../state';
 
-export function getPlanets(): readonly Planet[] {
-  return getGameStateLastValue().planets;
-}
+export const getPlanets = (): readonly Planet[] =>
+  getGameStateLastValue().planets;

@@ -1,5 +1,4 @@
-import { getGameStateLastValue } from '../state';
+import { getGameStateLastValue } from '../get-game-state-last-value';
 
-export function getIsOver(): boolean {
-  return Boolean(getGameStateLastValue().over?.winner);
-}
+export const getIsOver = (): boolean =>
+  Boolean(getGameStateLastValue().over?.winner);

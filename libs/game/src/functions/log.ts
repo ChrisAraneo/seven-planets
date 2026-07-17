@@ -3,15 +3,13 @@ import type { LogEntry } from '../interfaces/log-entry';
 
 const LOG_TAIL_CAP = 500;
 
-export function log(
+export const log = (
   state: GameState,
   message: string,
   cssClass = 'sys',
-): GameState {
-  return {
-    ...state,
-    log: ([...state.log, { message, cssClass }] as LogEntry[]).slice(
-      -LOG_TAIL_CAP,
-    ),
-  };
-}
+): GameState => ({
+  ...state,
+  log: ([...state.log, { message, cssClass }] as LogEntry[]).slice(
+    -LOG_TAIL_CAP,
+  ),
+});

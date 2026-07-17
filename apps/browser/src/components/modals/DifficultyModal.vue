@@ -7,10 +7,10 @@ const ui = useUiStore();
 
 const unlocked = useUnlocksStore().unlocked;
 
-function choose(level: Difficulty): void {
+const choose = (level: Difficulty): void => {
   if (!unlocked.has(level)) return;
   ui.chooseDifficulty(level);
-}
+};
 </script>
 
 <template>
@@ -26,7 +26,8 @@ function choose(level: Difficulty): void {
         class="difficulty-card"
         :class="{ locked: !unlocked.has(difficulty.id) }"
         :disabled="!unlocked.has(difficulty.id)"
-        @click="choose(difficulty.id)">
+        @click="choose(difficulty.id)"
+      >
         <span class="difficulty-icon">{{
           unlocked.has(difficulty.id) ? difficulty.icon : '🔒'
         }}</span>

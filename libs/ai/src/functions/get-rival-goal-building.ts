@@ -8,9 +8,9 @@ import {
 import { computeTechLevel } from './compute-tech-level';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export function getRivalGoalBuilding(
+export const getRivalGoalBuilding = (
   player: Player,
-): { id: BuildingType; cost: Cost } | null {
+): { id: BuildingType; cost: Cost } | null => {
   const techLevel = computeTechLevel(player);
   for (const buildingType of PRIORITIES.filter(
     (candidate) => candidate !== 'SINGULARITY',
@@ -30,4 +30,4 @@ export function getRivalGoalBuilding(
     }
   }
   return null;
-}
+};

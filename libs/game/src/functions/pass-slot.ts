@@ -8,13 +8,13 @@ import { chain } from '../utils/chain';
 import { log } from './log';
 import { setStatus } from './set-status';
 
-export function passSlot(
+export const passSlot = (
   state: GameState,
   player: Player,
   planet: Planet,
   isHumanControlled: boolean,
-): void {
-  return chain(state)
+): void =>
+  chain(state)
     .tap(() =>
       match(isHumanControlled)
         .with(
@@ -39,4 +39,3 @@ export function passSlot(
     )
     .thru(noop)
     .value();
-}

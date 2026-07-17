@@ -10,12 +10,12 @@ import { chain } from '../../utils/chain';
 import { logPlay } from './log-play';
 import { spendInfluenceCard } from './spend-influence-card';
 
-export function playPeace(
+export const playPeace = (
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-): boolean {
-  return chain(state)
+): boolean =>
+  chain(state)
     .tap(() => spendInfluenceCard(state, playerId, influenceType))
     .tap(() => logPlay(state, playerId, influenceType, 'sys'))
     .tap(() =>
@@ -44,4 +44,3 @@ export function playPeace(
     )
     .thru(() => true)
     .value();
-}

@@ -6,7 +6,7 @@ import { getAiState } from '../state';
 import { computePlan } from './compute-plan';
 import type { Plan } from './plan-types';
 
-export function getPlan(player: Player): Plan {
+export const getPlan = (player: Player): Plan => {
   const aiState = getAiState();
   const state = getGameStateLastValue();
   let playerPlans = aiState.planCache.get(state);
@@ -21,6 +21,6 @@ export function getPlan(player: Player): Plan {
   const plan = computePlan(player, cachedPlan?.kind ?? null);
   playerPlans.set(player.id, plan);
   return plan;
-}
+};
 
 export { type Plan, type StrategyKind } from './plan-types';

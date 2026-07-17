@@ -1,10 +1,10 @@
-import { dispatch } from '../../state';
+import { dispatch } from '../../dispatch';
 
 export interface RecruitTroopsPayload {
   playerId: number;
   planetId: number;
 }
 
-export function recruitTroops(payload: RecruitTroopsPayload): void {
+export const recruitTroops = (payload: RecruitTroopsPayload): void => {
   dispatch({ kind: 'RECRUIT_TROOPS', payload });
-}
+};

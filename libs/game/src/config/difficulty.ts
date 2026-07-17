@@ -86,12 +86,9 @@ export const DIFFICULTIES: DifficultyDef[] = [
 
 export const DEFAULT_DIFFICULTY: Difficulty = 'normal';
 
-export function getDifficulty(id: Difficulty): DifficultyDef {
-  return (
-    DIFFICULTIES.find((difficultyDef) => difficultyDef.id === id) ??
-    DIFFICULTIES.find(
-      (difficultyDef) => difficultyDef.id === DEFAULT_DIFFICULTY,
-    ) ??
-    DIFFICULTIES[0]
-  );
-}
+export const getDifficulty = (id: Difficulty): DifficultyDef =>
+  DIFFICULTIES.find((difficultyDef) => difficultyDef.id === id) ??
+  DIFFICULTIES.find(
+    (difficultyDef) => difficultyDef.id === DEFAULT_DIFFICULTY,
+  ) ??
+  DIFFICULTIES[0];

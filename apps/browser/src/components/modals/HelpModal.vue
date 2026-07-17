@@ -156,17 +156,17 @@ const ui = useUiStore();
       <li>
         <b>⭐ INFLUENCE</b> is a separate track (not a hand card): earn +1 per
         trade you initiate and +1 per turn from an <b>L2 🤝 Embassy</b>. From
-        <b>turn {{ INFLUENCE_CARDS_FROM_TURN }}</b
-        >, 2 <b>influence cards</b> join every pool — picking one pays its ⭐
+        <b>turn {{ INFLUENCE_CARDS_FROM_TURN }}</b>, 2 <b>influence cards</b> join every pool — picking one pays its ⭐
         cost and puts the card <b>in your hand</b>; play it for free on
         <b>any of your action turns</b> (⭐ Influence button):
         <ul class="rules">
-          <li v-for="influenceType in INFLUENCE_TYPES" :key="influenceType">
+          <li
+            v-for="influenceType in INFLUENCE_TYPES"
+            :key="influenceType"
+          >
             {{ INFLUENCE_CARDS[influenceType].icon }}
             <b>{{ INFLUENCE_CARDS[influenceType].name }}</b>
-            <span class="dimtx"
-              >({{ INFLUENCE_CARDS[influenceType].cost }}⭐)</span
-            >
+            <span class="dimtx">({{ INFLUENCE_CARDS[influenceType].cost }}⭐)</span>
             —
             {{ INFLUENCE_CARDS[influenceType].desc }}
           </li>
@@ -183,19 +183,25 @@ const ui = useUiStore();
       <li>
         <b>Buildings</b> (built/upgraded instantly when picked from the pool):
         <ul class="rules">
-          <li v-for="id in BUILD_ORDER" :key="id">
+          <li
+            v-for="id in BUILD_ORDER"
+            :key="id"
+          >
             {{ BUILDINGS[id].icon }} <b>{{ BUILDINGS[id].name }}</b>
-            <span class="dimtx"
-              >({{ getCostLabel(BUILDINGS[id].cost) }} at L1 — level N costs N×
-              that, max L{{ getMaxLevel(id) }})</span
-            >
+            <span class="dimtx">({{ getCostLabel(BUILDINGS[id].cost) }} at L1 — level N costs N×
+              that, max L{{ getMaxLevel(id) }})</span>
             — {{ BUILDINGS[id].desc }}
           </li>
         </ul>
       </li>
     </ul>
     <div class="mbtns">
-      <button class="btn" @click="ui.closeModal()">Close</button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Close
+      </button>
     </div>
   </ModalShell>
 </template>

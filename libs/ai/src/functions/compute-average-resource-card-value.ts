@@ -1,6 +1,6 @@
 import { CARDS, RESOURCE_TYPES } from '@seven-planets/game';
 
-export function computeAverageResourceCardValue(): number {
+export const computeAverageResourceCardValue = (): number => {
   const resourceTypes = RESOURCE_TYPES.filter(
     (resourceType) => resourceType !== 'SPICE',
   );
@@ -11,4 +11,4 @@ export function computeAverageResourceCardValue(): number {
     weightedValue += CARDS[resourceType].weight * CARDS[resourceType].value;
   }
   return totalWeight ? weightedValue / totalWeight : 1;
-}
+};

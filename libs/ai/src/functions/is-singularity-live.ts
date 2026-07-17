@@ -5,8 +5,8 @@ import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { computeTechLevel } from './compute-tech-level';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export function isSingularityLive(): boolean {
-  return getAlivePlayers().some((player) =>
+export const isSingularityLive = (): boolean =>
+  getAlivePlayers().some((player) =>
     getOwnedPlanets(player).some((planet) => {
       const nextLevel = (planet.buildings.SINGULARITY || 0) + 1;
       return (
@@ -16,4 +16,3 @@ export function isSingularityLive(): boolean {
       );
     }),
   );
-}

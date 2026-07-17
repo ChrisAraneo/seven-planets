@@ -2,7 +2,7 @@ import type { Player } from '@seven-planets/game';
 
 import { getAiState } from '../state';
 
-export function activateWeightsFor(player: Player): void {
+export const activateWeightsFor = (player: Player): void => {
   const aiState = getAiState();
   const { difficulty, tuned } = aiState;
   if (difficulty && !player.isHuman) {
@@ -24,4 +24,4 @@ export function activateWeightsFor(player: Player): void {
     aiState.W = tuned;
     aiState.randomPickChance = 0;
   }
-}
+};

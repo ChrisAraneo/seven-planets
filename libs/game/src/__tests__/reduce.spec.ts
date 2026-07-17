@@ -4,19 +4,19 @@ import { describe, expect, it } from 'vitest';
 import { canPickCard } from '../functions/can-pick-card';
 import { createInitialGameState } from '../functions/create-initial-game-state';
 import type { GameState } from '../interfaces/game-state';
-import { advance, reduce } from '../reducers/reduce';
+import { advance } from '../reducers/advance';
+import { reduce } from '../reducers/reduce';
 
-function isParkedAtFirstPick(): GameState {
-  return reduce(createInitialGameState(), { kind: 'START' });
-}
+const isParkedAtFirstPick = (): GameState =>
+  reduce(createInitialGameState(), { kind: 'START' });
 
-function getFirstPickableIndex(state: GameState): number {
+const getFirstPickableIndex = (state: GameState): number => {
   const player = state.players[state.activeId];
   const planet = state.planets[state.draftPlanetId];
   return state.pool.findIndex((poolType) =>
     canPickCard(state, player, poolType, planet),
   );
-}
+};
 
 describe('reduce/advance invariants', () => {
   it("parks turn 1's first pick with exactly one inputSeq bump", () => {

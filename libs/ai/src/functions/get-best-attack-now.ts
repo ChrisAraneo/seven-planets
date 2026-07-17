@@ -6,7 +6,7 @@ import { computeEffectiveMinimumConquerProbability } from './compute-effective-m
 import type { AttackPlan } from './get-attack-plans';
 import { getAttackPlans } from './get-attack-plans';
 
-export function getBestAttackNow(player: Player): AttackPlan | null {
+export const getBestAttackNow = (player: Player): AttackPlan | null => {
   const aiState = getAiState();
   if ((player.hand.ATTACK || 0) < 1) {
     return null;
@@ -34,4 +34,4 @@ export function getBestAttackNow(player: Player): AttackPlan | null {
     }
   }
   return null;
-}
+};

@@ -6,7 +6,7 @@ import {
   computeIncomeAmount,
 } from '@seven-planets/game';
 
-export function computePlanetValue(planet: Planet): number {
+export const computePlanetValue = (planet: Planet): number => {
   let value = 6;
   for (const buildingType of BUILD_ORDER) {
     const level = planet.buildings[buildingType] || 0;
@@ -24,4 +24,4 @@ export function computePlanetValue(planet: Planet): number {
   value +=
     (planet.buildings.SINGULARITY || 0) * 4 + (planet.buildings.LAB ? 2 : 0);
   return value;
-}
+};

@@ -14,7 +14,7 @@ const ALWAYS_UNLOCKED: Difficulty[] = DIFFICULTIES.map(
   (difficultyDef) => difficultyDef.id,
 ).filter((id) => !rewarded.has(id));
 
-function read(): Set<Difficulty> {
+const read = (): Set<Difficulty> => {
   const unlocked = new Set<Difficulty>(ALWAYS_UNLOCKED);
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -28,22 +28,20 @@ function read(): Set<Difficulty> {
     }
   } catch {}
   return unlocked;
-}
+};
 
-function write(unlocked: Set<Difficulty>): void {
+const write = (unlocked: Set<Difficulty>): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocked]));
   } catch {}
-}
+};
 
 export const useUnlocksStore = defineStore('unlocks', () => {
   const unlocked = ref<Set<Difficulty>>(read());
 
-  function isUnlocked(id: Difficulty): boolean {
-    return unlocked.value.has(id);
-  }
+  const isUnlocked = (id: Difficulty): boolean => unlocked.value.has(id);
 
-  function recordWin(level: Difficulty): Difficulty | null {
+  const recordWin = (level: Difficulty): Difficulty | null => {
     const next = UNLOCKED_BY_WIN[level];
     if (!next) {
       return null;
@@ -54,7 +52,7 @@ export const useUnlocksStore = defineStore('unlocks', () => {
     unlocked.value.add(next);
     write(unlocked.value);
     return next;
-  }
+  };
 
   return { unlocked, isUnlocked, recordWin };
 });

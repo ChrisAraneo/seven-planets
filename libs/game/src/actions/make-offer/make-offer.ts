@@ -1,5 +1,5 @@
+import { dispatch } from '../../dispatch';
 import type { Cost } from '../../interfaces/cost';
-import { dispatch } from '../../state';
 
 export interface MakeOfferPayload {
   playerId: number;
@@ -8,6 +8,6 @@ export interface MakeOfferPayload {
   gets: Cost;
 }
 
-export function makeOffer(payload: MakeOfferPayload): void {
+export const makeOffer = (payload: MakeOfferPayload): void => {
   dispatch({ kind: 'MAKE_OFFER', payload });
-}
+};

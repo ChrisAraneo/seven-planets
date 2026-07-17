@@ -10,21 +10,21 @@ const SEATS = 7;
 const HUMAN_SEAT = 0;
 const DEFAULT_GAMES = 3_000;
 
-function median(nums: number[]): number {
+const median = (nums: number[]): number => {
   if (nums.length === 0) return 0;
   const s = nums.slice().sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
+};
 
-function mean(nums: number[]): number {
+const mean = (nums: number[]): number => {
   if (nums.length === 0) return 0;
   return nums.reduce((a, b) => a + b, 0) / nums.length;
-}
+};
 
-function fmt(n: number, dp = 1): string {
+const fmt = (n: number, dp = 1): string => {
   return n.toFixed(dp);
-}
+};
 
 interface DiffStat {
   id: string;
@@ -38,7 +38,7 @@ interface DiffStat {
   allTurns: number[];
 }
 
-async function main(): Promise<void> {
+const main = async (): Promise<void> => {
   const gamesPer = Math.max(1, Number(process.argv[2]) || DEFAULT_GAMES);
   const totalGames = gamesPer * DIFFICULTIES.length;
 
@@ -102,7 +102,7 @@ async function main(): Promise<void> {
   const outPath = resolve(reportsDir, `difficulty-${stamp}.md`);
   writeFileSync(outPath, buildMarkdownReport(stats, summary) + '\n', 'utf8');
   console.log(`\nReport written to ${outPath}`);
-}
+};
 
 interface Summary {
   gamesPer: number;
@@ -110,11 +110,11 @@ interface Summary {
   elapsed: number;
 }
 
-function asciiTable(
+const asciiTable = (
   headers: string[],
   aligns: ('l' | 'r')[],
   rows: string[][],
-): string {
+): string => {
   const widths = headers.map((h, c) =>
     Math.max(h.length, ...rows.map((r) => r[c].length)),
   );
@@ -124,13 +124,13 @@ function asciiTable(
     '| ' + cells.map((c, i) => pad(c, widths[i], aligns[i])).join(' | ') + ' |';
   const sep = '|' + widths.map((w) => '-'.repeat(w + 2)).join('|') + '|';
   return [line(headers), sep, ...rows.map(line)].join('\n');
-}
+};
 
-function winRate(st: DiffStat): number {
+const winRate = (st: DiffStat): number => {
   return st.games ? (st.humanWins / st.games) * 100 : 0;
-}
+};
 
-function buildConsoleReport(stats: DiffStat[], sum: Summary): string {
+const buildConsoleReport = (stats: DiffStat[], sum: Summary): string => {
   const { gamesPer, totalGames, elapsed } = sum;
   const L: string[] = [];
   L.push('==================================================================');
@@ -191,9 +191,9 @@ function buildConsoleReport(stats: DiffStat[], sum: Summary): string {
   );
   L.push('');
   return L.join('\n');
-}
+};
 
-function buildMarkdownReport(stats: DiffStat[], sum: Summary): string {
+const buildMarkdownReport = (stats: DiffStat[], sum: Summary): string => {
   const { gamesPer, totalGames, elapsed } = sum;
   const L: string[] = [];
   L.push('# Seven Planets — Difficulty Win-Rate Report');
@@ -237,7 +237,7 @@ function buildMarkdownReport(stats: DiffStat[], sum: Summary): string {
   }
   L.push('');
   return L.join('\n');
-}
+};
 
 main().catch((err) => {
   console.error(err);

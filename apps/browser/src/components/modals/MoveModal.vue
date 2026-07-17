@@ -56,13 +56,13 @@ const capacityLabel = computed(() =>
     : String(getRocketCapacity(from.value)),
 );
 
-function decrease(): void {
+const decrease = (): void => {
   if (troopCount.value > 1) troopCount.value--;
-}
-function increase(): void {
+};
+const increase = (): void => {
   if (troopCount.value < capacity.value) troopCount.value++;
-}
-function doMove(): void {
+};
+const doMove = (): void => {
   if (capacity.value < 1 || toId.value < 0) return;
   ui.closeModal();
   void moveTroops({
@@ -71,7 +71,7 @@ function doMove(): void {
     toId: toId.value,
     troops: troopCount.value,
   });
-}
+};
 </script>
 
 <template>
@@ -89,7 +89,8 @@ function doMove(): void {
         :key="planet.id"
         class="tab"
         :class="{ active: planet.id === fromId }"
-        @click="fromId = planet.id">
+        @click="fromId = planet.id"
+      >
         {{ planet.name }} 🪖{{ planet.troops }}
       </button>
     </p>
@@ -98,7 +99,8 @@ function doMove(): void {
       :key="planet.id"
       class="trow"
       :class="{ sel: planet.id === toId }"
-      @click="toId = planet.id">
+      @click="toId = planet.id"
+    >
       <div class="tinfo">
         <b>{{ planet.name }}</b>
       </div>
@@ -107,17 +109,24 @@ function doMove(): void {
     <p style="margin-top: 12px">
       Troops aboard:
       <span class="stepper">
-        <button @click="decrease">−</button
-        ><span class="sval">{{ troopCount }}</span
-        ><button @click="increase">+</button>
+        <button @click="decrease">−</button><span class="sval">{{ troopCount }}</span><button @click="increase">+</button>
       </span>
       <span class="dimtx">({{ from.name }} garrisons {{ from.troops }})</span>
     </p>
     <div class="mbtns">
-      <button class="btn" :disabled="capacity < 1" @click="doMove">
+      <button
+        class="btn"
+        :disabled="capacity < 1"
+        @click="doMove"
+      >
         🛸 MOVE
       </button>
-      <button class="btn" @click="ui.closeModal()">Cancel</button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Cancel
+      </button>
     </div>
   </ModalShell>
 </template>

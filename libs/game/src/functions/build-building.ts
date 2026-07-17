@@ -1,22 +1,24 @@
-import { match } from 'ts-pattern';
-
-import { BUILDINGS, computeBuildingCost } from '../config/constants';
+import { BUILDINGS } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';
+import { computeBuildingCost } from './compute-building-cost';
 import { emitEffect } from './emit-effect';
+import { getBuildVerb } from './get-build-verb';
+import { getLevelSuffix } from './get-level-suffix';
 import { getTechLevel } from './get-tech-level';
 import { log } from './log';
+import { logTechAdvance } from './log-tech-advance';
 import { payCost } from './pay-cost';
 import { updatePlanet } from './update-planet';
 
-export function buildBuilding(
+export const buildBuilding = (
   state: GameState,
   playerId: number,
   planetId: number,
   buildingType: BuildingType,
-): GameState {
-  return chain({
+): GameState =>
+  chain({
     currentTech: getTechLevel(state, state.players[playerId]),
     level: (state.planets[planetId].buildings[buildingType] || 0) + 1,
   })
@@ -54,44 +56,3 @@ export function buildBuilding(
       logTechAdvance(logged, playerId, currentTech),
     )
     .value();
-}
-
-function getBuildVerb(buildingType: BuildingType, level: number): string {
-  return match(level)
-    .when(
-      () => level > 1,
-      () =>
-        `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${level}`,
-    )
-    .otherwise(
-      () =>
-        `builds ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name}`,
-    );
-}
-
-function getLevelSuffix(level: number): string {
-  return match(level)
-    .when(
-      () => level > 1,
-      () => ` L${level}`,
-    )
-    .otherwise(() => '');
-}
-
-function logTechAdvance(
-  state: GameState,
-  playerId: number,
-  previousTech: number,
-): GameState {
-  return match(getTechLevel(state, state.players[playerId]))
-    .when(
-      (updatedTech) => updatedTech > previousTech,
-      (updatedTech) =>
-        log(
-          state,
-          `🔬 ${state.players[playerId].name} reaches TECHNOLOGY ${updatedTech} — level-${updatedTech} upgrades unlocked, and they now draft before lower-tech rivals!`,
-          'sys',
-        ),
-    )
-    .otherwise(() => state);
-}

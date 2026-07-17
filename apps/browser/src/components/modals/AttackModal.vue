@@ -104,20 +104,20 @@ const preview = computed(() => {
   };
 });
 
-function capacityLabel(planet = source.value): string {
+const capacityLabel = (planet = source.value): string => {
   const cap = getRocketCapacity(planet);
   return cap === Infinity ? '∞ (all troops)' : String(cap);
-}
-function selectTarget(planet: { id: number; truce: boolean }): void {
+};
+const selectTarget = (planet: { id: number; truce: boolean }): void => {
   if (!planet.truce) selectedId.value = planet.id;
-}
-function decrease(): void {
+};
+const decrease = (): void => {
   if (troopCount.value > 1) troopCount.value--;
-}
-function increase(): void {
+};
+const increase = (): void => {
   if (troopCount.value < capacity.value) troopCount.value++;
-}
-function launch(): void {
+};
+const launch = (): void => {
   if (!canLaunch.value) return;
   ui.closeModal();
   dispatch(
@@ -128,7 +128,7 @@ function launch(): void {
       troops: troopCount.value,
     }),
   );
-}
+};
 </script>
 
 <template>
@@ -141,7 +141,10 @@ function launch(): void {
       {{ CONQUEST_TRUCE }} turns). Spends one ⚔️ Attack card (you have
       {{ human.hand.ATTACK }}).
     </p>
-    <p v-if="breaksVow" class="vow-warning">
+    <p
+      v-if="breaksVow"
+      class="vow-warning"
+    >
       ☮️➡️⚔️ You are a PACIFIST. Launching this attack breaks your vow
       <strong>permanently</strong>: you lose the +defense and +⭐ bonuses on
       every planet and can never become a PACIFIST again.
@@ -153,7 +156,8 @@ function launch(): void {
         :key="planet.id"
         class="tab"
         :class="{ active: planet.id === sourceId }"
-        @click="sourceId = planet.id">
+        @click="sourceId = planet.id"
+      >
         {{ planet.name }} 🪖{{ planet.troops }}
       </button>
     </p>
@@ -162,13 +166,17 @@ function launch(): void {
       :key="planet.id"
       class="trow"
       :class="{ sel: planet.id === selectedId, truce: isUnderTruce(planet) }"
-      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })">
+      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })"
+    >
       <div class="tinfo">
         <b :style="{ color: game.state.players[planet.ownerId].color }">{{
           planet.name
         }}</b>
         — {{ game.state.players[planet.ownerId].name }}
-        <span v-if="isUnderTruce(planet)" class="dimtx">
+        <span
+          v-if="isUnderTruce(planet)"
+          class="dimtx"
+        >
           🕊️ truce ({{ planet.protectedUntil - game.state.turn + 1 }} turn{{
             planet.protectedUntil - game.state.turn ? 's' : ''
           }})
@@ -179,22 +187,17 @@ function launch(): void {
         <span
           v-if="game.state.players[planet.ownerId].hasPacifistStatus"
           v-tooltip="`Pacifist — +${PACIFIST_DEF_BONUS} defense`"
-          >☮️</span
-        >
+        >☮️</span>
         🃏{{ getHandSize(game.state.players[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">
       Troops aboard:
       <span class="stepper">
-        <button @click="decrease">−</button
-        ><span class="sval">{{ troopCount }}</span
-        ><button @click="increase">+</button>
+        <button @click="decrease">−</button><span class="sval">{{ troopCount }}</span><button @click="increase">+</button>
       </span>
-      <span class="dimtx"
-        >({{ source.name }} garrisons {{ source.troops }}, rocket capacity
-        {{ capacityLabel() }})</span
-      >
+      <span class="dimtx">({{ source.name }} garrisons {{ source.troops }}, rocket capacity
+        {{ capacityLabel() }})</span>
     </p>
     <p>
       <template v-if="preview">
@@ -203,7 +206,7 @@ function launch(): void {
         }}
         &nbsp;vs&nbsp; defense {{ preview.defensePower }} + 🎲0-{{
           COMBAT.defenseRoll
-        }}<br />
+        }}<br>
         <b
           :style="{
             color:
@@ -213,29 +216,45 @@ function launch(): void {
                   ? '#ffd23d'
                   : '#ff6b6b',
           }"
-          >Win chance: {{ preview.winPercent }}%</b
-        >
+        >Win chance: {{ preview.winPercent }}%</b>
         —
-        <span v-if="preview.note === 'good'" style="color: #7dff8a"
-          >odds look good.</span
+        <span
+          v-if="preview.note === 'good'"
+          style="color: #7dff8a"
+        >odds look good.</span>
+        <span
+          v-else-if="preview.note === 'close'"
+          style="color: #ffd23d"
+        >close fight, luck decides.</span>
+        <span
+          v-else
+          class="warn"
+        >likely suicide.</span>
+        <span
+          v-if="preview.sendingAll"
+          class="warn"
         >
-        <span v-else-if="preview.note === 'close'" style="color: #ffd23d"
-          >close fight, luck decides.</span
-        >
-        <span v-else class="warn">likely suicide.</span>
-        <span v-if="preview.sendingAll" class="warn">
-          Sending everyone leaves {{ source.name }} defenseless!</span
-        >
+          Sending everyone leaves {{ source.name }} defenseless!</span>
       </template>
-      <span v-else class="warn"
-        >All enemy planets are under truce — no valid target.</span
-      >
+      <span
+        v-else
+        class="warn"
+      >All enemy planets are under truce — no valid target.</span>
     </p>
     <div class="mbtns">
-      <button class="btn danger" :disabled="!canLaunch" @click="launch">
+      <button
+        class="btn danger"
+        :disabled="!canLaunch"
+        @click="launch"
+      >
         🚀 LAUNCH
       </button>
-      <button class="btn" @click="ui.closeModal()">Cancel</button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Cancel
+      </button>
     </div>
   </ModalShell>
 </template>

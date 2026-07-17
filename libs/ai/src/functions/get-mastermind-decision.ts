@@ -27,9 +27,9 @@ export type MastermindDecision =
   | { kind: 'move'; from: Planet; to: Planet; n: number }
   | { kind: 'trade'; partner: Player; gives: Cost; gets: Cost };
 
-export function getMastermindDecision(
+export const getMastermindDecision = (
   player: Player,
-): MastermindDecision | null {
+): MastermindDecision | null => {
   activateWeightsFor(player);
   return (
     getInfluenceDecision(player) ??
@@ -38,9 +38,9 @@ export function getMastermindDecision(
     getMoveDecision(player) ??
     getTradeDecision(player)
   );
-}
+};
 
-function getInfluenceDecision(player: Player): MastermindDecision | null {
+const getInfluenceDecision = (player: Player): MastermindDecision | null => {
   const influenceDecision = getInfluencePlay(player);
   if (!influenceDecision) {
     return null;
@@ -50,9 +50,9 @@ function getInfluenceDecision(player: Player): MastermindDecision | null {
     type: influenceDecision.type,
     options: influenceDecision.options,
   };
-}
+};
 
-function getAttackDecision(player: Player): MastermindDecision | null {
+const getAttackDecision = (player: Player): MastermindDecision | null => {
   if ((player.hand.ATTACK || 0) < 1) {
     return null;
   }
@@ -66,23 +66,20 @@ function getAttackDecision(player: Player): MastermindDecision | null {
     target: attackPlan.target,
     n: attackPlan.n,
   };
-}
+};
 
-function getStagingPlanet(player: Player): Planet | null {
+const getStagingPlanet = (player: Player): Planet | null => {
   const plan = getPlan(player);
   return plan.stagingId === null
     ? null
     : getGameStateLastValue().planets[plan.stagingId];
-}
+};
 
-function canRecruitAt(player: Player, planet: Planet): boolean {
-  return (
-    (planet.buildings.BARRACKS || 0) > 0 &&
-    computeRecruitableTroops(planet, player.hand) >= 1
-  );
-}
+const canRecruitAt = (player: Player, planet: Planet): boolean =>
+  (planet.buildings.BARRACKS || 0) > 0 &&
+  computeRecruitableTroops(planet, player.hand) >= 1;
 
-function getRecruitDecision(player: Player): MastermindDecision | null {
+const getRecruitDecision = (player: Player): MastermindDecision | null => {
   if ((player.hand.RECRUIT || 0) < 1) {
     return null;
   }
@@ -106,12 +103,12 @@ function getRecruitDecision(player: Player): MastermindDecision | null {
     getStagingRecruit(player, ownedPlanets) ??
     getThinnestRecruit(player, ownedPlanets)
   );
-}
+};
 
-function getStagingRecruit(
+const getStagingRecruit = (
   player: Player,
   ownedPlanets: Planet[],
-): MastermindDecision | null {
+): MastermindDecision | null => {
   const plan = getPlan(player);
   const isStacking =
     plan.kind === 'MILITARIZE' ||
@@ -139,12 +136,12 @@ function getStagingRecruit(
     )
     .at(0);
   return anyRecruitable ? { kind: 'recruit', planet: anyRecruitable } : null;
-}
+};
 
-function getThinnestRecruit(
+const getThinnestRecruit = (
   player: Player,
   ownedPlanets: Planet[],
-): MastermindDecision | null {
+): MastermindDecision | null => {
   const thinnestPlanet = ownedPlanets
     .filter(
       (planet) =>
@@ -159,9 +156,9 @@ function getThinnestRecruit(
     )
     .at(0);
   return thinnestPlanet ? { kind: 'recruit', planet: thinnestPlanet } : null;
-}
+};
 
-function getMoveDecision(player: Player): MastermindDecision | null {
+const getMoveDecision = (player: Player): MastermindDecision | null => {
   const canMove =
     (player.hand.MOVE || 0) > 0 &&
     hasBuilding(player, 'SPACEPORT') &&
@@ -170,9 +167,9 @@ function getMoveDecision(player: Player): MastermindDecision | null {
     return null;
   }
   return getRescueMove(player) ?? getStagingMove(player);
-}
+};
 
-function getRescueMove(player: Player): MastermindDecision | null {
+const getRescueMove = (player: Player): MastermindDecision | null => {
   const ownedPlanets = getOwnedPlanets(player);
   const troopFloor = computeGarrisonFloor();
   const endangered = ownedPlanets
@@ -206,9 +203,9 @@ function getRescueMove(player: Player): MastermindDecision | null {
     }
   }
   return null;
-}
+};
 
-function getStagingMove(player: Player): MastermindDecision | null {
+const getStagingMove = (player: Player): MastermindDecision | null => {
   const ownedPlanets = getOwnedPlanets(player);
   const troopFloor = computeGarrisonFloor();
   const plan = getPlan(player);
@@ -241,9 +238,9 @@ function getStagingMove(player: Player): MastermindDecision | null {
   return troopsToStage >= 2
     ? { kind: 'move', from: donor, to: staging, n: troopsToStage }
     : null;
-}
+};
 
-function getTradeDecision(player: Player): MastermindDecision | null {
+const getTradeDecision = (player: Player): MastermindDecision | null => {
   const canTrade =
     !player.hasTradedCurrentTurn &&
     (player.hand.TRADE || 0) > 0 &&
@@ -253,4 +250,4 @@ function getTradeDecision(player: Player): MastermindDecision | null {
   }
   const offer = getTradeOffer(player, getPlan(player));
   return offer ? { kind: 'trade', ...offer } : null;
-}
+};

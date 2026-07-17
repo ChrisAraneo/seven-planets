@@ -7,11 +7,11 @@ import { chain } from '../../utils/chain';
 import { applyPick } from './apply-pick';
 import { isValidPick } from './is-valid-pick';
 
-export function applyPickCard(
+export const applyPickCard = (
   state: GameState,
   payload: PickCardPayload,
-): GameState {
-  return match(state)
+): GameState =>
+  match(state)
     .when(
       () =>
         !state.isAwaitingPick ||
@@ -47,4 +47,3 @@ export function applyPickCard(
         )
         .value(),
     );
-}

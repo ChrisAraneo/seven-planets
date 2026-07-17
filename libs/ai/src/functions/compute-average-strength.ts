@@ -1,7 +1,7 @@
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { computePlayerStrength } from './compute-player-strength';
 
-export function computeAverageStrength(): number {
+export const computeAverageStrength = (): number => {
   const strengths = getAlivePlayers().map((player) =>
     computePlayerStrength(player),
   );
@@ -9,4 +9,4 @@ export function computeAverageStrength(): number {
     strengths.reduce((sum, strength) => sum + strength, 0) /
     (strengths.length || 1)
   );
-}
+};

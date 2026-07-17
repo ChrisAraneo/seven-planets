@@ -1,5 +1,5 @@
-import { dispatch } from '../state';
+import { dispatch } from '../dispatch';
 
-export function runGame(): void {
+export const runGame = (): void => {
   dispatch({ kind: 'START' });
-}
+};

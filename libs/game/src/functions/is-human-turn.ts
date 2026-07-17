@@ -1,5 +1,4 @@
 import type { GameState } from '../interfaces/game-state';
 
-export function isHumanTurn(state: GameState): boolean {
-  return state.isAwaitingAction && !state.over;
-}
+export const isHumanTurn = (state: GameState): boolean =>
+  state.isAwaitingAction && !state.over;

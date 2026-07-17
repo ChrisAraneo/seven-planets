@@ -20,25 +20,25 @@ const barracksPls = computed(() => {
   );
 });
 
-function troopsFor(planetId: number): number {
+const troopsFor = (planetId: number): number => {
   return computeRecruitableTroops(
     game.state.planets[planetId],
     game.state.players[0].hand,
   );
-}
+};
 
-function shortWarning(planetId: number): string {
+const shortWarning = (planetId: number): string => {
   const planet = game.state.planets[planetId];
   const affordable = troopsFor(planetId);
   return affordable < computeRecruitYield(planet)
     ? ` ⚠️ only enough ⛏️ for ${affordable} of ${computeRecruitYield(planet)} troops`
     : '';
-}
+};
 
-function recruit(planetId: number): void {
+const recruit = (planetId: number): void => {
   ui.closeModal();
   void recruitTroops({ playerId: 0, planetId });
-}
+};
 </script>
 
 <template>
@@ -53,22 +53,26 @@ function recruit(planetId: number): void {
       v-for="planet in barracksPls"
       :key="planet.id"
       class="trow"
-      @click="recruit(planet.id)">
+      @click="recruit(planet.id)"
+    >
       <div class="tinfo">
         <b>{{ planet.name }}</b>
-        <span class="dimtx"
-          >🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
-            troopsFor(planet.id)
-          }}
+        <span class="dimtx">🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
+          troopsFor(planet.id)
+        }}
           troops for {{ troopsFor(planet.id) }}⛏️{{
             shortWarning(planet.id)
-          }}</span
-        >
+          }}</span>
       </div>
       <div>🪖{{ planet.troops }}</div>
     </div>
     <div class="mbtns">
-      <button class="btn" @click="ui.closeModal()">Cancel</button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Cancel
+      </button>
     </div>
   </ModalShell>
 </template>

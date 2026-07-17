@@ -4,11 +4,11 @@ import { isSingularityLabOk } from '@seven-planets/game';
 
 import { computeTechLevel } from './compute-tech-level';
 
-export function getNextAllowedLevel(
+export const getNextAllowedLevel = (
   player: Player,
   planet: Planet,
   buildingType: BuildingType,
-): number {
+): number => {
   const nextLevel = (planet.buildings[buildingType] || 0) + 1;
   if (nextLevel > getMaxLevel(buildingType)) {
     return 0;
@@ -23,4 +23,4 @@ export function getNextAllowedLevel(
     return 0;
   }
   return nextLevel;
-}
+};

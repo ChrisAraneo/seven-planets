@@ -32,28 +32,25 @@ const BOOM_MIN_DURATION = 200;
 const TEXT_DURATION = 1500;
 const TEXT_MIN_DURATION = 400;
 
-function speedMult(): number {
-  return sink?.isFastMode() ? FAST_MODE_SPEED : 1;
-}
+const speedMult = (): number => (sink?.isFastMode() ? FAST_MODE_SPEED : 1);
 
-function now(): number {
-  return typeof performance === 'undefined' ? Date.now() : performance.now();
-}
+const now = (): number =>
+  (typeof performance === 'undefined' ? Date.now() : performance.now());
 
-function enqueue(anim: Anim, delay: number): void {
+const enqueue = (anim: Anim, delay: number): void => {
   if (delay > 0) {
     setTimeout(() => sink?.enqueue({ ...anim, t0: now() }), delay);
     return;
   }
   sink?.enqueue(anim);
-}
+};
 
-export function installEffects(effectsSink: EffectsSink): void {
+export const installEffects = (effectsSink: EffectsSink): void => {
   sink = effectsSink;
   playedSeq = 0;
-}
+};
 
-export function playNewEffects(state: GameState): void {
+export const playNewEffects = (state: GameState): void => {
   if (!sink) {
     return;
   }
@@ -63,13 +60,13 @@ export function playNewEffects(state: GameState): void {
   const fresh = state.effects.filter((event) => event.seq > playedSeq);
   playedSeq = state.effectSeq;
   fresh.reduce((delay, event) => playEffect(state, event, delay), 0);
-}
+};
 
-function playEffect(
+const playEffect = (
   state: GameState,
   event: EffectEvent,
   delay: number,
-): number {
+): number => {
   switch (event.kind) {
     case 'rocket': {
       return playRocket(state, event, delay);
@@ -84,13 +81,13 @@ function playEffect(
       return delay;
     }
   }
-}
+};
 
-function playRocket(
+const playRocket = (
   state: GameState,
   event: Extract<EffectEvent, { kind: 'rocket' }>,
   delay: number,
-): number {
+): number => {
   const from = state.planets[event.fromId];
   const to = state.planets[event.toId];
   const dur = Math.max(ROCKET_MIN_DURATION, ROCKET_DURATION * speedMult());
@@ -108,13 +105,13 @@ function playRocket(
     delay,
   );
   return delay + dur + ROCKET_SETTLE_GAP;
-}
+};
 
-function playBoom(
+const playBoom = (
   state: GameState,
   event: Extract<EffectEvent, { kind: 'boom' }>,
   delay: number,
-): number {
+): number => {
   const planet = state.planets[event.planetId];
   enqueue(
     {
@@ -127,13 +124,13 @@ function playBoom(
     delay,
   );
   return delay;
-}
+};
 
-function playFloatText(
+const playFloatText = (
   state: GameState,
   event: Extract<EffectEvent, { kind: 'floatText' }>,
   delay: number,
-): number {
+): number => {
   const planet = state.planets[event.planetId];
   enqueue(
     {
@@ -148,4 +145,4 @@ function playFloatText(
     delay,
   );
   return delay;
-}
+};

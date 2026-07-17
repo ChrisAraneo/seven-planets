@@ -4,7 +4,6 @@ import {
   defer,
   filter,
   mergeMap,
-  type Observable,
   observeOn,
   of,
   queueScheduler,
@@ -17,8 +16,10 @@ import type { GameState } from './interfaces/game-state';
 import { reduce } from './reducers/reduce';
 import { chain } from './utils/chain';
 
-const actionSubject = new Subject<Action>();
-const stateSubject = new BehaviorSubject<GameState>(createInitialGameState());
+export const actionSubject = new Subject<Action>();
+export const stateSubject = new BehaviorSubject<GameState>(
+  createInitialGameState(),
+);
 
 actionSubject
   .pipe(
@@ -41,23 +42,3 @@ actionSubject
     filter((state): state is GameState => state !== null),
   )
   .subscribe((state) => stateSubject.next(state));
-
-export function dispatch(action: Action): void {
-  actionSubject.next(action);
-}
-
-export function getGameState(): Observable<GameState> {
-  return stateSubject.asObservable();
-}
-
-export function getGameStateLastValue(): GameState {
-  return stateSubject.getValue();
-}
-
-export function setGameState(state: GameState): void {
-  stateSubject.next(state);
-}
-
-export function resetGameState(): void {
-  stateSubject.next(createInitialGameState());
-}

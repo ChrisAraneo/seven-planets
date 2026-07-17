@@ -28,11 +28,13 @@ const STATIC_SIDE: Record<string, string> = {
 const TOOLTIP_OFFSET = 8;
 const VIEWPORT_PADDING = 6;
 
-function createTipElements(text: string): {
+const createTipElements = (
+  text: string,
+): {
   tip: HTMLDivElement;
   content: HTMLDivElement;
   arrowEl: HTMLDivElement;
-} {
+} => {
   const tip = document.createElement('div');
   tip.classList.add('fui-tooltip');
   tip.setAttribute('role', 'tooltip');
@@ -43,9 +45,9 @@ function createTipElements(text: string): {
   arrowEl.classList.add('fui-tooltip-arrow');
   tip.append(content, arrowEl);
   return { tip, content, arrowEl };
-}
+};
 
-function show(el: HTMLElement): void {
+const show = (el: HTMLElement): void => {
   const handle = handles.get(el);
   if (!handle || handle.tip || !handle.text) {
     return;
@@ -81,9 +83,9 @@ function show(el: HTMLElement): void {
     });
 
   handle.stop = autoUpdate(el, tip, reposition);
-}
+};
 
-function hide(el: HTMLElement): void {
+const hide = (el: HTMLElement): void => {
   const handle = handles.get(el);
   if (!handle?.tip) {
     return;
@@ -93,7 +95,7 @@ function hide(el: HTMLElement): void {
   handle.tip.remove();
   handle.tip = null;
   handle.content = null;
-}
+};
 
 export const vTooltip: Directive<HTMLElement, string | undefined> = {
   mounted(el, binding) {

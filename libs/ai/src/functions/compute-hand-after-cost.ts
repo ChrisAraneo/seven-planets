@@ -1,6 +1,6 @@
 import type { Cost, Hand } from '@seven-planets/game';
 
-export function computeHandAfterCost(hand: Hand, cost: Cost): Hand {
+export const computeHandAfterCost = (hand: Hand, cost: Cost): Hand => {
   const remaining: Hand = { ...hand };
   let relicsSpent = 0;
   for (const resourceType of Object.keys(cost)) {
@@ -10,4 +10,4 @@ export function computeHandAfterCost(hand: Hand, cost: Cost): Hand {
   }
   remaining.RELIC = (remaining.RELIC || 0) - relicsSpent;
   return remaining;
-}
+};

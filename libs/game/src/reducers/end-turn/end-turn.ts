@@ -5,11 +5,11 @@ import type { EndTurnPayload } from '../../actions/end-turn';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 
-export function applyEndTurn(
+export const applyEndTurn = (
   state: GameState,
   payload: EndTurnPayload,
-): GameState {
-  return match(state)
+): GameState =>
+  match(state)
     .when(
       () => payload.playerId !== state.activeId || !state.isAwaitingAction,
       () => state,
@@ -28,4 +28,3 @@ export function applyEndTurn(
         )
         .value(),
     );
-}

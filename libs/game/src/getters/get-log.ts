@@ -1,6 +1,4 @@
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import type { LogEntry } from '../interfaces/log-entry';
-import { getGameStateLastValue } from '../state';
 
-export function getLog(): readonly LogEntry[] {
-  return getGameStateLastValue().log;
-}
+export const getLog = (): readonly LogEntry[] => getGameStateLastValue().log;

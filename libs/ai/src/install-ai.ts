@@ -32,17 +32,17 @@ const TURN_START_DELAY = 350;
 const BETWEEN_ACTIONS_DELAY = 320;
 const PICK_DELAY = 300;
 
-export function isAiSeat(seatId: number): boolean {
+export const isAiSeat = (seatId: number): boolean => {
   const players = getPlayers();
   if (seatId < 0 || seatId >= players.length) {
     return false;
   }
   return !players[seatId].isHuman || IS_AUTO_HUMAN;
-}
+};
 
 type Decision = NonNullable<ReturnType<typeof getMastermindDecision>>;
 
-function performDecision(playerId: number, decision: Decision): void {
+const performDecision = (playerId: number, decision: Decision): void => {
   switch (decision.kind) {
     case 'influence': {
       dispatch(
@@ -91,9 +91,9 @@ function performDecision(playerId: number, decision: Decision): void {
       break;
     }
   }
-}
+};
 
-function aiPickCard(playerId: number): void {
+const aiPickCard = (playerId: number): void => {
   const state = getGameStateLastValue();
   const player = state.players[playerId];
   const planet =
@@ -106,9 +106,9 @@ function aiPickCard(playerId: number): void {
     index = pickable.indexOf(true);
   }
   pickCard({ playerId, index });
-}
+};
 
-function takeOneAction(playerId: number): boolean {
+const takeOneAction = (playerId: number): boolean => {
   if (getIsOver()) {
     return false;
   }
@@ -128,13 +128,13 @@ function takeOneAction(playerId: number): boolean {
   performDecision(playerId, mastermindDecision);
 
   return true;
-}
+};
 
 const HEADLESS_ACTION_BUDGET = 12;
 let headlessTurnKey = -1;
 let headlessActionsLeft = 0;
 
-function headlessTurnStep(snapshot: GameState): void {
+const headlessTurnStep = (snapshot: GameState): void => {
   if (IS_PACED || !snapshot.isAwaitingAction || !isAiSeat(snapshot.activeId)) {
     return;
   }
@@ -156,9 +156,9 @@ function headlessTurnStep(snapshot: GameState): void {
     }
   }
   dispatch(createEndTurnAction({ playerId: snapshot.activeId }));
-}
+};
 
-function aiTakeTurnPaced(playerId: number, remaining = 12): void {
+const aiTakeTurnPaced = (playerId: number, remaining = 12): void => {
   setTimeout(
     () => {
       const didAct = remaining > 0 && takeOneAction(playerId);
@@ -170,9 +170,9 @@ function aiTakeTurnPaced(playerId: number, remaining = 12): void {
     },
     remaining === 12 ? TURN_START_DELAY : BETWEEN_ACTIONS_DELAY,
   );
-}
+};
 
-function aiConsiderOffer(playerId: number): void {
+const aiConsiderOffer = (playerId: number): void => {
   const state = getGameStateLastValue();
   const offer = state.pendingOffer;
   if (!offer || offer.toId !== playerId) {
@@ -187,9 +187,9 @@ function aiConsiderOffer(playerId: number): void {
     proposer,
   );
   resolveOffer({ playerId, isAccepted });
-}
+};
 
-function respond(snapshot: GameState): void {
+const respond = (snapshot: GameState): void => {
   if (snapshot.over || !isAiSeat(snapshot.activeId)) {
     return;
   }
@@ -205,9 +205,9 @@ function respond(snapshot: GameState): void {
   if (snapshot.isAwaitingAction && IS_PACED) {
     aiTakeTurnPaced(seatId);
   }
-}
+};
 
-export function installAi(): void {
+export const installAi = (): void => {
   getGameState().pipe(distinctUntilKeyChanged('inputSeq')).subscribe(respond);
 
   getGameState()
@@ -222,4 +222,4 @@ export function installAi(): void {
     });
 
   getGameState().subscribe(headlessTurnStep);
-}
+};

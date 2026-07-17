@@ -1,27 +1,26 @@
 import { assign } from 'lodash-es';
 import { match, P } from 'ts-pattern';
 
-import { ACTION_TYPES, CARDS, INFLUENCE_CARDS } from '../../config/constants';
+import { CARDS, INFLUENCE_CARDS } from '../../config/constants';
 import { emitEffect } from '../../functions/emit-effect';
 import { getHomePlanet } from '../../functions/get-home-planet';
 import { log } from '../../functions/log';
-import type { ActionType } from '../../interfaces/action-type';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceOptions } from '../../interfaces/influence-options';
 import type { InfluenceType } from '../../interfaces/influence-type';
-import type { Player } from '../../interfaces/player';
 import { chain } from '../../utils/chain';
+import { getStealContext } from './get-steal-context';
 import { spendInfluenceCard } from './spend-influence-card';
 
-const { nonNullable, nullish } = P;
+const { nullish } = P;
 
-export function playStealAction(
+export const playStealAction = (
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
   options: InfluenceOptions,
-): boolean {
-  return match(getStealContext(state, options))
+): boolean =>
+  match(getStealContext(state, options))
     .with(nullish, () => false)
     .otherwise(({ cardType, target }) =>
       chain(state)
@@ -60,23 +59,3 @@ export function playStealAction(
         .thru(() => true)
         .value(),
     );
-}
-
-function getStealContext(
-  state: GameState,
-  options: InfluenceOptions,
-): { cardType: ActionType; target: Player } | null {
-  return match({
-    cardType: options.cardType,
-    target: options.target && state.players[options.target.id],
-  })
-    .with(
-      { cardType: nonNullable, target: nonNullable },
-      ({ cardType, target }) =>
-        target.isAlive &&
-        ACTION_TYPES.includes(cardType) &&
-        (target.hand[cardType] || 0) >= 1,
-      ({ cardType, target }) => ({ cardType, target }),
-    )
-    .otherwise(() => null);
-}

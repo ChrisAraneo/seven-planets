@@ -5,7 +5,7 @@ import { computeActionDrawProbability } from './compute-action-draw-probability'
 import { computeIncomePerTurn } from './compute-income-per-turn';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export function computeRecruitRate(player: Player): number {
+export const computeRecruitRate = (player: Player): number => {
   let bestYield = 0;
   for (const planet of getOwnedPlanets(player)) {
     bestYield = Math.max(bestYield, computeRecruitYield(planet));
@@ -20,4 +20,4 @@ export function computeRecruitRate(player: Player): number {
       ? 0.9
       : computeActionDrawProbability('RECRUIT');
   return Math.min(bestYield, Math.max(0, oreFlow)) * cardFlow;
-}
+};

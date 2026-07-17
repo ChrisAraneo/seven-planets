@@ -3,12 +3,12 @@ import { isResourceType } from '@seven-planets/game';
 
 import { shouldMastermindAcceptTrade } from './should-mastermind-accept-trade';
 
-export function shouldAcceptTrade(
+export const shouldAcceptTrade = (
   aiPlayer: Player,
   gives: Cost,
   gets: Cost,
   proposer: Player | null = null,
-): boolean {
+): boolean => {
   for (const resourceType in gives) {
     if (!isResourceType(resourceType) && (gives[resourceType] || 0) > 0) {
       return false;
@@ -25,4 +25,4 @@ export function shouldAcceptTrade(
     }
   }
   return shouldMastermindAcceptTrade(aiPlayer, gives, gets, proposer);
-}
+};

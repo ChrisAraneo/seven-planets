@@ -1,10 +1,10 @@
-import { dispatch } from '../../state';
+import { dispatch } from '../../dispatch';
 
 export interface ResolveOfferPayload {
   playerId: number;
   isAccepted: boolean;
 }
 
-export function resolveOffer(payload: ResolveOfferPayload): void {
+export const resolveOffer = (payload: ResolveOfferPayload): void => {
   dispatch({ kind: 'RESOLVE_OFFER', payload });
-}
+};

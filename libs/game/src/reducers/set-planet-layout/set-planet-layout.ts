@@ -5,16 +5,14 @@ import type { GameState } from '../../interfaces/game-state';
 
 const { nullish } = P;
 
-export function applySetPlanetLayout(
+export const applySetPlanetLayout = (
   state: GameState,
   layout: readonly PlanetLayout[],
-): GameState {
-  return {
-    ...state,
-    planets: state.planets.map((planet, index) =>
-      match(layout[index])
-        .with(nullish, () => planet)
-        .otherwise((coords) => ({ ...planet, ...coords })),
-    ),
-  };
-}
+): GameState => ({
+  ...state,
+  planets: state.planets.map((planet, index) =>
+    match(layout[index])
+      .with(nullish, () => planet)
+      .otherwise((coords) => ({ ...planet, ...coords })),
+  ),
+});

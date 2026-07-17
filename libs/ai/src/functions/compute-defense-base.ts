@@ -5,10 +5,10 @@ import { computeSingularityDefenseBonus } from '@seven-planets/game';
 
 import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 
-export function computeDefenseBase(
+export const computeDefenseBase = (
   planet: Planet,
   troops = planet.troops,
-): number {
+): number => {
   const pacifistBonus = getPlayerByIndex(planet.ownerId)?.hasPacifistStatus
     ? PACIFIST_DEF_BONUS
     : 0;
@@ -19,4 +19,4 @@ export function computeDefenseBase(
     computeSingularityDefenseBonus(planet) +
     HOME_FIELD
   );
-}
+};

@@ -1,47 +1,22 @@
-import { assign, cloneDeep, noop } from 'lodash-es';
+import { assign, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import type { RecruitTroopsPayload } from '../../actions/recruit-troops/recruit-troops';
-import { computeRecruitYield } from '../../functions/compute-recruit-yield';
 import { computeRecruitableTroops } from '../../functions/compute-recruitable-troops';
 import { emitEffect } from '../../functions/emit-effect';
 import { getPluralSuffix } from '../../functions/get-plural-suffix';
-import { hasActionCard } from '../../functions/has-action-card';
 import { log } from '../../functions/log';
 import { payCost } from '../../functions/pay-cost';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { GameState } from '../../interfaces/game-state';
-import type { Planet } from '../../interfaces/planet';
 import { chain } from '../../utils/chain';
+import { getOreLimitedSuffix } from './get-ore-limited-suffix';
 
-export function applyRecruitTroops(
-  state: GameState,
-  payload: RecruitTroopsPayload,
-): GameState {
-  return match(state)
-    .when(
-      () => payload.playerId !== state.activeId || Boolean(state.over),
-      () => state,
-    )
-    .when(
-      () => !hasActionCard(state.players[payload.playerId], 'RECRUIT'),
-      () => state,
-    )
-    .otherwise(() =>
-      chain(cloneDeep(state))
-        .tap((clone) =>
-          executeRecruit(clone, payload.playerId, payload.planetId),
-        )
-        .value(),
-    );
-}
-
-function executeRecruit(
+export const executeRecruit = (
   state: GameState,
   playerId: number,
   planetId: number,
-): void {
-  return match(state.planets[planetId])
+): void =>
+  match(state.planets[planetId])
     .when((planet) => !planet.buildings.BARRACKS, noop)
     .when(
       (planet) =>
@@ -85,13 +60,3 @@ function executeRecruit(
           )
           .value(),
     );
-}
-
-function getOreLimitedSuffix(planet: Planet, count: number): string {
-  return match(count < computeRecruitYield(planet))
-    .with(
-      true,
-      () => ` (ore-limited, Barracks yields ${computeRecruitYield(planet)})`,
-    )
-    .otherwise(() => '');
-}

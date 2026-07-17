@@ -1,6 +1,5 @@
 import { CARD_TYPES } from '../config/constants';
 import type { Player } from '../interfaces/player';
 
-export function getHandSize(player: Player): number {
-  return CARD_TYPES.reduce((sum, cardType) => sum + player.hand[cardType], 0);
-}
+export const getHandSize = (player: Player): number =>
+  CARD_TYPES.reduce((sum, cardType) => sum + player.hand[cardType], 0);

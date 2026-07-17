@@ -1,9 +1,9 @@
 import { COMBAT } from '@seven-planets/game';
 
-export function computeBattleWinProbability(
+export const computeBattleWinProbability = (
   attackBase: number,
   defenseBase: number,
-): number {
+): number => {
   const { attackRoll } = COMBAT;
   const { defenseRoll } = COMBAT;
   let wins = 0;
@@ -15,4 +15,4 @@ export function computeBattleWinProbability(
     }
   }
   return wins / ((attackRoll + 1) * (defenseRoll + 1));
-}
+};

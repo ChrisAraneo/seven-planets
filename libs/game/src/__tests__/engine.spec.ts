@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { canAfford, computeBuildingCost } from '../config/constants';
+import { canAfford } from '../functions/can-afford';
+import { computeBuildingCost } from '../functions/compute-building-cost';
 import { createInitialGameState } from '../functions/create-initial-game-state';
 
 describe('Seven Planets engine', () => {

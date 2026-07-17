@@ -4,11 +4,11 @@ import { getHomePlanet } from '../../functions/get-home-planet';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 
-export function isValidPick(
+export const isValidPick = (
   state: GameState,
   { playerId, index }: PickCardPayload,
-): boolean {
-  return chain(state.players[playerId])
+): boolean =>
+  chain(state.players[playerId])
     .thru((player) => ({
       player,
       planet:
@@ -21,4 +21,3 @@ export function isValidPick(
         canPickCard(state, player, state.pool[index], planet),
     )
     .value();
-}

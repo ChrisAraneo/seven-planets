@@ -9,14 +9,12 @@ import { filterAlivePlayers } from './filter-alive-players';
 import { getOwnedPlanets } from './get-owned-planets';
 import { getTechLevel } from './get-tech-level';
 
-export function getInfluenceTarget(
+export const getInfluenceTarget = (
   state: GameState,
   player: Player,
   influenceType: InfluenceType,
-): Player | null {
-  return match(
-    filterAlivePlayers(state).filter((rival) => rival.id !== player.id),
-  )
+): Player | null =>
+  match(filterAlivePlayers(state).filter((rival) => rival.id !== player.id))
     .when(
       (rivals) => rivals.length === 0,
       (): Player | null => null,
@@ -44,4 +42,3 @@ export function getInfluenceTarget(
         )
         .otherwise((): Player | null => null),
     );
-}

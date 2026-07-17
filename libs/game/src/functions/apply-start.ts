@@ -5,8 +5,8 @@ import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';
 import { log } from './log';
 
-export function applyStart(state: GameState): GameState {
-  return match(state)
+export const applyStart = (state: GameState): GameState =>
+  match(state)
     .when(
       () => state.cursor.phase !== 'setup',
       () => state,
@@ -36,4 +36,3 @@ export function applyStart(state: GameState): GameState {
         )
         .value(),
     );
-}

@@ -1,6 +1,6 @@
 import type { Player } from '@seven-planets/game';
 
-export function canTarget(attacker: Player, owner: Player): boolean {
+export const canTarget = (attacker: Player, owner: Player): boolean => {
   if (attacker.isKamikaze) {
     return owner.isHuman;
   }
@@ -8,4 +8,4 @@ export function canTarget(attacker: Player, owner: Player): boolean {
     return false;
   }
   return true;
-}
+};

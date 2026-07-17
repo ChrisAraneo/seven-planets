@@ -1,6 +1,5 @@
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import type { Player } from '../interfaces/player';
-import { getGameStateLastValue } from '../state';
 
-export function getPlayers(): readonly Player[] {
-  return getGameStateLastValue().players;
-}
+export const getPlayers = (): readonly Player[] =>
+  getGameStateLastValue().players;

@@ -38,11 +38,11 @@ const SPECS: ParamSpec[] = [
   { key: 'willDefensive', step: 0.1, min: 0.05, max: 0.7 },
 ];
 
-function round3(n: number): number {
+const round3 = (n: number): number => {
   return Math.round(n * 1000) / 1000;
-}
+};
 
-async function winRate(weights: AiWeights, games: number): Promise<number> {
+const winRate = async (weights: AiWeights, games: number): Promise<number> => {
   setAiWeights(weights);
   let wins = 0;
   for (let g = 0; g < games; g++) {
@@ -50,9 +50,9 @@ async function winRate(weights: AiWeights, games: number): Promise<number> {
     if (result.winner && !result.winner.isHuman) wins++;
   }
   return wins / games;
-}
+};
 
-function weightsFileContent(w: AiWeights): string {
+const weightsFileContent = (w: AiWeights): string => {
   const doc: Record<keyof AiWeights, string> = {
     planHorizon:
       'Strategy look-ahead window in turns (the "next 5-10 turns" plan).',
@@ -107,9 +107,9 @@ export const WEIGHTS: Weights = {
 ${lines.join('\n')}
 }
 `;
-}
+};
 
-async function main(): Promise<void> {
+const main = async (): Promise<void> => {
   const games = Math.max(20, Number(process.argv[2]) || DEFAULT_GAMES);
   const passes = Math.max(1, Number(process.argv[3]) || DEFAULT_PASSES);
 
@@ -196,7 +196,7 @@ async function main(): Promise<void> {
   ].join('\n');
   writeFileSync(reportPath, report + '\n', 'utf8');
   console.log(`Report written to ${reportPath}`);
-}
+};
 
 main().catch((err) => {
   console.error(err);

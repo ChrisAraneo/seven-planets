@@ -1,19 +1,15 @@
-import { assign, fromPairs, mapValues } from 'lodash-es';
-import { match } from 'ts-pattern';
+import { assign, fromPairs } from 'lodash-es';
 
 import type { ActionType } from '../interfaces/action-type';
 import type { BuildingDefinition } from '../interfaces/building-definition';
 import type { BuildingType } from '../interfaces/building-type';
 import type { CardDefinition } from '../interfaces/card-definition';
 import type { CardType } from '../interfaces/card-type';
-import type { Cost } from '../interfaces/cost';
-import type { Hand } from '../interfaces/hand';
 import type { InfluenceCardDefinition } from '../interfaces/influence-card-definition';
 import type { InfluenceType } from '../interfaces/influence-type';
 import type { PlanetStyle } from '../interfaces/planet-style';
 import type { PoolType } from '../interfaces/pool-type';
 import type { ResourceType } from '../interfaces/resource-type';
-import { chain } from '../utils/chain';
 
 export const RESOURCE_TYPES: ResourceType[] = [
   'ORE',
@@ -213,37 +209,6 @@ export const BUILD_ORDER: BuildingType[] = [
   'LAB',
   'SINGULARITY',
 ];
-
-const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
-  MINE: 2,
-  EXTRACTOR: 2,
-  SOLAR: 2,
-  HARVESTER: 2,
-  SPACEPORT: 2,
-  EMBASSY: 2,
-  SINGULARITY: 4,
-};
-export function getMaxLevel(id: BuildingType): number {
-  return BUILDING_MAX_LEVEL[id] || 3;
-}
-
-export function computeBuildingCost(id: BuildingType, level: number): Cost {
-  return match(level)
-    .when(
-      () => level <= 1,
-      () => BUILDINGS[id].cost,
-    )
-    .otherwise(() => mapValues(BUILDINGS[id].cost, (amount) => amount * level));
-}
-
-export function computeIncomeAmount(id: BuildingType, lvl: number): number {
-  return match({ id, lvl })
-    .when(
-      (candidate) => candidate.id === 'MINE' && candidate.lvl >= 2,
-      (): number => 3,
-    )
-    .otherwise((candidate) => candidate.lvl);
-}
 
 assign(
   CARDS,
@@ -504,54 +469,3 @@ export const TAUNTS: string[] = [
   '"You lost this war five turns ago."',
   '"Probability favors the prepared."',
 ];
-
-export function randomInt(minimum: number, maximum: number): number {
-  return minimum + Math.floor(Math.random() * (maximum - minimum + 1));
-}
-export function choice<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-export function shuffleArray<T>(items: T[]): T[] {
-  return chain(items.map((item) => ({ item, key: Math.random() })))
-    .sortBy(({ key }) => key)
-    .map(({ item }) => item)
-    .value();
-}
-
-export function computeHandValue(map: Hand | Cost): number {
-  return CARD_TYPES.reduce(
-    (sum, cardType) => sum + (map[cardType] || 0) * CARDS[cardType].value,
-    0,
-  );
-}
-
-export function canAfford(hand: Hand, cost: Cost): boolean {
-  return (
-    Object.entries(cost).reduce(
-      (shortfall, [type, amount]) =>
-        shortfall + Math.max(0, amount - (hand[type] || 0)),
-      0,
-    ) <=
-    (hand.RELIC || 0) - (cost.RELIC || 0)
-  );
-}
-
-export function getCostLabel(cost: Cost): string {
-  return Object.keys(cost)
-    .map((type) => `${cost[type]}${CARDS[type].icon}`)
-    .join(' ');
-}
-
-export function formatCards(cards: Hand | Cost): string {
-  return match(
-    CARD_TYPES.filter((cardType) => (cards[cardType] || 0) > 0).map(
-      (cardType) => `${cards[cardType]}${CARDS[cardType].icon}`,
-    ),
-  )
-    .when(
-      (parts) => parts.length > 0,
-      (parts) => parts.join(' '),
-    )
-    .otherwise(() => 'nothing');
-}

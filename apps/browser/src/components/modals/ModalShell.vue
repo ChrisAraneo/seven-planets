@@ -5,7 +5,10 @@ const emit = defineEmits<{ close: [] }>();
 
 <template>
   <div id="modal-root">
-    <div class="overlay" @click.self="closeOnOverlay && emit('close')">
+    <div
+      class="overlay"
+      @click.self="closeOnOverlay && emit('close')"
+    >
       <div class="modal">
         <slot />
       </div>

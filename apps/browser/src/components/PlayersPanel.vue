@@ -13,12 +13,12 @@ import type { Player } from '@seven-planets/game';
 
 const game = useGameStore();
 
-function resLine(player: Player): string {
+const resLine = (player: Player): string => {
   return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(
     ' ',
   );
-}
-function actLine(player: Player): string {
+};
+const actLine = (player: Player): string => {
   const heldInf = INFLUENCE_TYPES.filter((t) => player.hand[t] > 0)
     .map((t) => `${CARDS[t].icon}${player.hand[t]}`)
     .join(' ');
@@ -26,7 +26,7 @@ function actLine(player: Player): string {
     ACTION_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(' ') +
     (heldInf ? ` · ${heldInf}` : '')
   );
-}
+};
 </script>
 
 <template>
@@ -39,10 +39,12 @@ function actLine(player: Player): string {
         active: player.id === game.state.activeId && !game.state.over,
         dead: !player.isAlive,
       }"
-      :style="{ borderLeftColor: player.color }">
-      <span class="pname" :style="{ color: player.color }"
-        >{{ player.name }}{{ player.isHuman ? ' ★' : '' }}</span
-      >
+      :style="{ borderLeftColor: player.color }"
+    >
+      <span
+        class="pname"
+        :style="{ color: player.color }"
+      >{{ player.name }}{{ player.isHuman ? ' ★' : '' }}</span>
       <div class="pstats">
         🪐{{
           game.state.planets.filter((planet) => planet.ownerId === player.id)

@@ -22,12 +22,12 @@ import { getOwnedPlanets } from './get-owned-planets';
 import { hasBuilding } from './has-building';
 import type { Plan } from './plan-types';
 
-export function computeOwnDraftValue(
+export const computeOwnDraftValue = (
   player: Player,
   draftPlanet: Planet,
   poolType: PoolType,
   plan: Plan,
-): number {
+): number => {
   const cardDefinition = CARDS[poolType];
   if (isBuildingType(poolType)) {
     return computeBuildingDraftValue(player, draftPlanet, poolType, plan);
@@ -57,14 +57,14 @@ export function computeOwnDraftValue(
       );
     }
   }
-}
+};
 
-function computeBuildingDraftValue(
+const computeBuildingDraftValue = (
   player: Player,
   draftPlanet: Planet,
   buildingType: BuildingType,
   plan: Plan,
-): number {
+): number => {
   const level = getNextAllowedLevel(player, draftPlanet, buildingType);
   if (!level) {
     return -1;
@@ -89,9 +89,9 @@ function computeBuildingDraftValue(
     }
   }
   return value;
-}
+};
 
-function computeAttackDraftValue(player: Player, plan: Plan): number {
+const computeAttackDraftValue = (player: Player, plan: Plan): number => {
   if (player.hasPacifistStatus) {
     return -1;
   }
@@ -110,9 +110,9 @@ function computeAttackDraftValue(player: Player, plan: Plan): number {
     attackValue += 1;
   }
   return attackValue - (player.hand.ATTACK || 0) * 0.5;
-}
+};
 
-function computeRecruitDraftValue(player: Player, plan: Plan): number {
+const computeRecruitDraftValue = (player: Player, plan: Plan): number => {
   let recruitValue = 1.3;
   if (
     hasBuilding(player, 'BARRACKS') &&
@@ -127,30 +127,30 @@ function computeRecruitDraftValue(player: Player, plan: Plan): number {
     recruitValue += 1.6;
   }
   return recruitValue - (player.hand.RECRUIT || 0) * 0.4;
-}
+};
 
-function computeMoveDraftValue(player: Player): number {
+const computeMoveDraftValue = (player: Player): number => {
   let moveValue = 0.8;
   if (getOwnedPlanets(player).length >= 2 && hasBuilding(player, 'SPACEPORT')) {
     moveValue += 0.8;
   }
   return moveValue - (player.hand.MOVE || 0) * 0.6;
-}
+};
 
-function computeTradeDraftValue(player: Player): number {
+const computeTradeDraftValue = (player: Player): number => {
   let tradeValue = 1;
   if (hasBuilding(player, 'EMBASSY')) {
     tradeValue += 0.6;
   }
   return tradeValue - (player.hand.TRADE || 0) * 0.5;
-}
+};
 
-function computeResourceDraftValue(
+const computeResourceDraftValue = (
   player: Player,
   poolType: PoolType,
   plan: Plan,
   baseValue: number,
-): number {
+): number => {
   let resourceValue = baseValue;
   const head = plan.buildQueue.at(0);
   if (head && (head.cost[poolType] || 0) > (player.hand[poolType] || 0)) {
@@ -166,4 +166,4 @@ function computeResourceDraftValue(
     resourceValue += 0.3;
   }
   return resourceValue - Math.min(1.5, (player.hand[poolType] || 0) * 0.08);
-}
+};

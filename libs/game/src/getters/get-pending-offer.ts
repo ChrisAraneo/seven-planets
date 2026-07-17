@@ -1,6 +1,5 @@
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import type { PendingOffer } from '../interfaces/pending-offer';
-import { getGameStateLastValue } from '../state';
 
-export function getPendingOffer(): PendingOffer | null {
-  return getGameStateLastValue().pendingOffer;
-}
+export const getPendingOffer = (): PendingOffer | null =>
+  getGameStateLastValue().pendingOffer;

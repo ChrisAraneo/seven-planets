@@ -28,24 +28,24 @@ import { getOwnedPlanets } from './get-owned-planets';
 import { hasBuilding } from './has-building';
 import { isUnderTruce } from './is-under-truce';
 
-export function computeBuildingWorth(
+export const computeBuildingWorth = (
   player: Player,
   buildingType: BuildingType,
   planet: Planet,
   level: number,
-): number {
+): number => {
   const costValue = computeHandValue(computeBuildingCost(buildingType, level));
   const grossValue =
     computeIncomeWorth(player, buildingType, level) +
     computeSpecialWorth(player, buildingType, planet, level);
   return grossValue - costValue;
-}
+};
 
-function computeIncomeWorth(
+const computeIncomeWorth = (
   player: Player,
   buildingType: BuildingType,
   level: number,
-): number {
+): number => {
   const incomeResource = BUILDINGS[buildingType].income;
   if (!incomeResource) {
     return 0;
@@ -60,14 +60,14 @@ function computeIncomeWorth(
     roiHorizon *
     liquidity
   );
-}
+};
 
-function computeSpecialWorth(
+const computeSpecialWorth = (
   player: Player,
   buildingType: BuildingType,
   planet: Planet,
   level: number,
-): number {
+): number => {
   switch (buildingType) {
     case 'BARRACKS': {
       return computeBarracksWorth(player, planet, level);
@@ -100,13 +100,13 @@ function computeSpecialWorth(
       return 0;
     }
   }
-}
+};
 
-function computeBarracksWorth(
+const computeBarracksWorth = (
   player: Player,
   planet: Planet,
   level: number,
-): number {
+): number => {
   const roiHorizon = getAiState().W.buildRoiHorizon;
   let grossValue = 0;
   if (!hasBuilding(player, 'BARRACKS')) {
@@ -123,13 +123,13 @@ function computeBarracksWorth(
     grossValue += 3;
   }
   return grossValue;
-}
+};
 
-function computeSiloWorth(
+const computeSiloWorth = (
   player: Player,
   planet: Planet,
   level: number,
-): number {
+): number => {
   if (player.hasPacifistStatus) {
     return 0;
   }
@@ -144,13 +144,13 @@ function computeSiloWorth(
     grossValue += computeCapacityUnlockWorth(player, planet, level);
   }
   return grossValue;
-}
+};
 
-function computeCapacityUnlockWorth(
+const computeCapacityUnlockWorth = (
   player: Player,
   planet: Planet,
   level: number,
-): number {
+): number => {
   let minimumTroopsNeeded = Infinity;
   for (const targetPlanet of getGameStateLastValue().planets) {
     const isTargetable =
@@ -170,21 +170,21 @@ function computeCapacityUnlockWorth(
     upgradedCapacity >= minimumTroopsNeeded
     ? 7
     : 0;
-}
+};
 
-function computeShieldWorth(
+const computeShieldWorth = (
   player: Player,
   planet: Planet,
   level: number,
-): number {
+): number => {
   const risk = 1 - computeHoldProbability(player, planet, planet.troops);
   return (
     (SHIELD_DEFENSE[level] - SHIELD_DEFENSE[level - 1]) * 0.35 +
     risk * computePlanetValue(planet) * 0.6
   );
-}
+};
 
-function computeSpaceportWorth(player: Player, level: number): number {
+const computeSpaceportWorth = (player: Player, level: number): number => {
   let grossValue =
     getOwnedPlanets(player).length >= 2 ? (level === 1 ? 4 : 2.5) : 0.5;
   if (
@@ -206,4 +206,4 @@ function computeSpaceportWorth(player: Player, level: number): number {
     }
   }
   return grossValue;
-}
+};

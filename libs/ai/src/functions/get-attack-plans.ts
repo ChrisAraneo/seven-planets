@@ -33,7 +33,7 @@ export interface AttackPlan {
   score: number;
 }
 
-export function getAttackPlans(player: Player): AttackPlan[] {
+export const getAttackPlans = (player: Player): AttackPlan[] => {
   if (player.hasPacifistStatus) {
     return [];
   }
@@ -57,18 +57,17 @@ export function getAttackPlans(player: Player): AttackPlan[] {
   return plans.toSorted(
     (attackPlan, eachAttackPlan) => eachAttackPlan.score - attackPlan.score,
   );
-}
+};
 
-function getLossWeight(player: Player): number {
-  return getAiState().W.troopValue * (player.isKamikaze ? 0.25 : 1);
-}
+const getLossWeight = (player: Player): number =>
+  getAiState().W.troopValue * (player.isKamikaze ? 0.25 : 1);
 
-function planStrikeFrom(
+const planStrikeFrom = (
   player: Player,
   source: Planet,
   target: Planet,
   defenderOwner: Player,
-): AttackPlan | null {
+): AttackPlan | null => {
   if (!source.buildings.SILO) {
     return null;
   }
@@ -90,16 +89,16 @@ function planStrikeFrom(
         troopsToConquer,
       )
     : planRaid(player, source, target, defenderOwner, maxTroops);
-}
+};
 
-function planConquest(
+const planConquest = (
   player: Player,
   source: Planet,
   target: Planet,
   defenderOwner: Player,
   maxTroops: number,
   troopsToConquer: number,
-): AttackPlan {
+): AttackPlan => {
   const defenseBase = computeDefenseBase(target);
   const minimumWinProbability =
     computeEffectiveMinimumConquerProbability(player);
@@ -128,15 +127,15 @@ function planConquest(
   ]
     .map((count) => buildConquestPlan(player, source, target, count, value))
     .reduce((best, plan) => (plan.score > best.score ? plan : best));
-}
+};
 
-function buildConquestPlan(
+const buildConquestPlan = (
   player: Player,
   source: Planet,
   target: Planet,
   count: number,
   value: number,
-): AttackPlan {
+): AttackPlan => {
   const winProbability = computeBattleWinProbability(
     computeAttackBase(count, source),
     computeDefenseBase(target),
@@ -164,15 +163,15 @@ function buildConquestPlan(
       winProbability * holdProbability * value -
       expectedLoss * getLossWeight(player),
   };
-}
+};
 
-function planRaid(
+const planRaid = (
   player: Player,
   source: Planet,
   target: Planet,
   defenderOwner: Player,
   raidTroops: number,
-): AttackPlan {
+): AttackPlan => {
   const winProbability = computeBattleWinProbability(
     computeAttackBase(raidTroops, source),
     computeDefenseBase(target),
@@ -186,9 +185,9 @@ function planRaid(
     (1 - winProbability) * computeLossesOnDefeat(raidTroops);
   const zeal = player.isKamikaze
     ? 3
-    : computePlayerStrength(defenderOwner) > 1.3 * computeAverageStrength()
+    : (computePlayerStrength(defenderOwner) > 1.3 * computeAverageStrength()
       ? 1.4
-      : 1.05;
+      : 1.05);
   return {
     source,
     target,
@@ -202,4 +201,4 @@ function planRaid(
       winProbability * defenderLoss * getAiState().W.troopValue * zeal -
       expectedLoss * getLossWeight(player),
   };
-}
+};

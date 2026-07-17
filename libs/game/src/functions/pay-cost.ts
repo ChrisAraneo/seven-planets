@@ -2,19 +2,20 @@ import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
 import type { Hand } from '../interfaces/hand';
 import { chain } from '../utils/chain';
+import { spendFromHand } from './spend-from-hand';
 import { updatePlayer } from './update-player';
 
-interface PaymentProgress {
+export interface PaymentProgress {
   hand: Hand;
   relicsNeeded: number;
 }
 
-export function payCost(
+export const payCost = (
   state: GameState,
   playerId: number,
   cost: Cost,
-): GameState {
-  return updatePlayer(state, playerId, (player) => ({
+): GameState =>
+  updatePlayer(state, playerId, (player) => ({
     ...player,
     hand: chain(Object.entries(cost))
       .reduce(
@@ -28,17 +29,3 @@ export function payCost(
       }))
       .value(),
   }));
-}
-
-function spendFromHand(
-  progress: PaymentProgress,
-  type: string,
-  amount: number,
-): PaymentProgress {
-  return chain(Math.min(progress.hand[type], amount))
-    .thru((use) => ({
-      hand: { ...progress.hand, [type]: progress.hand[type] - use },
-      relicsNeeded: progress.relicsNeeded + (amount - use),
-    }))
-    .value();
-}

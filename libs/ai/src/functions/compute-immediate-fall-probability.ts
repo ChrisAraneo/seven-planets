@@ -10,10 +10,10 @@ import { computeMinimumTroopsToConquer } from './compute-minimum-troops-to-conqu
 import { computeProjectedStrike } from './compute-projected-strike';
 import { isUnderTruce } from './is-under-truce';
 
-export function computeImmediateFallProbability(
+export const computeImmediateFallProbability = (
   owner: Player,
   planet: Planet,
-): number {
+): number => {
   if (isUnderTruce(planet)) {
     return 0;
   }
@@ -36,4 +36,4 @@ export function computeImmediateFallProbability(
     }
   }
   return 1 - safeProbability;
-}
+};

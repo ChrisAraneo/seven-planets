@@ -1,30 +1,25 @@
 import { filter, firstValueFrom } from 'rxjs';
-import { match, P } from 'ts-pattern';
 
 import { getGameOverObject } from '..';
+import { dispatch } from '../dispatch';
+import { getGameState } from '../get-game-state';
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import { getTurn } from '../getters/get-turn';
-import type { GameOver } from '../interfaces/game-over';
-import {
-  dispatch,
-  getGameState,
-  getGameStateLastValue,
-  resetGameState,
-  setGameState,
-} from '../state';
+import { resetGameState } from '../reset-game-state';
+import { setGameState } from '../set-game-state';
 import { assignKamikazes } from './assign-kamikazes';
+import { getGameResult } from './get-game-result';
 
-const { nonNullable } = P;
-
-interface SimulationResult {
+export interface SimulationResult {
   turns: number;
   winner: { id: number; name: string; isHuman: boolean } | null;
   reason: string;
 }
 
-export async function simulateGame(
+export const simulateGame = async (
   maxTurns = 400,
   options: { kamikazeCount?: number } = {},
-): Promise<SimulationResult> {
+): Promise<SimulationResult> => {
   resetGameState();
   setGameState({
     ...assignKamikazes(getGameStateLastValue(), options.kamikazeCount ?? 0),
@@ -36,20 +31,4 @@ export async function simulateGame(
   dispatch({ kind: 'START' });
   await done;
   return getGameResult(getGameOverObject(), getTurn());
-}
-
-function getGameResult(over: GameOver | null, turns: number): SimulationResult {
-  return {
-    turns,
-    winner: match(over?.winner)
-      .with(nonNullable, (player) => ({
-        id: player.id,
-        name: player.name,
-        isHuman: player.isHuman,
-      }))
-      .otherwise(() => null),
-    reason: match(over)
-      .with(nonNullable, (gameOver) => gameOver.reason)
-      .otherwise(() => 'timeout'),
-  };
-}
+};

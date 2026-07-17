@@ -5,35 +5,35 @@ import { computeTechLevel } from './compute-tech-level';
 import { computeTotalTroops } from './compute-total-troops';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export function getSkipTarget(
+export const getSkipTarget = (
   player: Player,
   influenceType: InfluenceType,
-): Player | null {
+): Player | null => {
   const rivals = getAlivePlayers().filter((rival) => rival.id !== player.id);
   if (rivals.length === 0) {
     return null;
   }
   if (influenceType === 'SKIP_ARMY') {
     return rivals.reduce((best, rival) =>
-      computeTotalTroops(rival) > computeTotalTroops(best) ? rival : best,
+      (computeTotalTroops(rival) > computeTotalTroops(best) ? rival : best),
     );
   }
   if (influenceType === 'SKIP_PLANETS') {
     return rivals.reduce((best, rival) =>
-      getOwnedPlanets(rival).length > getOwnedPlanets(best).length
+      (getOwnedPlanets(rival).length > getOwnedPlanets(best).length
         ? rival
-        : best,
+        : best),
     );
   }
   if (influenceType === 'SKIP_INFLUENCE') {
     return rivals.reduce((best, rival) =>
-      rival.influence < best.influence ? rival : best,
+      (rival.influence < best.influence ? rival : best),
     );
   }
   if (influenceType === 'SKIP_TECH') {
     return rivals.reduce((best, rival) =>
-      computeTechLevel(rival) > computeTechLevel(best) ? rival : best,
+      (computeTechLevel(rival) > computeTechLevel(best) ? rival : best),
     );
   }
   return null;
-}
+};

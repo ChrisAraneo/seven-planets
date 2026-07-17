@@ -17,7 +17,7 @@ export interface BuildCandidate {
   pComplete: number;
 }
 
-export function getBuildCandidates(player: Player): BuildCandidate[] {
+export const getBuildCandidates = (player: Player): BuildCandidate[] => {
   const candidates: BuildCandidate[] = [];
   for (const planet of getOwnedPlanets(player)) {
     for (const buildingType of BUILD_ORDER) {
@@ -42,13 +42,13 @@ export function getBuildCandidates(player: Player): BuildCandidate[] {
     }
   }
   return queue;
-}
+};
 
-function createBuildCandidate(
+const createBuildCandidate = (
   player: Player,
   planet: Planet,
   buildingType: BuildingType,
-): BuildCandidate | null {
+): BuildCandidate | null => {
   const aiState = getAiState();
   const level = getNextAllowedLevel(player, planet, buildingType);
   if (!level) {
@@ -64,4 +64,4 @@ function createBuildCandidate(
     computeCardAppearProbability(buildingType, aiState.W.planHorizon) *
     Math.max(0.1, Math.min(1, 1.2 - turnsToAfford / aiState.W.planHorizon));
   return { id: buildingType, planet, level, cost, worth, pComplete };
-}
+};

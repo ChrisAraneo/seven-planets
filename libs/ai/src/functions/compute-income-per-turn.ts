@@ -7,7 +7,7 @@ import {
 
 import { getOwnedPlanets } from './get-owned-planets';
 
-export function computeIncomePerTurn(player: Player): Cost {
+export const computeIncomePerTurn = (player: Player): Cost => {
   const income: Cost = {};
   for (const planet of getOwnedPlanets(player)) {
     for (const buildingType of BUILD_ORDER) {
@@ -20,4 +20,4 @@ export function computeIncomePerTurn(player: Player): Cost {
     }
   }
   return income;
-}
+};

@@ -7,9 +7,9 @@ import { computePlanetValue } from './compute-planet-value';
 import { getOwnedPlanets } from './get-owned-planets';
 import { isUnderTruce } from './is-under-truce';
 
-export function getBestCoupTarget(
+export const getBestCoupTarget = (
   player: Player,
-): { planet: Planet; value: number } | null {
+): { planet: Planet; value: number } | null => {
   if (player.isKamikaze) {
     return null;
   }
@@ -32,14 +32,14 @@ export function getBestCoupTarget(
   }
 
   return best;
-}
+};
 
-function isViableCoupTarget(
+const isViableCoupTarget = (
   player: Player,
   owner: Player,
   planet: Planet,
   canTakeLastPlanet: boolean,
-): boolean {
+): boolean => {
   if (
     planet.ownerId === player.id ||
     !owner.isAlive ||
@@ -49,4 +49,4 @@ function isViableCoupTarget(
     return false;
   }
   return canTakeLastPlanet || getOwnedPlanets(owner).length > 1;
-}
+};

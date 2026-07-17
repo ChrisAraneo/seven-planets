@@ -1,5 +1,4 @@
-import { getGameStateLastValue } from '../state';
+import { getGameStateLastValue } from '../get-game-state-last-value';
 
-export function getAwaitingPick(): boolean {
-  return getGameStateLastValue().isAwaitingPick;
-}
+export const getAwaitingPick = (): boolean =>
+  getGameStateLastValue().isAwaitingPick;

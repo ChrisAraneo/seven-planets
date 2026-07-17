@@ -14,14 +14,12 @@ import { spendInfluenceCard } from './spend-influence-card';
 
 const { nullish } = P;
 
-export function playSkip(
+export const playSkip = (
   state: GameState,
   playerId: number,
   influenceType: InfluenceType,
-): boolean {
-  return match(
-    getInfluenceTarget(state, state.players[playerId], influenceType),
-  )
+): boolean =>
+  match(getInfluenceTarget(state, state.players[playerId], influenceType))
     .with(nullish, () => false)
     .otherwise((target) =>
       chain(state)
@@ -60,4 +58,3 @@ export function playSkip(
         .thru(() => true)
         .value(),
     );
-}

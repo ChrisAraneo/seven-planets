@@ -5,11 +5,11 @@ import { computeSiloBonus } from '@seven-planets/game';
 import { computeRecruitRate } from './compute-recruit-rate';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export function computeProjectedStrike(
+export const computeProjectedStrike = (
   player: Player,
   turnsAhead: number,
   excludePlanetId = -1,
-): { n: number; bonus: number } {
+): { n: number; bonus: number } => {
   let best = { n: 0, bonus: 0 };
   const growth = computeRecruitRate(player) * turnsAhead;
   for (const planet of getOwnedPlanets(player)) {
@@ -24,4 +24,4 @@ export function computeProjectedStrike(
     }
   }
   return best;
-}
+};

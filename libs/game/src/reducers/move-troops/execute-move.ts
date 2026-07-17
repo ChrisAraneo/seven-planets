@@ -1,40 +1,19 @@
-import { assign, cloneDeep, noop } from 'lodash-es';
+import { assign, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 
 import type { MoveTroopsPayload } from '../../actions/move-troops/move-troops';
 import { emitEffect } from '../../functions/emit-effect';
 import { getPluralSuffix } from '../../functions/get-plural-suffix';
-import { hasActionCard } from '../../functions/has-action-card';
 import { log } from '../../functions/log';
 import { spendActionCard } from '../../functions/spend-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 
-export function applyMoveTroops(
-  state: GameState,
-  payload: MoveTroopsPayload,
-): GameState {
-  return match(state)
-    .when(
-      () => payload.playerId !== state.activeId || Boolean(state.over),
-      () => state,
-    )
-    .when(
-      () => !hasActionCard(state.players[payload.playerId], 'MOVE'),
-      () => state,
-    )
-    .otherwise(() =>
-      chain(cloneDeep(state))
-        .tap((clone) => executeMove(clone, payload))
-        .value(),
-    );
-}
-
-function executeMove(
+export const executeMove = (
   state: GameState,
   { playerId, fromId, toId, troops }: MoveTroopsPayload,
-): void {
-  return match(Boolean(state.planets[fromId].buildings.SPACEPORT))
+): void =>
+  match(Boolean(state.planets[fromId].buildings.SPACEPORT))
     .with(false, noop)
     .otherwise(
       () =>
@@ -83,4 +62,3 @@ function executeMove(
           )
           .value(),
     );
-}

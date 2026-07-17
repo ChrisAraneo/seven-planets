@@ -9,7 +9,10 @@ import { computeProjectedStrike } from './compute-projected-strike';
 import { getOwnedPlanets } from './get-owned-planets';
 import { isUnderTruce } from './is-under-truce';
 
-export function isImminentAttacker(owner: Player, attacker: Player): boolean {
+export const isImminentAttacker = (
+  owner: Player,
+  attacker: Player,
+): boolean => {
   if (attacker.hasPacifistStatus || (attacker.hand.ATTACK || 0) < 1) {
     return false;
   }
@@ -31,4 +34,4 @@ export function isImminentAttacker(owner: Player, attacker: Player): boolean {
     }
   }
   return false;
-}
+};

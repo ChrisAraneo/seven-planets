@@ -23,13 +23,13 @@ interface HoldContext {
   staticDefense: number;
 }
 
-export function computeHoldProbability(
+export const computeHoldProbability = (
   owner: Player,
   planet: Planet,
   garrison: number,
   protectedUntil: number = planet.protectedUntil,
   horizon: number = getAiState().W.holdHorizon,
-): number {
+): number => {
   let holdProbability = 1;
   const context: HoldContext = {
     planet,
@@ -54,9 +54,12 @@ export function computeHoldProbability(
     }
   }
   return holdProbability;
-}
+};
 
-function computeAttackerThreat(context: HoldContext, attacker: Player): number {
+const computeAttackerThreat = (
+  context: HoldContext,
+  attacker: Player,
+): number => {
   const peakWinProbability = computePeakWinProbability(context, attacker);
   if (peakWinProbability <= 0) {
     return 0;
@@ -72,12 +75,12 @@ function computeAttackerThreat(context: HoldContext, attacker: Player): number {
   return (
     peakWinProbability * attackCardProbability * computeAggression(attacker)
   );
-}
+};
 
-function computePeakWinProbability(
+const computePeakWinProbability = (
   context: HoldContext,
   attacker: Player,
-): number {
+): number => {
   let peakWinProbability = 0;
   for (let turnsAhead = 1; turnsAhead <= context.horizon; turnsAhead++) {
     if (getTurn() + turnsAhead > context.protectedUntil) {
@@ -104,4 +107,4 @@ function computePeakWinProbability(
     }
   }
   return peakWinProbability;
-}
+};

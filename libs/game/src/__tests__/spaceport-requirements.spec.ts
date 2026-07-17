@@ -4,10 +4,10 @@ import { canPickCard } from '../functions/can-pick-card';
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
-import { applyMoveTroops } from '../reducers/move-troops/move-troops';
+import { applyMoveTroops } from '../reducers/move-troops/apply-move-troops';
 
-function player(hand: Record<string, number> = {}): Player {
-  return {
+const player = (hand: Record<string, number> = {}): Player =>
+  ({
     id: 0,
     name: 'You',
     color: '#fff',
@@ -15,28 +15,26 @@ function player(hand: Record<string, number> = {}): Player {
     isAlive: true,
     hand,
     influence: 0,
-  } as unknown as Player;
-}
+  }) as unknown as Player;
 
-function planet(
+const planet = (
   id: number,
   troops: number,
   buildings: Record<string, number>,
-): Planet {
-  return {
+): Planet =>
+  ({
     id,
     name: `P${id}`,
     ownerId: 0,
     troops,
     buildings,
-  } as unknown as Planet;
-}
+  }) as unknown as Planet;
 
-function state(
+const state = (
   planets: Planet[],
   hand: Record<string, number> = {},
-): GameState {
-  return {
+): GameState =>
+  ({
     turn: 12,
     phase: 'action',
     cursor: { phase: 'action', seatQueue: [0], seatIdx: 0 },
@@ -57,8 +55,7 @@ function state(
     isAwaitingAction: true,
     inputSeq: 0,
     pendingOffer: null,
-  } as unknown as GameState;
-}
+  }) as unknown as GameState;
 
 describe('Move requires a Spaceport on the SOURCE planet', () => {
   const move = { playerId: 0, fromId: 0, toId: 1, troops: 3 };

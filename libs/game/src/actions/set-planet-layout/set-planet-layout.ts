@@ -1,4 +1,4 @@
-import { dispatch } from '../../state';
+import { dispatch } from '../../dispatch';
 
 export interface PlanetLayout {
   x: number;
@@ -6,6 +6,6 @@ export interface PlanetLayout {
   r: number;
 }
 
-export function setPlanetLayout(layout: readonly PlanetLayout[]): void {
+export const setPlanetLayout = (layout: readonly PlanetLayout[]): void => {
   dispatch({ kind: 'SET_PLANET_LAYOUT', payload: layout });
-}
+};

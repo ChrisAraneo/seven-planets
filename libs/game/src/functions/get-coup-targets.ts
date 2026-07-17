@@ -5,7 +5,7 @@ import { getOwnedPlanets } from './get-owned-planets';
 import { isPacifist } from './is-pacifist';
 import { isUnderTruce } from './is-under-truce';
 
-export function getCoupTargets(state: GameState, player: Player): Planet[] {
+export const getCoupTargets = (state: GameState, player: Player): Planet[] => {
   const canTakeLast = isPacifist(player);
   return state.planets.filter(
     (planet) =>
@@ -15,4 +15,4 @@ export function getCoupTargets(state: GameState, player: Player): Planet[] {
       (canTakeLast ||
         getOwnedPlanets(state, state.players[planet.ownerId]).length > 1),
   );
-}
+};

@@ -18,12 +18,12 @@ import { getBuildCandidates } from '../functions/get-build-candidates';
 import { getPlan } from '../functions/get-plan';
 import { resetAiWeights } from '../functions/reset-ai-weights';
 
-function midGameState(): GameState {
+const midGameState = (): GameState => {
   resetGameState();
   const state = getGameStateLastValue();
   state.turn = 20;
   return state;
-}
+};
 
 describe('mastermind combat analytics', () => {
   it('computes exact battle win probabilities', () => {

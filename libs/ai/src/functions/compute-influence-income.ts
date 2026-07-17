@@ -4,7 +4,7 @@ import { PACIFIST_INFLUENCE } from '@seven-planets/game';
 import { getOwnedPlanets } from './get-owned-planets';
 import { hasBuilding } from './has-building';
 
-export function computeInfluenceIncome(player: Player): number {
+export const computeInfluenceIncome = (player: Player): number => {
   let income = 0;
   for (const planet of getOwnedPlanets(player)) {
     if ((planet.buildings.EMBASSY || 0) >= 2) {
@@ -18,4 +18,4 @@ export function computeInfluenceIncome(player: Player): number {
     income += 0.25;
   }
   return income;
-}
+};

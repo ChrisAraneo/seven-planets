@@ -60,20 +60,20 @@ watch(
   },
 );
 
-function changePartner(id: number): void {
+const changePartner = (id: number): void => {
   partnerId.value = id;
   for (const t of RESOURCE_TYPES)
     get[t] = Math.min(get[t], partner.value.hand[t]);
   note.value = { msg: 'Adjust the offer, then transmit it.', cls: 'info' };
-}
+};
 
-function step(side: 'give' | 'get', t: string, delta: number): void {
+const step = (side: 'give' | 'get', t: string, delta: number): void => {
   if (side === 'give')
     give[t] = Math.max(0, Math.min(human.hand[t], give[t] + delta));
   else get[t] = Math.max(0, Math.min(partner.value.hand[t], get[t] + delta));
-}
+};
 
-function propose(): void {
+const propose = (): void => {
   const gives: Cost = {};
   const gets: Cost = {};
   for (const t of RESOURCE_TYPES) {
@@ -120,7 +120,7 @@ function propose(): void {
       cls: 'ok',
     };
   }
-}
+};
 </script>
 
 <template>
@@ -131,8 +131,13 @@ function propose(): void {
       <select
         class="btn"
         :value="partnerId"
-        @change="changePartner(+($event.target as HTMLSelectElement).value)">
-        <option v-for="player in partners" :key="player.id" :value="player.id">
+        @change="changePartner(+($event.target as HTMLSelectElement).value)"
+      >
+        <option
+          v-for="player in partners"
+          :key="player.id"
+          :value="player.id"
+        >
           {{ player.name }}
         </option>
       </select>
@@ -146,21 +151,20 @@ function propose(): void {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="resourceType in RESOURCE_TYPES" :key="resourceType">
+        <tr
+          v-for="resourceType in RESOURCE_TYPES"
+          :key="resourceType"
+        >
           <td>{{ CARDS[resourceType].icon }} {{ CARDS[resourceType].name }}</td>
           <td>
             <span class="stepper">
-              <button @click="step('give', resourceType, -1)">−</button
-              ><span class="sval">{{ give[resourceType] }}</span
-              ><button @click="step('give', resourceType, 1)">+</button>
+              <button @click="step('give', resourceType, -1)">−</button><span class="sval">{{ give[resourceType] }}</span><button @click="step('give', resourceType, 1)">+</button>
             </span>
             <span class="dimtx">/ {{ human.hand[resourceType] }}</span>
           </td>
           <td>
             <span class="stepper">
-              <button @click="step('get', resourceType, -1)">−</button
-              ><span class="sval">{{ get[resourceType] }}</span
-              ><button @click="step('get', resourceType, 1)">+</button>
+              <button @click="step('get', resourceType, -1)">−</button><span class="sval">{{ get[resourceType] }}</span><button @click="step('get', resourceType, 1)">+</button>
             </span>
             <span class="dimtx">/ {{ partner.hand[resourceType] }}</span>
           </td>
@@ -170,12 +174,23 @@ function propose(): void {
     <div
       class="mnote"
       :class="{ warn: note.cls === 'warn' }"
-      :style="note.cls === 'ok' ? { color: '#7dff8a' } : {}">
+      :style="note.cls === 'ok' ? { color: '#7dff8a' } : {}"
+    >
       {{ note.msg }}
     </div>
     <div class="mbtns">
-      <button class="btn" @click="propose">📡 Transmit Offer</button>
-      <button class="btn" @click="ui.closeModal()">Close</button>
+      <button
+        class="btn"
+        @click="propose"
+      >
+        📡 Transmit Offer
+      </button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Close
+      </button>
     </div>
   </ModalShell>
 </template>

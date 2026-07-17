@@ -46,10 +46,10 @@ const STRATEGY_KINDS: StrategyKind[] = [
   'COUP_BANK',
 ];
 
-export function computePlan(
+export const computePlan = (
   player: Player,
   prevKind: StrategyKind | null,
-): Plan {
+): Plan => {
   const tempo = Math.min(1.8, 0.8 + getTurn() / 50);
   const queue = getBuildCandidates(player);
   const strike = getBestAttackNow(player);
@@ -77,9 +77,9 @@ export function computePlan(
     threat,
     scores,
   };
-}
+};
 
-function computeDevelopScore(queue: BuildCandidate[]): number {
+const computeDevelopScore = (queue: BuildCandidate[]): number => {
   const ecoTempo = Math.max(0.45, 1.15 - getTurn() / 90);
   return (
     queue
@@ -91,28 +91,28 @@ function computeDevelopScore(queue: BuildCandidate[]): number {
     0.45 *
     ecoTempo
   );
-}
+};
 
-function getStagingPlanet(player: Player): Planet | null {
+const getStagingPlanet = (player: Player): Planet | null => {
   const silos = getOwnedPlanets(player).filter(
     (planet) => planet.buildings.SILO,
   );
   return silos.length > 0
     ? silos.reduce((best, candidatePlanet) =>
-        getRocketCapacity(candidatePlanet) > getRocketCapacity(best) ||
+        (getRocketCapacity(candidatePlanet) > getRocketCapacity(best) ||
         (getRocketCapacity(candidatePlanet) === getRocketCapacity(best) &&
           candidatePlanet.troops > best.troops)
           ? candidatePlanet
-          : best,
+          : best),
       )
     : null;
-}
+};
 
-function computeBestInvasion(
+const computeBestInvasion = (
   player: Player,
   staging: Planet | null,
   tempo: number,
-): InvasionPlan | null {
+): InvasionPlan | null => {
   let best: InvasionPlan | null = null;
   for (const target of getGameStateLastValue().planets) {
     const candidate = scoreInvasion(player, target, staging, tempo);
@@ -121,14 +121,14 @@ function computeBestInvasion(
     }
   }
   return best;
-}
+};
 
-function scoreInvasion(
+const scoreInvasion = (
   player: Player,
   target: Planet,
   staging: Planet | null,
   tempo: number,
-): InvasionPlan | null {
+): InvasionPlan | null => {
   const aiState = getAiState();
   const defenderOwner = getPlayerByIndex(target.ownerId);
   if (
@@ -169,13 +169,13 @@ function scoreInvasion(
     targetId: target.id,
     troopsNeeded: neededTroops + aiState.W.reserveTroops,
   };
-}
+};
 
-function computeTurnsToStage(
+const computeTurnsToStage = (
   player: Player,
   staging: Planet | null,
   neededTroops: number,
-): number {
+): number => {
   const recruitmentRate = Math.max(0.4, computeRecruitRate(player));
   const stagedTroops = staging ? staging.troops : 0;
   return (
@@ -187,13 +187,13 @@ function computeTurnsToStage(
       ),
     ) + (staging ? 0 : 4)
   );
-}
+};
 
-function computeNeededTroops(
+const computeNeededTroops = (
   target: Planet,
   defenderOwner: Player,
   stagingBonus: number,
-): number {
+): number => {
   const futureDefenders = Math.round(
     target.troops + computeRecruitRate(defenderOwner) * 3,
   );
@@ -214,9 +214,9 @@ function computeNeededTroops(
     neededTroops++;
   }
   return neededTroops;
-}
+};
 
-function computeThreat(player: Player): number {
+const computeThreat = (player: Player): number => {
   let threat = 0;
   for (const planet of getOwnedPlanets(player)) {
     threat +=
@@ -225,9 +225,9 @@ function computeThreat(player: Player): number {
       (getOwnedPlanets(player).length === 1 ? 3 : 0.6);
   }
   return threat;
-}
+};
 
-function computeCoupBankScore(player: Player, threat: number): number {
+const computeCoupBankScore = (player: Player, threat: number): number => {
   const aiState = getAiState();
   const coupCost = INFLUENCE_CARDS.COUP.cost;
   const coupTarget = getBestCoupTarget(player);
@@ -238,9 +238,9 @@ function computeCoupBankScore(player: Player, threat: number): number {
   const turnsToCoup =
     player.influence >= coupCost
       ? 0
-      : starIncome > 0.05
+      : (starIncome > 0.05
         ? (coupCost - player.influence) / starIncome
-        : 99;
+        : 99);
   let coupBank = 0;
   if (turnsToCoup <= aiState.W.planHorizon * 2) {
     coupBank = coupTarget.value * 0.92 ** turnsToCoup * 0.8;
@@ -252,12 +252,12 @@ function computeCoupBankScore(player: Player, threat: number): number {
     coupBank *= Math.max(0.3, 1 - threat * 0.08);
   }
   return coupBank;
-}
+};
 
-function pickStrategy(
+const pickStrategy = (
   scores: Record<StrategyKind, number>,
   prevKind: StrategyKind | null,
-): StrategyKind {
+): StrategyKind => {
   if (prevKind) {
     scores[prevKind] *= getAiState().W.planStickiness;
   }
@@ -268,23 +268,23 @@ function pickStrategy(
     }
   }
   return kind;
-}
+};
 
-function prioritizeEnablers(
+const prioritizeEnablers = (
   queue: BuildCandidate[],
   kind: StrategyKind,
   player: Player,
-): BuildCandidate[] {
+): BuildCandidate[] => {
   const enabler =
     kind === 'MILITARIZE' || kind === 'STRIKE'
       ? (candidate: BuildCandidate) =>
           (candidate.id === 'BARRACKS' && !hasBuilding(player, 'BARRACKS')) ||
           (candidate.id === 'SILO' && !hasBuilding(player, 'SILO'))
-      : kind === 'FORTIFY'
+      : (kind === 'FORTIFY'
         ? (candidate: BuildCandidate) =>
             (candidate.id === 'BARRACKS' && !hasBuilding(player, 'BARRACKS')) ||
             candidate.id === 'SHIELD'
-        : null;
+        : null);
   if (!enabler) {
     return queue;
   }
@@ -292,4 +292,4 @@ function prioritizeEnablers(
     ...queue.filter((candidate) => enabler(candidate)),
     ...queue.filter((candidate) => !enabler(candidate)),
   ];
-}
+};

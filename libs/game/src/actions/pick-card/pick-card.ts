@@ -1,10 +1,10 @@
-import { dispatch } from '../../state';
+import { dispatch } from '../../dispatch';
 
 export interface PickCardPayload {
   playerId: number;
   index: number;
 }
 
-export function pickCard(payload: PickCardPayload): void {
+export const pickCard = (payload: PickCardPayload): void => {
   dispatch({ kind: 'PICK_CARD', ...payload });
-}
+};

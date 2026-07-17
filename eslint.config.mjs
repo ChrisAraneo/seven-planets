@@ -58,6 +58,7 @@ export default [
           ],
         },
       ],
+      '@typescript-eslint/no-magic-numbers': 'off',
     },
   },
   {
@@ -89,14 +90,9 @@ export default [
       'max-lines': 'off',
       'max-lines-per-function': 'off',
       'max-statements': 'off',
-      complexity: 'off',
-    },
-  },
-  {
-    files: ['**/__tests__/**/*.ts', '**/*.spec.ts', 'e2e/**/*.ts'],
-    rules: {
       '@typescript-eslint/naming-convention': 'off',
       '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      complexity: 'off',
     },
   },
   {

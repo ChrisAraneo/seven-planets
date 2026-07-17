@@ -15,7 +15,10 @@ import { getRivalGoalBuilding } from './get-rival-goal-building';
 import { hasBuilding } from './has-building';
 import { isSingularityReadyFor } from './is-singularity-ready-for';
 
-export function computeDenialValue(player: Player, poolType: PoolType): number {
+export const computeDenialValue = (
+  player: Player,
+  poolType: PoolType,
+): number => {
   const averageStrength = computeAverageStrength();
   let worstValue = 0;
   for (const rival of getAlivePlayers()) {
@@ -34,9 +37,9 @@ export function computeDenialValue(player: Player, poolType: PoolType): number {
     }
   }
   return worstValue;
-}
+};
 
-function computeRivalGain(rival: Player, poolType: PoolType): number {
+const computeRivalGain = (rival: Player, poolType: PoolType): number => {
   if (isBuildingType(poolType)) {
     if (poolType === 'SINGULARITY' && isSingularityReadyFor(rival)) {
       return 5;
@@ -45,9 +48,9 @@ function computeRivalGain(rival: Player, poolType: PoolType): number {
   }
   if (isInfluenceType(poolType)) {
     return rival.influence >= INFLUENCE_CARDS[poolType].cost
-      ? poolType === 'COUP'
+      ? (poolType === 'COUP'
         ? 6
-        : 1.5
+        : 1.5)
       : 0;
   }
   if (poolType === 'ATTACK') {
@@ -64,4 +67,4 @@ function computeRivalGain(rival: Player, poolType: PoolType): number {
       : 0;
   }
   return 0;
-}
+};

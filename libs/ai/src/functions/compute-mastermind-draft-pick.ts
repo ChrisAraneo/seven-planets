@@ -7,11 +7,11 @@ import { computeDenialValue } from './compute-denial-value';
 import { computeOwnDraftValue } from './compute-own-draft-value';
 import { getPlan } from './get-plan';
 
-export function computeMastermindDraftPick(
+export const computeMastermindDraftPick = (
   player: Player,
   draftPlanet: Planet,
   pickable: boolean[],
-): number {
+): number => {
   const aiState = getAiState();
   activateWeightsFor(player);
   if (
@@ -24,9 +24,9 @@ export function computeMastermindDraftPick(
     }
   }
   return pickBestIndex(player, draftPlanet, pickable);
-}
+};
 
-function pickRandomIndex(pickable: boolean[]): number {
+const pickRandomIndex = (pickable: boolean[]): number => {
   const options: number[] = [];
   for (let index = 0; index < getGameStateLastValue().pool.length; index++) {
     if (pickable[index]) {
@@ -36,13 +36,13 @@ function pickRandomIndex(pickable: boolean[]): number {
   return options.length > 0
     ? options[Math.floor(Math.random() * options.length)]
     : -1;
-}
+};
 
-function pickBestIndex(
+const pickBestIndex = (
   player: Player,
   draftPlanet: Planet,
   pickable: boolean[],
-): number {
+): number => {
   const aiState = getAiState();
   const plan = getPlan(player);
   let bestIndex = -1;
@@ -65,4 +65,4 @@ function pickBestIndex(
     }
   }
   return bestScore < -1 ? -1 : bestIndex;
-}
+};

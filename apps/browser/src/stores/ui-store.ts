@@ -27,15 +27,15 @@ export const useUiStore = defineStore('ui', () => {
   const started = ref(false);
   const difficulty = ref<Difficulty | null>(null);
 
-  function openModal(name: ModalName): void {
+  const openModal = (name: ModalName): void => {
     modal.value = name;
-  }
+  };
 
-  function closeModal(): void {
+  const closeModal = (): void => {
     modal.value = null;
-  }
+  };
 
-  function chooseDifficulty(level: Difficulty): void {
+  const chooseDifficulty = (level: Difficulty): void => {
     if (started.value) {
       return;
     }
@@ -43,14 +43,14 @@ export const useUiStore = defineStore('ui', () => {
     applyDifficulty(level);
     started.value = true;
     runGame();
-  }
+  };
 
-  function start(): void {
+  const start = (): void => {
     if (!started.value && IS_AUTO_HUMAN) {
       useEffectsStore().fastMode = true;
       chooseDifficulty(DEFAULT_DIFFICULTY);
     }
-  }
+  };
 
   return {
     modal,
@@ -64,14 +64,14 @@ export const useUiStore = defineStore('ui', () => {
   };
 });
 
-function applyDifficulty(level: Difficulty): void {
+const applyDifficulty = (level: Difficulty): void => {
   const def = getDifficulty(level);
   setAiDifficulty(def.ai);
   setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount));
-}
+};
 
-function restartGame(): void {
+const restartGame = (): void => {
   if (typeof window !== 'undefined') {
     window.location.reload();
   }
-}
+};

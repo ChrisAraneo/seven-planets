@@ -29,13 +29,13 @@ const ui = useUiStore();
 
 const human = game.state.players[0];
 
-function playInfluence(
+const playInfluence = (
   type: InfluenceType,
   options: InfluenceOptions = {},
-): void {
+): void => {
   ui.closeModal();
   dispatch(createUseInfluenceAction({ playerId: 0, type, options }));
-}
+};
 
 type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
@@ -51,13 +51,13 @@ const rivals = computed(() =>
   filterAlivePlayers(game.state).filter((player) => !player.isHuman),
 );
 
-function skipTarget(influenceType: InfluenceType): Player | null {
+const skipTarget = (influenceType: InfluenceType): Player | null => {
   return influenceType.startsWith('SKIP_')
     ? getInfluenceTarget(game.state, human, influenceType)
     : null;
-}
+};
 
-function chooseCard(influenceType: InfluenceType): void {
+const chooseCard = (influenceType: InfluenceType): void => {
   if (influenceType === 'STEAL_ACTION') {
     view.value = 'steal';
     return;
@@ -67,9 +67,9 @@ function chooseCard(influenceType: InfluenceType): void {
     return;
   }
   playInfluence(influenceType);
-}
+};
 
-function coupIcons(planet: Planet): string {
+const coupIcons = (planet: Planet): string => {
   return BUILD_ORDER.filter((b) => planet.buildings[b])
     .map(
       (b: BuildingType) =>
@@ -77,17 +77,17 @@ function coupIcons(planet: Planet): string {
         (planet.buildings[b] > 1 ? planet.buildings[b] : ''),
     )
     .join(' ');
-}
+};
 
-function doCoup(planet: Planet): void {
+const doCoup = (planet: Planet): void => {
   playInfluence('COUP', { planet });
-}
-function doSteal(
+};
+const doSteal = (
   target: Player,
   cardType: 'RECRUIT' | 'ATTACK' | 'MOVE' | 'TRADE',
-): void {
+): void => {
   playInfluence('STEAL_ACTION', { target, cardType });
-}
+};
 </script>
 
 <template>
@@ -102,28 +102,37 @@ function doSteal(
         v-for="influenceType in held"
         :key="influenceType"
         class="trow"
-        @click="chooseCard(influenceType)">
+        @click="chooseCard(influenceType)"
+      >
         <div class="tinfo">
-          <b
-            >{{ INFLUENCE_CARDS[influenceType].icon }}
-            {{ INFLUENCE_CARDS[influenceType].name }}</b
-          >
+          <b>{{ INFLUENCE_CARDS[influenceType].icon }}
+            {{ INFLUENCE_CARDS[influenceType].name }}</b>
           ×{{ human.hand[influenceType] }}
           —
           <span class="dimtx">{{ INFLUENCE_CARDS[influenceType].desc }}</span>
           <template v-if="influenceType.startsWith('SKIP_')">
-            <span v-if="skipTarget(influenceType)" class="dimtx">
+            <span
+              v-if="skipTarget(influenceType)"
+              class="dimtx"
+            >
               → would hit
               <b :style="{ color: skipTarget(influenceType)!.color }">{{
                 skipTarget(influenceType)!.name
-              }}</b></span
-            >
-            <span v-else class="warn"> (no rival to target)</span>
+              }}</b></span>
+            <span
+              v-else
+              class="warn"
+            > (no rival to target)</span>
           </template>
         </div>
       </div>
       <div class="mbtns">
-        <button class="btn" @click="ui.closeModal()">Cancel</button>
+        <button
+          class="btn"
+          @click="ui.closeModal()"
+        >
+          Cancel
+        </button>
       </div>
     </template>
 
@@ -147,7 +156,8 @@ function doSteal(
           v-for="planet in coupList"
           :key="planet.id"
           class="trow"
-          @click="doCoup(planet)">
+          @click="doCoup(planet)"
+        >
           <div class="tinfo">
             <b :style="{ color: game.state.players[planet.ownerId].color }">{{
               planet.name
@@ -157,7 +167,10 @@ function doSteal(
           <div>🪖{{ planet.troops }} {{ coupIcons(planet) }}</div>
         </div>
       </template>
-      <p v-else class="warn">
+      <p
+        v-else
+        class="warn"
+      >
         No valid target — planets under truce cannot be couped{{
           canCoupLast
             ? ''
@@ -165,8 +178,18 @@ function doSteal(
         }}.
       </p>
       <div class="mbtns">
-        <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="ui.closeModal()">Cancel</button>
+        <button
+          class="btn"
+          @click="view = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="btn"
+          @click="ui.closeModal()"
+        >
+          Cancel
+        </button>
       </div>
     </template>
 
@@ -176,30 +199,52 @@ function doSteal(
         Take one action card of your choice from a chosen rival (influence cards
         cannot be taken).
       </p>
-      <div v-for="rival in rivals" :key="rival.id" class="trow">
+      <div
+        v-for="rival in rivals"
+        :key="rival.id"
+        class="trow"
+      >
         <div class="tinfo">
           <b :style="{ color: rival.color }">{{ rival.name }}</b> —
           <template
             v-if="
               ACTION_TYPES.some((actionType) => rival.hand[actionType] > 0)
-            ">
-            <template v-for="actionType in ACTION_TYPES" :key="actionType">
+            "
+          >
+            <template
+              v-for="actionType in ACTION_TYPES"
+              :key="actionType"
+            >
               <button
                 v-if="rival.hand[actionType] > 0"
                 class="tab"
-                @click="doSteal(rival, actionType)">
+                @click="doSteal(rival, actionType)"
+              >
                 {{ CARDS[actionType].icon }} {{ CARDS[actionType].name }} ×{{
                   rival.hand[actionType]
                 }}
               </button>
             </template>
           </template>
-          <span v-else class="dimtx">no action cards</span>
+          <span
+            v-else
+            class="dimtx"
+          >no action cards</span>
         </div>
       </div>
       <div class="mbtns">
-        <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="ui.closeModal()">Cancel</button>
+        <button
+          class="btn"
+          @click="view = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="btn"
+          @click="ui.closeModal()"
+        >
+          Cancel
+        </button>
       </div>
     </template>
   </ModalShell>

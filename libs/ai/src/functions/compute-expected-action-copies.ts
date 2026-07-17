@@ -6,7 +6,7 @@ import {
   MOVE_CARDS_FROM_TURN,
 } from '@seven-planets/game';
 
-export function computeExpectedActionCopies(actionType: ActionType): number {
+export const computeExpectedActionCopies = (actionType: ActionType): number => {
   if (getTurn() < ACTION_CARDS_FROM_TURN) {
     return 0;
   }
@@ -22,4 +22,4 @@ export function computeExpectedActionCopies(actionType: ActionType): number {
     0,
   );
   return (6 * CARDS[actionType].weight) / totalWeight;
-}
+};

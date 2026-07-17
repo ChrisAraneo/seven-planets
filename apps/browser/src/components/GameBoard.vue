@@ -27,12 +27,12 @@ let canvasH = 0;
 let stars: { x: number; y: number; radius: number; phase: number }[] = [];
 let animationFrame = 0;
 
-function circle(x: number, y: number, radius: number): void {
+const circle = (x: number, y: number, radius: number): void => {
   context!.beginPath();
   context!.arc(x, y, radius, 0, Math.PI * 2);
-}
+};
 
-function layoutBoard(): void {
+const layoutBoard = (): void => {
   const element = canvas.value;
   if (!element || !element.parentElement) return;
   const rect = element.parentElement.getBoundingClientRect();
@@ -73,9 +73,9 @@ function layoutBoard(): void {
       phase: Math.random() * 6.28,
     });
   }
-}
+};
 
-function drawFrame(now: number): void {
+const drawFrame = (now: number): void => {
   if (!context) return;
   context.clearRect(0, 0, canvasW, canvasH);
   context.fillStyle = '#05070f';
@@ -116,14 +116,14 @@ function drawFrame(now: number): void {
 
   for (const planet of getPlanets()) drawPlanet(planet, now);
   drawAnims(now);
-}
+};
 
-function drawBlackHole(
+const drawBlackHole = (
   x: number,
   y: number,
   radius: number,
   now: number,
-): void {
+): void => {
   if (!context) return;
   const seconds = now / 1000;
 
@@ -186,9 +186,9 @@ function drawBlackHole(
   context.lineWidth = 2;
   circle(x, y, radius * 0.98);
   context.stroke();
-}
+};
 
-function drawPlanet(planet: Planet, now: number): void {
+const drawPlanet = (planet: Planet, now: number): void => {
   if (!context) return;
   const style =
     PLANET_STYLES[
@@ -533,9 +533,9 @@ function drawPlanet(planet: Planet, now: number): void {
       y + radius + 33 + row * 14,
     );
   }
-}
+};
 
-function drawAnims(now: number): void {
+const drawAnims = (now: number): void => {
   if (!context) return;
   for (let index = anims.length - 1; index >= 0; index--) {
     const anim = anims[index];
@@ -594,12 +594,12 @@ function drawAnims(now: number): void {
       context.globalAlpha = 1;
     }
   }
-}
+};
 
-function frame(now: number): void {
+const frame = (now: number): void => {
   drawFrame(now || 0);
   animationFrame = requestAnimationFrame(frame);
-}
+};
 
 onMounted(() => {
   layoutBoard();
@@ -615,6 +615,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div id="board-wrap">
-    <canvas id="board" ref="canvas" />
+    <canvas
+      id="board"
+      ref="canvas"
+    />
   </div>
 </template>

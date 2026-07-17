@@ -3,6 +3,5 @@ import type { BuildingType } from '../interfaces/building-type';
 
 const BUILDING_TYPE_SET: ReadonlySet<string> = new Set(BUILD_ORDER);
 
-export function isBuildingType(value: string): value is BuildingType {
-  return BUILDING_TYPE_SET.has(value);
-}
+export const isBuildingType = (value: string): value is BuildingType =>
+  BUILDING_TYPE_SET.has(value);

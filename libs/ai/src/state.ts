@@ -20,6 +20,4 @@ const aiState: AiState = {
   planCache: new WeakMap(),
 };
 
-export function getAiState(): AiState {
-  return aiState;
-}
+export const getAiState = (): AiState => aiState;
