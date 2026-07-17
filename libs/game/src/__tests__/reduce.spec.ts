@@ -29,8 +29,8 @@ describe('reduce/advance invariants', () => {
     expect(state.turn).toBe(1);
     expect(state.phase).toBe('draft');
     expect(state.cursor).toMatchObject({ phase: 'draft', slot: 0, pick: 0 });
-    expect(state.awaitingPick).toBe(true);
-    expect(state.awaitingAction).toBe(false);
+    expect(state.isAwaitingPick).toBe(true);
+    expect(state.isAwaitingAction).toBe(false);
     expect(state.inputSeq).toBe(1);
     expect(state.draftPlanetId).toBeGreaterThanOrEqual(0);
   });
@@ -48,7 +48,7 @@ describe('reduce/advance invariants', () => {
     // Same seat, same slot, second pick — one fresh park, one fresh bump.
     expect(afterPick.activeId).toBe(seatId);
     expect(afterPick.cursor).toMatchObject({ phase: 'draft', pick: 1 });
-    expect(afterPick.awaitingPick).toBe(true);
+    expect(afterPick.isAwaitingPick).toBe(true);
     expect(afterPick.inputSeq).toBe(state.inputSeq + 1);
     expect(afterPick.pool.length).toBe(state.pool.length - 1);
   });
@@ -58,14 +58,14 @@ describe('reduce/advance invariants', () => {
     const crafted = cloneDeep(parked);
     /* Influence cards nobody can afford (everyone starts at 0⭐): nothing
        is pickable for any seat, so every slot passes. */
-    crafted.awaitingPick = false;
+    crafted.isAwaitingPick = false;
     crafted.pool = ['COUP', 'PEACE'];
     const resumed = advance(crafted);
     /* The whole turn-1 draft passed through (plus the skipped pre-action
        phase) and the game next parks at turn 2's first pick — a single
        inputSeq bump for that one park, none for the passes. */
     expect(resumed.turn).toBe(2);
-    expect(resumed.awaitingPick).toBe(true);
+    expect(resumed.isAwaitingPick).toBe(true);
     expect(resumed.inputSeq).toBe(parked.inputSeq + 1);
     expect(
       resumed.log.some((entry) =>
@@ -86,7 +86,7 @@ describe('reduce/advance invariants', () => {
     /* The park is consumed but the answer is discarded (no card applied),
        and the draft-planet marker survives the abort (§ the old early return). */
     expect(resumed.cursor).toEqual({ phase: 'done' });
-    expect(resumed.awaitingPick).toBe(false);
+    expect(resumed.isAwaitingPick).toBe(false);
     expect(resumed.activeId).toBe(-1);
     expect(resumed.draftPlanetId).toBe(parked.draftPlanetId);
     expect(resumed.pool.length).toBe(parked.pool.length);

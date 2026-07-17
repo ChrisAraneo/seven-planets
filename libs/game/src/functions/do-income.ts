@@ -1,35 +1,44 @@
-import { chain } from '../utils/chain';
 import { match, P } from 'ts-pattern';
+
 import {
   BUILD_ORDER,
   BUILDINGS,
-  formatCards,
   computeIncomeAmount,
+  formatCards,
   PACIFIST_INFLUENCE,
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
-
+import { chain } from '../utils/chain';
 import { log } from './log';
 import { updatePlayers } from './update-players';
 
 const { number, string } = P;
 
 interface IncomeTally {
-  handAdd: Record<number, Record<string, number>>; // Cards actually added to hands
-  infAdd: Record<number, number>; // Influence actually added
-  gains: Record<number, Record<string, number>>; // Production, for the log
-  moveGains: Record<number, number>; // L2 Spaceport: free Move card every 3 turns
-  infGains: Record<number, number>; // L2 Embassy: +1 ⭐ Influence every turn
-  pacGains: Record<number, number>; // Pacifist: +PACIFIST_INFLUENCE ⭐ per planet
+  // Cards actually added to hands
+  handAdd: Partial<Record<number, Record<string, number>>>;
+  // Influence actually added
+  infAdd: Partial<Record<number, number>>;
+  // Production, for the log
+  gains: Partial<Record<number, Record<string, number>>>;
+  // L2 Spaceport: free Move card every SPACEPORT_MOVE_PERIOD turns
+  moveGains: Partial<Record<number, number>>;
+  // L2 Embassy: +1 ⭐ Influence every turn
+  infGains: Partial<Record<number, number>>;
+  // Pacifist: +PACIFIST_INFLUENCE ⭐ per planet
+  pacGains: Partial<Record<number, number>>;
 }
 
+// L2 Spaceport perk cadence: a free Move card every 3rd turn.
+const SPACEPORT_MOVE_PERIOD = 3;
+
 // Grant every alive owner their per-turn production. Pure: accumulate each player's
-// hand/influence deltas, apply them in one structural-sharing pass, then log.
+// Hand/influence deltas, apply them in one structural-sharing pass, then log.
 export function doIncome(state: GameState): GameState {
   return chain(
-    state.planets.reduce(
+    state.planets.reduce<IncomeTally>(
       (tally, planet) => addPlanetIncome(tally, state, planet),
       {
         handAdd: {},
@@ -38,7 +47,7 @@ export function doIncome(state: GameState): GameState {
         moveGains: {},
         infGains: {},
         pacGains: {},
-      } as IncomeTally,
+      },
     ),
   )
     .thru((tally) => logIncome(applyIncome(state, tally), tally))
@@ -57,10 +66,10 @@ function addPlanetIncome(
     )
     .otherwise((owner) =>
       chain(tally)
-        .thru((tally) => addBuildingIncome(tally, owner.id, planet))
-        .thru((tally) => addSpaceportPerk(tally, state.turn, owner.id, planet))
-        .thru((tally) => addEmbassyPerk(tally, owner.id, planet))
-        .thru((tally) => addPacifistPerk(tally, owner))
+        .thru((acc) => addBuildingIncome(acc, owner.id, planet))
+        .thru((acc) => addSpaceportPerk(acc, state.turn, owner.id, planet))
+        .thru((acc) => addEmbassyPerk(acc, owner.id, planet))
+        .thru((acc) => addPacifistPerk(acc, owner))
         .value(),
     );
 }
@@ -71,24 +80,24 @@ function addBuildingIncome(
   planet: Planet,
 ): IncomeTally {
   return BUILD_ORDER.reduce(
-    (tally, buildingType) =>
+    (acc, buildingType) =>
       match({
         level: planet.buildings[buildingType],
         income: BUILDINGS[buildingType].income,
       })
         .with(
           { level: number.positive(), income: string },
+          // Scales with level (Mine L2: 3)
           ({ level, income }) =>
-            // Scales with level (Mine L2: 3)
             chain(computeIncomeAmount(buildingType, level))
               .thru((amount) => ({
-                ...tally,
-                handAdd: bumpNested(tally.handAdd, ownerId, income, amount),
-                gains: bumpNested(tally.gains, ownerId, income, amount),
+                ...acc,
+                handAdd: bumpNested(acc.handAdd, ownerId, income, amount),
+                gains: bumpNested(acc.gains, ownerId, income, amount),
               }))
               .value(),
         )
-        .otherwise(() => tally),
+        .otherwise(() => acc),
     tally,
   );
 }
@@ -102,7 +111,7 @@ function addSpaceportPerk(
 ): IncomeTally {
   return match(planet.buildings.SPACEPORT || 0)
     .when(
-      (level) => level >= 2 && turn % 3 === 0,
+      (level) => level >= 2 && turn % SPACEPORT_MOVE_PERIOD === 0,
       () => ({
         ...tally,
         handAdd: bumpNested(tally.handAdd, ownerId, 'MOVE', 1),
@@ -164,18 +173,18 @@ function applyIncome(state: GameState, tally: IncomeTally): GameState {
 
 function logIncome(state: GameState, tally: IncomeTally): GameState {
   return chain(state)
-    .thru((state) =>
+    .thru((current) =>
       Object.entries(tally.gains).reduce(
         (acc, [id, produced]) =>
           log(
             acc,
-            `⚙️ ${acc.players[Number(id)].name} produces ${formatCards(produced)}`,
+            `⚙️ ${acc.players[Number(id)].name} produces ${formatCards(produced ?? {})}`,
             'draft',
           ),
-        state,
+        current,
       ),
     )
-    .thru((state) =>
+    .thru((current) =>
       Object.entries(tally.moveGains).reduce(
         (acc, [id, count]) =>
           log(
@@ -183,10 +192,10 @@ function logIncome(state: GameState, tally: IncomeTally): GameState {
             `🛰️ ${acc.players[Number(id)].name} receives +${count}🛸 Move (L2 Spaceport)`,
             'draft',
           ),
-        state,
+        current,
       ),
     )
-    .thru((state) =>
+    .thru((current) =>
       Object.entries(tally.infGains).reduce(
         (acc, [id, count]) =>
           log(
@@ -194,10 +203,10 @@ function logIncome(state: GameState, tally: IncomeTally): GameState {
             `⭐ ${acc.players[Number(id)].name} gains +${count} Influence (L2 Embassy)`,
             'draft',
           ),
-        state,
+        current,
       ),
     )
-    .thru((state) =>
+    .thru((current) =>
       Object.entries(tally.pacGains).reduce(
         (acc, [id, count]) =>
           log(
@@ -205,26 +214,26 @@ function logIncome(state: GameState, tally: IncomeTally): GameState {
             `☮️ ${acc.players[Number(id)].name} gains +${count} Influence (Pacifist)`,
             'draft',
           ),
-        state,
+        current,
       ),
     )
     .value();
 }
 
 function bump(
-  record: Record<number, number>,
+  record: Partial<Record<number, number>>,
   id: number,
   amount: number,
-): Record<number, number> {
+): Partial<Record<number, number>> {
   return { ...record, [id]: (record[id] || 0) + amount };
 }
 
 function bumpNested(
-  record: Record<number, Record<string, number>>,
+  record: Partial<Record<number, Record<string, number>>>,
   id: number,
   key: string,
   amount: number,
-): Record<number, Record<string, number>> {
+): Partial<Record<number, Record<string, number>>> {
   return {
     ...record,
     [id]: { ...record[id], [key]: (record[id]?.[key] || 0) + amount },

@@ -1,5 +1,6 @@
-import { getAiState } from '../state';
 import type { Player } from '@seven-planets/game';
+
+import { getAiState } from '../state';
 
 export function computeAggression(player: Player): number {
   const aiState = getAiState();

@@ -1,8 +1,8 @@
-import { getTurn } from '@seven-planets/game';
-import { getAiState } from '../state';
 import type { Player } from '@seven-planets/game';
+import { getTurn } from '@seven-planets/game';
 import { getGameStateLastValue } from '@seven-planets/game';
 
+import { getAiState } from '../state';
 import { computePlan } from './compute-plan';
 import type { Plan } from './plan-types';
 

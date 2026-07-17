@@ -1,6 +1,6 @@
+import type { BuildingType, Planet, Player } from '@seven-planets/game';
 import { getMaxLevel } from '@seven-planets/game';
 import { isSingularityLabOk } from '@seven-planets/game';
-import type { BuildingType, Planet, Player } from '@seven-planets/game';
 
 import { computeTechLevel } from './compute-tech-level';
 

@@ -1,6 +1,6 @@
+import type { BuildingType } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { ADVANCED_FROM_TURN, BUILD_ORDER } from '@seven-planets/game';
-import type { BuildingType } from '@seven-planets/game';
 
 import { isSingularityLive } from './is-singularity-live';
 

@@ -5,5 +5,5 @@ export function updatePlayers(
   state: GameState,
   callback: (player: Player) => Player,
 ): GameState {
-  return { ...state, players: state.players.map(callback) };
+  return { ...state, players: state.players.map((player) => callback(player)) };
 }

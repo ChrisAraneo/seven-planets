@@ -1,7 +1,6 @@
+import type { Anim } from '@seven-planets/effects';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-
-import type { Anim } from '@seven-planets/effects';
 
 /* Presentation-effects state. The effects layer enqueues canvas animations
    here (via the sink main.ts injects); the GameBoard component drains the

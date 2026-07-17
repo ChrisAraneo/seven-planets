@@ -52,10 +52,12 @@ function actLine(player: Player): string {
           computeTotalTroops(game.state, player)
         }}
         🏛️{{ getBuildingCount(game.state, player) }} ⭐{{ player.influence
-        }}{{ player.skipTurns > 0 || player.skippedNow ? ' ⏭️' : '' }} ·
+        }}{{ player.skipTurns > 0 || player.isSkippedNow ? ' ⏭️' : '' }} ·
         {{ resLine(player) }}
       </div>
-      <div class="pstats">{{ actLine(player) }}</div>
+      <div class="pstats">
+        {{ actLine(player) }}
+      </div>
     </div>
   </div>
 </template>

@@ -1,9 +1,9 @@
 import { cloneDeep } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
+
 import { shuffleArray } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
-
+import { chain } from '../utils/chain';
 import { updatePlayers } from './update-players';
 
 export function assignKamikazes(state: GameState, count: number): GameState {
@@ -16,10 +16,10 @@ export function assignKamikazes(state: GameState, count: number): GameState {
     .thru((cleared) =>
       match(count)
         .when(
-          (count) => count <= 0,
+          () => count <= 0,
           () => cleared,
         )
-        .otherwise((count) => markRandomAiAsKamikaze(cleared, count)),
+        .otherwise(() => markRandomAiAsKamikaze(cleared, count)),
     )
     .value();
 }
@@ -38,10 +38,10 @@ function markRandomAiAsKamikaze(state: GameState, count: number): GameState {
       updatePlayers(state, (player) =>
         match(player)
           .when(
-            (player) => chosen.has(player.id),
-            (player) => ({ ...player, isKamikaze: true }),
+            () => chosen.has(player.id),
+            () => ({ ...player, isKamikaze: true }),
           )
-          .otherwise((player) => player),
+          .otherwise(() => player),
       ),
     )
     .value();

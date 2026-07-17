@@ -12,8 +12,8 @@ const from = computed(() =>
   offer.value ? game.state.players[offer.value.fromId] : null,
 );
 
-function resolveOffer(accept: boolean): void {
-  resolveGameOffer({ playerId: 0, accept });
+function resolveOffer(isAccepted: boolean): void {
+  resolveGameOffer({ playerId: 0, isAccepted });
 }
 </script>
 

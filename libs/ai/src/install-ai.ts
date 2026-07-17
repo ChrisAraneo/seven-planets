@@ -1,17 +1,10 @@
-import { distinctUntilChanged, distinctUntilKeyChanged, map } from 'rxjs';
-
-import type {
-  GameState,
-  InfluenceOptions,
-  InfluenceType,
-  Cost,
-} from '@seven-planets/game';
+import type { GameState } from '@seven-planets/game';
 import {
-  AUTO_HUMAN,
   getGameState,
   getGameStateLastValue,
   getIsOver,
   getPlayers,
+  IS_AUTO_HUMAN,
 } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
 import { getHomePlanet } from '@seven-planets/game';
@@ -26,11 +19,12 @@ import {
   recruitTroops,
   resolveOffer,
 } from '@seven-planets/game';
+import { distinctUntilChanged, distinctUntilKeyChanged, map } from 'rxjs';
 
-import { getMastermindDecision } from './functions/get-mastermind-decision';
-import { computeMastermindDraftPick } from './functions/compute-mastermind-draft-pick';
-import { shouldAcceptTrade } from './functions/should-accept-trade';
 import { getPlayerByIndex } from '../../game/src/getters/get-player-by-index';
+import { computeMastermindDraftPick } from './functions/compute-mastermind-draft-pick';
+import { getMastermindDecision } from './functions/get-mastermind-decision';
+import { shouldAcceptTrade } from './functions/should-accept-trade';
 
 /* =====================================================================
    The mastermind AI driver.
@@ -61,36 +55,37 @@ import { getPlayerByIndex } from '../../game/src/getters/get-player-by-index';
    ===================================================================== */
 
 /** Paced (timer-deferred) answers in the browser; instant headless. */
-const PACED = typeof document !== 'undefined';
+const IS_PACED = typeof document !== 'undefined';
 
 const TURN_START_DELAY = 350;
 const BETWEEN_ACTIONS_DELAY = 320;
 const PICK_DELAY = 300;
 
 /** A seat is AI-controlled when it is not the human, or in demo mode
-    (AUTO_HUMAN) when even the human proxy is driven by the AI. */
+    (IS_AUTO_HUMAN) when even the human proxy is driven by the AI. */
 export function isAiSeat(seatId: number): boolean {
   const players = getPlayers();
   if (seatId < 0 || seatId >= players.length) {
     return false;
   }
-  return !players[seatId].isHuman || AUTO_HUMAN;
+  return !players[seatId].isHuman || IS_AUTO_HUMAN;
 }
 
 type Decision = NonNullable<ReturnType<typeof getMastermindDecision>>;
 
 function performDecision(playerId: number, decision: Decision): void {
   switch (decision.kind) {
-    case 'influence':
+    case 'influence': {
       dispatch(
         createUseInfluenceAction({
           playerId,
-          type: decision.type as InfluenceType,
-          options: decision.options as InfluenceOptions,
+          type: decision.type,
+          options: decision.options,
         }),
       );
       return;
-    case 'attack':
+    }
+    case 'attack': {
       dispatch(
         createAttackPlanetAction({
           playerId,
@@ -100,10 +95,12 @@ function performDecision(playerId: number, decision: Decision): void {
         }),
       );
       return;
-    case 'recruit':
+    }
+    case 'recruit': {
       recruitTroops({ playerId, planetId: decision.planet.id });
       return;
-    case 'move':
+    }
+    case 'move': {
       moveTroops({
         playerId,
         fromId: decision.from.id,
@@ -111,14 +108,19 @@ function performDecision(playerId: number, decision: Decision): void {
         troops: decision.n,
       });
       return;
-    case 'trade':
+    }
+    case 'trade': {
       makeOffer({
         playerId,
         partnerId: decision.partner.id,
-        gives: decision.gives as Cost,
-        gets: decision.gets as Cost,
+        gives: decision.gives,
+        gets: decision.gets,
       });
-      return;
+      break;
+    }
+    default: {
+      break;
+    }
   }
 }
 
@@ -135,10 +137,10 @@ function aiPickCard(playerId: number): void {
   let index = computeMastermindDraftPick(player, planet, pickable);
   if (index < 0 || !pickable[index]) {
     // The engine only parks when something is pickable — fall back to
-    // the first legal card rather than leave the draft stuck.
+    // The first legal card rather than leave the draft stuck.
     index = pickable.indexOf(true);
   }
-  pickCard({ playerId, index: index });
+  pickCard({ playerId, index });
 }
 
 /** Decide and perform one action, returning false when the turn is done. */
@@ -149,7 +151,7 @@ function takeOneAction(playerId: number): boolean {
 
   const player = getPlayerByIndex(playerId);
 
-  if (player === undefined) {
+  if (!player) {
     return false;
   }
 
@@ -175,7 +177,7 @@ let headlessTurnKey = -1;
 let headlessActionsLeft = 0;
 
 function headlessTurnStep(snapshot: GameState): void {
-  if (PACED || !snapshot.awaitingAction || !isAiSeat(snapshot.activeId)) {
+  if (IS_PACED || !snapshot.isAwaitingAction || !isAiSeat(snapshot.activeId)) {
     return;
   }
   // A trade offer is out: resume when the partner's answer is reduced.
@@ -183,7 +185,7 @@ function headlessTurnStep(snapshot: GameState): void {
     return;
   }
   // The AI always ends its turn — even a game-ending action must be
-  // followed by endTurn so the engine can settle the cursor to 'done'.
+  // Followed by endTurn so the engine can settle the cursor to 'done'.
   if (snapshot.over) {
     dispatch(createEndTurnAction({ playerId: snapshot.activeId }));
     return;
@@ -206,8 +208,8 @@ function headlessTurnStep(snapshot: GameState): void {
 function aiTakeTurnPaced(playerId: number, remaining = 12): void {
   setTimeout(
     () => {
-      const acted = remaining > 0 && takeOneAction(playerId);
-      if (acted) {
+      const didAct = remaining > 0 && takeOneAction(playerId);
+      if (didAct) {
         aiTakeTurnPaced(playerId, remaining - 1);
         return;
       }
@@ -227,9 +229,14 @@ function aiConsiderOffer(playerId: number): void {
   }
   const player = state.players[playerId];
   const proposer = state.players[offer.fromId];
-  // pendingOffer is from the proposer's perspective; flip it to `p`'s.
-  const accept = shouldAcceptTrade(player, offer.gets, offer.gives, proposer);
-  resolveOffer({ playerId, accept });
+  // PendingOffer is from the proposer's perspective; flip it to `p`'s.
+  const isAccepted = shouldAcceptTrade(
+    player,
+    offer.gets,
+    offer.gives,
+    proposer,
+  );
+  resolveOffer({ playerId, isAccepted });
 }
 
 /** The engine parked awaiting input (a snapshot with a fresh inputSeq
@@ -241,15 +248,15 @@ function respond(snapshot: GameState): void {
     return;
   }
   const seatId = snapshot.activeId;
-  if (snapshot.awaitingPick) {
-    if (PACED) {
+  if (snapshot.isAwaitingPick) {
+    if (IS_PACED) {
       setTimeout(() => aiPickCard(seatId), PICK_DELAY);
     } else {
       aiPickCard(seatId);
     }
     return;
   }
-  if (snapshot.awaitingAction && PACED) {
+  if (snapshot.isAwaitingAction && IS_PACED) {
     aiTakeTurnPaced(seatId);
   }
 }
@@ -265,8 +272,8 @@ export function installAi(): void {
   getGameState().pipe(distinctUntilKeyChanged('inputSeq')).subscribe(respond);
 
   // A trade offer awaits its target seat's answer. Subscribed BEFORE the
-  // headless turn driver so the answer is queued (and thus reduced) ahead
-  // of the offerer's next decision.
+  // Headless turn driver so the answer is queued (and thus reduced) ahead
+  // Of the offerer's next decision.
   getGameState()
     .pipe(
       map((snapshot) => snapshot.pendingOffer),

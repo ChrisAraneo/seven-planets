@@ -1,5 +1,5 @@
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
+
 import {
   PACIFIST_DEF_BONUS,
   PACIFIST_INFLUENCE,
@@ -7,14 +7,14 @@ import {
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-
+import { chain } from '../utils/chain';
 import { emitEffect } from './emit-effect';
-import { log } from './log';
 import { getOwnedPlanets } from './get-owned-planets';
+import { log } from './log';
 import { updatePlayer } from './update-player';
 
 // Promote any player who has gone PACIFIST_TURNS without attacking. A player who
-// Has once broken a pacifist vow (pacifismForfeited) can never be promoted again.
+// Has once broken a pacifist vow (hasForfeitedPacifism) can never be promoted again.
 export function updatePacifistStatus(state: GameState): GameState {
   return state.players.reduce(
     (eachState, player) => promoteIfVowKept(eachState, player, state.turn),
@@ -29,18 +29,20 @@ function promoteIfVowKept(
 ): GameState {
   return match(player)
     .when(
-      (player) =>
-        !player.isAlive || player.hasPacifistStatus || player.pacifismForfeited,
+      () =>
+        !player.isAlive ||
+        player.hasPacifistStatus ||
+        player.hasForfeitedPacifism,
       () => state,
     )
     .when(
-      (player) => turn - player.lastAttackTurn < PACIFIST_TURNS,
+      () => turn - player.lastAttackTurn < PACIFIST_TURNS,
       () => state,
     )
-    .otherwise((player) =>
+    .otherwise(() =>
       chain(
-        updatePlayer(state, player.id, (player) => ({
-          ...player,
+        updatePlayer(state, player.id, (current) => ({
+          ...current,
           hasPacifistStatus: true,
         })),
       )

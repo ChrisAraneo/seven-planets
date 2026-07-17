@@ -1,6 +1,3 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-
 import { setAiDifficulty } from '@seven-planets/ai';
 import {
   DEFAULT_DIFFICULTY,
@@ -8,9 +5,11 @@ import {
   getDifficulty,
 } from '@seven-planets/game';
 import { assignKamikazes } from '@seven-planets/game';
-import { AUTO_HUMAN } from '@seven-planets/game';
+import { IS_AUTO_HUMAN } from '@seven-planets/game';
 import { runGame } from '@seven-planets/game';
 import { getGameStateLastValue, setGameState } from '@seven-planets/game';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 import { useEffectsStore } from './effects-store';
 
@@ -51,11 +50,7 @@ export const useUiStore = defineStore('ui', () => {
       return;
     }
     difficulty.value = level;
-    const def = getDifficulty(level);
-    // Apply this level's handicap to every mastermind AI before the loop runs,
-    // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
-    setAiDifficulty(def.ai);
-    setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount));
+    applyDifficulty(level);
     started.value = true;
     runGame();
   }
@@ -64,19 +59,10 @@ export const useUiStore = defineStore('ui', () => {
       the game starts immediately; otherwise it waits for the human to pick a
       difficulty via the opening DifficultyModal (see chooseDifficulty). */
   function start(): void {
-    if (started.value) {
-      return;
-    }
     // Demo mode ("?auto") runs at full tilt with no difficulty prompt.
-    if (AUTO_HUMAN) {
+    if (!started.value && IS_AUTO_HUMAN) {
       useEffectsStore().fastMode = true;
       chooseDifficulty(DEFAULT_DIFFICULTY);
-    }
-  }
-
-  function newGame(): void {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
     }
   }
 
@@ -88,6 +74,20 @@ export const useUiStore = defineStore('ui', () => {
     closeModal,
     start,
     chooseDifficulty,
-    newGame,
+    restartGame,
   };
 });
+
+// Apply this level's handicap to every mastermind AI before the loop runs,
+// Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
+function applyDifficulty(level: Difficulty): void {
+  const def = getDifficulty(level);
+  setAiDifficulty(def.ai);
+  setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount));
+}
+
+function restartGame(): void {
+  if (typeof window !== 'undefined') {
+    window.location.reload();
+  }
+}

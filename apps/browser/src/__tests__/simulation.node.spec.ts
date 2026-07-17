@@ -1,14 +1,13 @@
 // @vitest-environment node
-// In a Node environment there is no `document`, so the engine's AUTO_HUMAN is
+// In a Node environment there is no `document`, so the engine's IS_AUTO_HUMAN is
 // True and every seat is played by the AI — letting us run whole games headless.
 // Importing the store seats the AI's getGameState() subscriptions, which answer every
-// engine park synchronously (RxJS subjects deliver synchronously; the engine
-// stream's queueScheduler flattens the loop) — games run at pure logic speed.
+// Engine park synchronously (RxJS subjects deliver synchronously; the engine
+// Stream's queueScheduler flattens the loop) — games run at pure logic speed.
 import '@/stores';
 
-import { describe, expect, it } from 'vitest';
-
 import { simulateGame } from '@seven-planets/game';
+import { describe, expect, it } from 'vitest';
 
 describe('headless game simulation', () => {
   it('plays full AI-vs-AI games to a resolution without throwing', async () => {

@@ -1,4 +1,4 @@
-import * as lodash from 'lodash-es';
+import * as lodashModule from 'lodash-es';
 
 /**
  * `chain` must come from the monolithic lodash build: the wrapper methods
@@ -11,6 +11,8 @@ import * as lodash from 'lodash-es';
  * `@types/lodash-es` does not declare the runtime default export, hence the
  * cast.
  */
-const _ = (lodash as unknown as { default: typeof lodash }).default;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- @types/lodash-es omits the runtime default export this file exists to reach
+const lodash = (lodashModule as unknown as { default: typeof lodashModule })
+  .default;
 
-export const chain = _.chain;
+export const { chain } = lodash;

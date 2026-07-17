@@ -3,13 +3,13 @@
    (unpaid → unpowered → only +8 that turn). */
 import { describe, expect, it } from 'vitest';
 
-import { doShieldUpkeep } from '../functions/do-shield-upkeep';
 import { computeRecruitableTroops } from '../functions/compute-recruitable-troops';
 import { computeShieldDefense } from '../functions/compute-shield-defense';
-import { applyRecruitTroops } from '../reducers/recruit-troops/recruit-troops';
+import { doShieldUpkeep } from '../functions/do-shield-upkeep';
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
+import { applyRecruitTroops } from '../reducers/recruit-troops/recruit-troops';
 
 function player(hand: Record<string, number> = {}): Player {
   return {
@@ -27,7 +27,7 @@ function planet(
   id: number,
   troops: number,
   buildings: Record<string, number>,
-  shieldUnpowered = false,
+  isShieldUnpowered = false,
 ): Planet {
   return {
     id,
@@ -35,7 +35,7 @@ function planet(
     ownerId: 0,
     troops,
     buildings,
-    shieldUnpowered,
+    isShieldUnpowered,
     protectedUntil: 0,
   } as unknown as Planet;
 }
@@ -53,7 +53,7 @@ function state(
     pool: [],
     activeId: 0,
     draftPlanetId: 0,
-    singularityAnnounced: false,
+    isSingularityAnnounced: false,
     startIdx: 0,
     players: [player(hand)],
     planets,
@@ -61,8 +61,8 @@ function state(
     effects: [],
     effectSeq: 0,
     status: '',
-    awaitingPick: false,
-    awaitingAction: true,
+    isAwaitingPick: false,
+    isAwaitingAction: true,
     inputSeq: 0,
     pendingOffer: null,
   } as unknown as GameState;
@@ -127,14 +127,15 @@ describe('L3 shield upkeep: 2💎 per turn or the shield runs unpowered', () => 
     const s = state([planet(0, 0, { SHIELD: 3 })], { CRYSTAL: 5 });
     const after = doShieldUpkeep(s);
     expect(after.players[0].hand.CRYSTAL).toBe(3);
-    expect(after.planets[0].shieldUnpowered).toBe(false);
+    expect(after.planets[0].isShieldUnpowered).toBe(false);
   });
 
   it('marks the shield unpowered when crystals are short', () => {
     const s = state([planet(0, 0, { SHIELD: 3 })], { CRYSTAL: 1 });
     const after = doShieldUpkeep(s);
-    expect(after.players[0].hand.CRYSTAL).toBe(1); // nothing drained
-    expect(after.planets[0].shieldUnpowered).toBe(true);
+    // Nothing drained
+    expect(after.players[0].hand.CRYSTAL).toBe(1);
+    expect(after.planets[0].isShieldUnpowered).toBe(true);
     expect(after.log.some((entry) => entry.message.includes('UNPOWERED'))).toBe(
       true,
     );
@@ -144,13 +145,13 @@ describe('L3 shield upkeep: 2💎 per turn or the shield runs unpowered', () => 
     const s = state([planet(0, 0, { SHIELD: 3 }, true)], { CRYSTAL: 2 });
     const after = doShieldUpkeep(s);
     expect(after.players[0].hand.CRYSTAL).toBe(0);
-    expect(after.planets[0].shieldUnpowered).toBe(false);
+    expect(after.planets[0].isShieldUnpowered).toBe(false);
   });
 
   it('shields below L3 need no upkeep', () => {
     const s = state([planet(0, 0, { SHIELD: 2 })], { CRYSTAL: 5 });
     const after = doShieldUpkeep(s);
     expect(after.players[0].hand.CRYSTAL).toBe(5);
-    expect(after.planets[0].shieldUnpowered).toBe(false);
+    expect(after.planets[0].isShieldUnpowered).toBe(false);
   });
 });

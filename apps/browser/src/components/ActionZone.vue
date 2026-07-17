@@ -13,7 +13,7 @@ import { computed } from 'vue';
 const game = useGameStore();
 const ui = useUiStore();
 
-const my = computed(() => game.state.awaitingAction && !game.state.over);
+const my = computed(() => game.state.isAwaitingAction && !game.state.over);
 const human = computed(() => game.state.players[0]);
 
 const hasBarracks = computed(() =>
@@ -89,29 +89,30 @@ function onRecruit(): void {
   <div id="action-zone">
     <div class="zone-label">ACTIONS</div>
     <button
+      v-tooltip="recruitTitle"
       class="btn action"
       :disabled="
         !my || !hasActionCard(human, 'RECRUIT') || !canRecruitSomewhere
       "
-      v-tooltip="recruitTitle"
       @click="onRecruit">
       🪖 Recruit ×{{ human.hand.RECRUIT }}
     </button>
     <button
+      v-tooltip="attackTitle"
       class="btn action"
       :disabled="!my || !hasActionCard(human, 'ATTACK') || !canLaunchSomewhere"
-      v-tooltip="attackTitle"
       @click="ui.openModal('attack')">
       ⚔️ Attack ×{{ human.hand.ATTACK }}
     </button>
     <button
+      v-tooltip="moveTitle"
       class="btn action"
       :disabled="!my || !hasActionCard(human, 'MOVE') || !canMoveSomewhere"
-      v-tooltip="moveTitle"
       @click="ui.openModal('move')">
       🛸 Move ×{{ human.hand.MOVE }}
     </button>
     <button
+      v-tooltip="tradeTitle"
       class="btn action"
       :disabled="
         !my ||
@@ -119,20 +120,19 @@ function onRecruit(): void {
         !hasEmbassy ||
         filterAlivePlayers(game.state).length < 2
       "
-      v-tooltip="tradeTitle"
       @click="ui.openModal('trade')">
       🔁 Trade ×{{ human.hand.TRADE }}
     </button>
     <button
+      v-tooltip="influenceTitle"
       class="btn action"
       :disabled="!my || heldInf < 1"
-      v-tooltip="influenceTitle"
       @click="ui.openModal('influence')">
       ⭐ Influence ×{{ heldInf }}
     </button>
     <button
-      class="btn action end"
       id="btn-end"
+      class="btn action end"
       :disabled="!my"
       @click="dispatch(createEndTurnAction({ playerId: 0 }))">
       ⏭️ End Turn

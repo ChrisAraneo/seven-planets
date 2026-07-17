@@ -1,5 +1,4 @@
 import { assign, noop } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 
 import {
@@ -11,13 +10,14 @@ import {
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
+import { chain } from '../utils/chain';
+import { createPool } from './create-pool';
 import { doIncome } from './do-income';
 import { doShieldUpkeep } from './do-shield-upkeep';
-import { getDraftOrder } from './get-draft-order';
 import { filterAlivePlayers } from './filter-alive-players';
+import { getDraftOrder } from './get-draft-order';
 import { isSingularityInPlay } from './is-singularity-in-play';
 import { log } from './log';
-import { createPool } from './create-pool';
 import { updatePacifistStatus } from './update-pacifist-status';
 
 /* Everything that happens between turns: bump the turn counter, reset the
@@ -51,17 +51,17 @@ function beginPlayerTurn(state: GameState, player: Player): void {
     assign(player, {
       hasTradedCurrentTurn: false,
       // Influence skip cards: paralysed players sit out draft AND action phases.
-      skippedNow: player.isAlive && player.skipTurns > 0,
+      isSkippedNow: player.isAlive && player.skipTurns > 0,
     }),
   )
-    .thru((player) => tickSkipTurns(state, player))
+    .thru(() => tickSkipTurns(state, player))
     .value();
 }
 
 function tickSkipTurns(state: GameState, player: Player): void {
   return match(player)
-    .when((player) => player.skipTurns <= 0, noop)
-    .otherwise((player) =>
+    .when(() => player.skipTurns <= 0, noop)
+    .otherwise(() =>
       chain(assign(player, { skipTurns: player.skipTurns - 1 }))
         .thru((ticked) => logParalysis(state, ticked))
         .value(),
@@ -70,9 +70,9 @@ function tickSkipTurns(state: GameState, player: Player): void {
 
 function logParalysis(state: GameState, player: Player): void {
   return match(player)
-    .when((player) => !player.isAlive, noop)
+    .when(() => !player.isAlive, noop)
     .otherwise(
-      (player) =>
+      () =>
         void assign(
           state,
           log(
@@ -94,14 +94,14 @@ function getRemainingSkipsSuffix(skipTurns: number): string {
 }
 
 function announceSingularity(state: GameState): void {
-  return match(!state.singularityAnnounced && isSingularityInPlay(state))
+  return match(!state.isSingularityAnnounced && isSingularityInPlay(state))
     .with(
       true,
       () =>
         void assign(
           state,
           log(
-            assign(state, { singularityAnnounced: true }),
+            assign(state, { isSingularityAnnounced: true }),
             '🌀 A Research Lab stands complete somewhere — the SINGULARITY card (technology + extra draft picks) can now appear in the pool!',
             'sys',
           ),
@@ -125,30 +125,30 @@ function getTurnFlavor(turn: number): string {
 
 function getMilestoneLogs(state: GameState): GameState {
   return chain(state)
-    .thru((state) =>
+    .thru((current) =>
       logWhenTurnIs(
-        state,
+        current,
         BUILDINGS_FROM_TURN,
         '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
       ),
     )
-    .thru((state) =>
+    .thru((current) =>
       logWhenTurnIs(
-        state,
+        current,
         ACTION_CARDS_FROM_TURN,
         '⚡ Action cards have entered the pool — ⚔️ Attack, 🪖 Recruit and 🔁 Trade can now be drafted!',
       ),
     )
-    .thru((state) =>
+    .thru((current) =>
       logWhenTurnIs(
-        state,
+        current,
         MOVE_CARDS_FROM_TURN,
         '🛸 Move cards have entered the pool — troops can now be redeployed (Spaceport required)!',
       ),
     )
-    .thru((state) =>
+    .thru((current) =>
       logWhenTurnIs(
-        state,
+        current,
         ADVANCED_FROM_TURN,
         '🔬 Advanced blueprints unlocked — the 🔬 Research Lab can now appear in the pool!',
       ),

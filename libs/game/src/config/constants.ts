@@ -4,8 +4,8 @@
    ===================================================================== */
 
 import { assign, fromPairs, mapValues } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
+
 import type { ActionType } from '../interfaces/action-type';
 import type { BuildingDefinition } from '../interfaces/building-definition';
 import type { BuildingType } from '../interfaces/building-type';
@@ -18,6 +18,7 @@ import type { InfluenceType } from '../interfaces/influence-type';
 import type { PlanetStyle } from '../interfaces/planet-style';
 import type { PoolType } from '../interfaces/pool-type';
 import type { ResourceType } from '../interfaces/resource-type';
+import { chain } from '../utils/chain';
 
 export const RESOURCE_TYPES: ResourceType[] = [
   'ORE',
@@ -34,10 +35,14 @@ export const ACTION_TYPES: ActionType[] = [
 ];
 export const CARD_TYPES: CardType[] = [...RESOURCE_TYPES, ...ACTION_TYPES];
 
-export const BUILDINGS_FROM_TURN = 6; // Turns 1-5 deal only resource cards; buildings join at 6
-export const ACTION_CARDS_FROM_TURN = 10; // ⚔️ Attack, 🪖 Recruit & 🔁 Trade cards are dealt from turn 10
-export const MOVE_CARDS_FROM_TURN = 20; // 🛸 Move cards join the action deck at turn 20
-export const ADVANCED_FROM_TURN = 10; // The Research Lab card is dealt from turn 10
+// Turns 1-5 deal only resource cards; buildings join at 6
+export const BUILDINGS_FROM_TURN = 6;
+// ⚔️ Attack, 🪖 Recruit & 🔁 Trade cards are dealt from turn 10
+export const ACTION_CARDS_FROM_TURN = 10;
+// 🛸 Move cards join the action deck at turn 20
+export const MOVE_CARDS_FROM_TURN = 20;
+// The Research Lab card is dealt from turn 10
+export const ADVANCED_FROM_TURN = 10;
 export const INFLUENCE_CARDS_FROM_TURN = 30;
 
 export const CARDS: Record<string, CardDefinition> = {
@@ -71,7 +76,7 @@ export const CARDS: Record<string, CardDefinition> = {
     color: '#8fb4e8',
     weight: 30,
     value: 1.2,
-    action: true,
+    isAction: true,
   },
   ATTACK: {
     name: 'Attack',
@@ -79,7 +84,7 @@ export const CARDS: Record<string, CardDefinition> = {
     color: '#ff5470',
     weight: 10,
     value: 1.4,
-    action: true,
+    isAction: true,
   },
   MOVE: {
     name: 'Move',
@@ -87,7 +92,7 @@ export const CARDS: Record<string, CardDefinition> = {
     color: '#6da2ff',
     weight: 6,
     value: 0.9,
-    action: true,
+    isAction: true,
   },
   TRADE: {
     name: 'Trade',
@@ -95,7 +100,7 @@ export const CARDS: Record<string, CardDefinition> = {
     color: '#ffd23d',
     weight: 18,
     value: 1,
-    action: true,
+    isAction: true,
   },
 };
 
@@ -228,7 +233,8 @@ const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   HARVESTER: 2,
   SPACEPORT: 2,
   EMBASSY: 2,
-  SINGULARITY: 4, // L4 is the apex, unlocked only by TECHNOLOGY 4 (a fully-built planet)
+  // L4 is the apex, unlocked only by TECHNOLOGY 4 (a fully-built planet)
+  SINGULARITY: 4,
 };
 export function getMaxLevel(id: BuildingType): number {
   return BUILDING_MAX_LEVEL[id] || 3;
@@ -238,12 +244,10 @@ export function getMaxLevel(id: BuildingType): number {
 export function computeBuildingCost(id: BuildingType, level: number): Cost {
   return match(level)
     .when(
-      (level) => level <= 1,
+      () => level <= 1,
       () => BUILDINGS[id].cost,
     )
-    .otherwise((level) =>
-      mapValues(BUILDINGS[id].cost, (amount) => amount * level),
-    );
+    .otherwise(() => mapValues(BUILDINGS[id].cost, (amount) => amount * level));
 }
 
 // Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
@@ -268,7 +272,7 @@ assign(
         color: BUILDINGS[buildingType].cardColor,
         weight: BUILDINGS[buildingType].cardWeight,
         value: 0,
-        building: true,
+        isBuilding: true,
       },
     ]),
   ),
@@ -319,7 +323,15 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDefinition> = {
     desc: 'All your planets are under truce for 1 turn',
   },
 };
-export const INFLUENCE_TYPES = Object.keys(INFLUENCE_CARDS) as InfluenceType[];
+export const INFLUENCE_TYPES: InfluenceType[] = [
+  'SKIP_ARMY',
+  'SKIP_PLANETS',
+  'SKIP_INFLUENCE',
+  'SKIP_TECH',
+  'STEAL_ACTION',
+  'COUP',
+  'PEACE',
+];
 assign(
   CARDS,
   fromPairs(
@@ -331,7 +343,7 @@ assign(
         color: '#ffb0d8',
         weight: 1,
         value: 0,
-        influenceCard: true,
+        isInfluenceCard: true,
       },
     ]),
   ),
@@ -342,57 +354,94 @@ export const POOL_TYPES: PoolType[] = [
   ...INFLUENCE_TYPES,
 ];
 
-export const BASE_ROCKET_CAP = 3; // Each Silo LEVEL doubles it: 3 → 6 → 12 → 24
-export const SILO_HIT_BONUS = 2; // ...and adds +2 strike per level
-export const SHIELD_DEFENSE = [0, 4, 8, 16] as const; // Defense by shield level (L1:+4, L2:+8, L3:+16)
-export const SHIELD_UPKEEP_LEVEL = 3; // From this level the shield needs upkeep...
-export const SHIELD_UPKEEP_CRYSTAL = 2; // ...draining this many 💎 every turn
-export const SHIELD_UNPOWERED_DEFENSE = 8; // An L3 shield that missed its upkeep falls back to this
-export const HOME_FIELD = 2; // Flat defense bonus for defenders
-export const SINGULARITY_DEF_BONUS = 8; // A level-4 Singularity warps local space: +8 planet defense
+// Each Silo LEVEL doubles it: 3 → 6 → 12 → 24
+export const BASE_ROCKET_CAP = 3;
+// ...and adds +2 strike per level
+export const SILO_HIT_BONUS = 2;
+// Defense by shield level (L1:+4, L2:+8, L3:+16)
+export const SHIELD_DEFENSE = [0, 4, 8, 16] as const;
+// From this level the shield needs upkeep...
+export const SHIELD_UPKEEP_LEVEL = 3;
+// ...draining this many 💎 every turn
+export const SHIELD_UPKEEP_CRYSTAL = 2;
+// An L3 shield that missed its upkeep falls back to this
+export const SHIELD_UNPOWERED_DEFENSE = 8;
+// Flat defense bonus for defenders
+export const HOME_FIELD = 2;
+// A level-4 Singularity warps local space: +8 planet defense
+export const SINGULARITY_DEF_BONUS = 8;
 
 // COMBAT MATH — the single source of truth for battle resolution, shared by
 // The engine (doAttack) and every AI that predicts battle outcomes (./ai).
 // Change these numbers and both the game AND the AI's risk calculations
 // Follow automatically. Casualty fractions are exact integer num/den pairs.
 export const COMBAT = {
-  attackPerTroop: 2, // Strike power contributed by each attacking troop
-  defensePerTroop: 2, // Defense contributed by each defending troop
-  attackRoll: 4, // Attacker adds randomInt(0, attackRoll) to the strike (more swing)
-  defenseRoll: 4, // Defender adds randomInt(0, defenseRoll) to the defense (more swing)
-  winDefLoss: { num: 1, den: 2 }, // Win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
-  winAttLoss: { num: 1, den: 3 }, // Win: attackers lose floor(n/3)
-  loseAttLoss: { num: 3, den: 4 }, // Loss: attackers lose ceil(3n/4)
-  loseDefLoss: { num: 1, den: 4 }, // Loss: defenders lose floor(n/4)
+  // Strike power contributed by each attacking troop
+  attackPerTroop: 2,
+  // Defense contributed by each defending troop
+  defensePerTroop: 2,
+  // Attacker adds randomInt(0, attackRoll) to the strike (more swing)
+  attackRoll: 4,
+  // Defender adds randomInt(0, defenseRoll) to the defense (more swing)
+  defenseRoll: 4,
+  // Win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
+  winDefLoss: { num: 1, den: 2 },
+  // Win: attackers lose floor(n/3)
+  winAttLoss: { num: 1, den: 3 },
+  // Loss: attackers lose ceil(3n/4)
+  loseAttLoss: { num: 3, den: 4 },
+  // Loss: defenders lose floor(n/4)
+  loseDefLoss: { num: 1, den: 4 },
 } as const;
-export const CONQUEST_TRUCE = 3; // A freshly conquered planet cannot be attacked for this many turns
-export const PEACE_TRUCE = 1; // Peace Treaty card: planets are under truce for this many turns
-export const SKIP_TURNS = 1; // ⏭️ skip influence cards (Sabotage/Uprising/…) paralyse a rival for this many turns
+// A freshly conquered planet cannot be attacked for this many turns
+export const CONQUEST_TRUCE = 3;
+// Peace Treaty card: planets are under truce for this many turns
+export const PEACE_TRUCE = 1;
+// ⏭️ skip influence cards (Sabotage/Uprising/…) paralyse a rival for this many turns
+export const SKIP_TURNS = 1;
 
 // PACIFIST STATUS — a player who launches no attack for this many turns turns
 // Permanently pacifist: they can never attack again, but each of their planets
 // Gains a flat defense bonus and produces extra influence every turn.
 export const PACIFIST_TURNS = 50;
-export const PACIFIST_DEF_BONUS = 4; // Added to every pacifist planet's defense
-export const PACIFIST_INFLUENCE = 2; // Extra ⭐ per pacifist planet every turn
+// Added to every pacifist planet's defense
+export const PACIFIST_DEF_BONUS = 4;
+// Extra ⭐ per pacifist planet every turn
+export const PACIFIST_INFLUENCE = 2;
 
 export const PLANET_STYLES: PlanetStyle[] = [
-  { light: '#4fd8c0', dark: '#0e4f63', feature: 'continents' }, //  0 Terra Prime (human)
-  { light: '#f0c070', dark: '#8a4416', feature: 'desert' }, //  1 arid desert world
-  { light: '#c9d6e8', dark: '#43485e', feature: 'city' }, //  2 machine city world
-  { light: '#8fe08a', dark: '#1e5c33', feature: 'moon' }, //  3 lush moon world
-  { light: '#d8f0ff', dark: '#3a6d94', feature: 'ice' }, //  4 frozen world
-  { light: '#ffd76e', dark: '#a33f14', feature: 'rings' }, //  5 ringed gas giant
-  { light: '#9a7fd0', dark: '#2a1e4d', feature: 'storm' }, //  6 storm world
-  { light: '#ff8060', dark: '#6a1a05', feature: 'lava' }, //  7 volcanic world
-  { light: '#60d890', dark: '#105030', feature: 'forest' }, //  8 dense jungle world
-  { light: '#c0e070', dark: '#304010', feature: 'toxic' }, //  9 toxic swamp world
-  { light: '#a0c8ff', dark: '#102060', feature: 'crystal' }, // 10 crystal spire world
-  { light: '#f0d090', dark: '#604010', feature: 'bands' }, // 11 sand-band desert
-  { light: '#c0c8f8', dark: '#1a1a40', feature: 'void' }, // 12 void / dark matter
-  { light: '#30c0d8', dark: '#0a3048', feature: 'ocean' }, // 13 endless ocean world
-  { light: '#ffb0d8', dark: '#503060', feature: 'nebula' }, // 14 nebula heart world
-  { light: '#b8ff70', dark: '#204010', feature: 'radiation' }, // 15 irradiated world
+  // 0 Terra Prime (human)
+  { light: '#4fd8c0', dark: '#0e4f63', feature: 'continents' },
+  // 1 arid desert world
+  { light: '#f0c070', dark: '#8a4416', feature: 'desert' },
+  // 2 machine city world
+  { light: '#c9d6e8', dark: '#43485e', feature: 'city' },
+  // 3 lush moon world
+  { light: '#8fe08a', dark: '#1e5c33', feature: 'moon' },
+  // 4 frozen world
+  { light: '#d8f0ff', dark: '#3a6d94', feature: 'ice' },
+  // 5 ringed gas giant
+  { light: '#ffd76e', dark: '#a33f14', feature: 'rings' },
+  // 6 storm world
+  { light: '#9a7fd0', dark: '#2a1e4d', feature: 'storm' },
+  // 7 volcanic world
+  { light: '#ff8060', dark: '#6a1a05', feature: 'lava' },
+  // 8 dense jungle world
+  { light: '#60d890', dark: '#105030', feature: 'forest' },
+  // 9 toxic swamp world
+  { light: '#c0e070', dark: '#304010', feature: 'toxic' },
+  // 10 crystal spire world
+  { light: '#a0c8ff', dark: '#102060', feature: 'crystal' },
+  // 11 sand-band desert
+  { light: '#f0d090', dark: '#604010', feature: 'bands' },
+  // 12 void / dark matter
+  { light: '#c0c8f8', dark: '#1a1a40', feature: 'void' },
+  // 13 endless ocean world
+  { light: '#30c0d8', dark: '#0a3048', feature: 'ocean' },
+  // 14 nebula heart world
+  { light: '#ffb0d8', dark: '#503060', feature: 'nebula' },
+  // 15 irradiated world
+  { light: '#b8ff70', dark: '#204010', feature: 'radiation' },
 ];
 
 // Full roster of possible AI opponents. Six are drawn at random each game.

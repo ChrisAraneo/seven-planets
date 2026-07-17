@@ -144,7 +144,7 @@ function propose(): void {
     <table class="ttable">
       <thead>
         <tr>
-          <th></th>
+          <th />
           <th>YOU GIVE</th>
           <th>YOU RECEIVE</th>
         </tr>

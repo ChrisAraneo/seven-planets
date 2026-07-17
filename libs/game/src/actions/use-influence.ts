@@ -1,5 +1,5 @@
-import type { InfluenceType } from '../interfaces/influence-type';
 import type { InfluenceOptions } from '../interfaces/influence-options';
+import type { InfluenceType } from '../interfaces/influence-type';
 
 export interface UseInfluenceAction {
   kind: 'USE_INFLUENCE';

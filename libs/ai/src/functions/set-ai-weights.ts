@@ -1,5 +1,4 @@
 import { getAiState } from '../state';
-
 import type { Weights } from '../weights';
 
 export function setAiWeights(patch: Partial<Weights>): void {

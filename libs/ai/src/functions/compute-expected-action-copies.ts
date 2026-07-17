@@ -1,10 +1,10 @@
+import type { ActionType } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import {
   ACTION_CARDS_FROM_TURN,
   CARDS,
   MOVE_CARDS_FROM_TURN,
 } from '@seven-planets/game';
-import type { ActionType } from '@seven-planets/game';
 
 export function computeExpectedActionCopies(actionType: ActionType): number {
   if (getTurn() < ACTION_CARDS_FROM_TURN) {

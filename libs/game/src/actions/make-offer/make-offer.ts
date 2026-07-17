@@ -1,5 +1,5 @@
-import { dispatch } from '../../state';
 import type { Cost } from '../../interfaces/cost';
+import { dispatch } from '../../state';
 
 export interface MakeOfferPayload {
   playerId: number;

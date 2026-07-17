@@ -9,7 +9,7 @@ export interface Planet {
   protectedUntil: number;
   /** True when an L3 Shield missed its per-turn 💎 upkeep this turn —
       the shield projects only SHIELD_UNPOWERED_DEFENSE until next upkeep. */
-  shieldUnpowered: boolean;
+  isShieldUnpowered: boolean;
   x: number;
   y: number;
   r: number;

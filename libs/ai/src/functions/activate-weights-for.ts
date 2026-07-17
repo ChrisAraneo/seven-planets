@@ -1,5 +1,6 @@
-import { getAiState } from '../state';
 import type { Player } from '@seven-planets/game';
+
+import { getAiState } from '../state';
 
 export function activateWeightsFor(player: Player): void {
   const aiState = getAiState();

@@ -24,7 +24,7 @@ const game = useGameStore();
 // clicks to the human's own draft turn (seat 0).
 const isPicking = computed(
   () =>
-    game.state.awaitingPick && game.state.activeId === 0 && !game.state.over,
+    game.state.isAwaitingPick && game.state.activeId === 0 && !game.state.over,
 );
 
 interface PoolCardVM {
@@ -62,8 +62,8 @@ const poolCards = computed<PoolCardVM[]>(() => {
     const card = CARDS[poolType];
     const valid =
       picking && canPickCard(state, human, poolType, getDraftPlanet);
-    const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${card.action ? 'action' : ''}`;
-    if (card.building) {
+    const base = `card ${picking ? (valid ? 'pickable' : 'locked') : ''} ${card.isAction ? 'action' : ''}`;
+    if (card.isBuilding) {
       const buildingType = poolType as BuildingType;
       const buildingDef = BUILDINGS[buildingType];
       const cur = picking ? getDraftPlanet.buildings[buildingType] || 0 : 0;
@@ -86,7 +86,7 @@ const poolCards = computed<PoolCardVM[]>(() => {
         title: `${buildingDef.name}: ${buildingDef.desc} — cost ${cost} for level ${next} (level N costs N× base, max L${getMaxLevel(buildingType)}, capped by your tech). Picking builds or upgrades it instantly on the drafting planet.`,
       };
     }
-    if (card.influenceCard) {
+    if (card.isInfluenceCard) {
       const influenceCard = INFLUENCE_CARDS[poolType as InfluenceType];
       return {
         poolIndex,
@@ -124,26 +124,36 @@ function pick(poolCard: PoolCardVM): void {
 
 <template>
   <div id="pool-zone">
-    <div id="status">{{ game.state.status }}</div>
+    <div id="status">
+      {{ game.state.status }}
+    </div>
     <div id="pool">
       <div
         v-for="poolCard in poolCards"
         :key="poolCard.poolIndex"
+        v-tooltip="poolCard.title"
         :class="poolCard.cls"
         :style="{ borderColor: poolCard.color }"
-        v-tooltip="poolCard.title"
         @click="pick(poolCard)">
         <template v-if="poolCard.kind === 'regular'">
-          <div class="ic">{{ poolCard.icon }}</div>
-          <div class="nm">{{ poolCard.name }}</div>
+          <div class="ic">
+            {{ poolCard.icon }}
+          </div>
+          <div class="nm">
+            {{ poolCard.name }}
+          </div>
         </template>
         <template v-else>
           <div class="bhead">
             <span class="bic2">{{ poolCard.icon }}</span
             ><span class="bnm">{{ poolCard.name }}{{ poolCard.badge }}</span>
           </div>
-          <div class="bcost2">{{ poolCard.cost }}</div>
-          <div class="bbonus">{{ poolCard.bonus }}</div>
+          <div class="bcost2">
+            {{ poolCard.cost }}
+          </div>
+          <div class="bbonus">
+            {{ poolCard.bonus }}
+          </div>
         </template>
       </div>
     </div>

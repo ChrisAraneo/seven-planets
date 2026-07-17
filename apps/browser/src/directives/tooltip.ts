@@ -8,7 +8,7 @@ import {
 } from '@floating-ui/dom';
 import type { Directive } from 'vue';
 
-/* v-tooltip="text" — a floating-ui replacement for the native `title`
+/* V-tooltip="text" — a floating-ui replacement for the native `title`
    attribute: instant, styled to match the game, and kept inside the
    viewport by floating-ui's flip/shift middleware (with an arrow).
    An empty/undefined value shows nothing. */
@@ -17,7 +17,7 @@ interface TooltipHandle {
   text: string;
   tip: HTMLDivElement | null;
   content: HTMLDivElement | null;
-  /** autoUpdate disposer while the tooltip is visible. */
+  /** AutoUpdate disposer while the tooltip is visible. */
   stop: (() => void) | null;
   listeners: [keyof HTMLElementEventMap, EventListener][];
 }
@@ -31,21 +31,35 @@ const STATIC_SIDE: Record<string, string> = {
   left: 'right',
 };
 
+// How far the tooltip floats from its anchor, and the viewport padding
+// Shift() keeps around it.
+const TOOLTIP_OFFSET = 8;
+const VIEWPORT_PADDING = 6;
+
+function createTipElements(text: string): {
+  tip: HTMLDivElement;
+  content: HTMLDivElement;
+  arrowEl: HTMLDivElement;
+} {
+  const tip = document.createElement('div');
+  tip.classList.add('fui-tooltip');
+  tip.setAttribute('role', 'tooltip');
+  const content = document.createElement('div');
+  content.classList.add('fui-tooltip-content');
+  content.textContent = text;
+  const arrowEl = document.createElement('div');
+  arrowEl.classList.add('fui-tooltip-arrow');
+  tip.append(content, arrowEl);
+  return { tip, content, arrowEl };
+}
+
 function show(el: HTMLElement): void {
   const handle = handles.get(el);
   if (!handle || handle.tip || !handle.text) {
     return;
   }
 
-  const tip = document.createElement('div');
-  tip.className = 'fui-tooltip';
-  tip.setAttribute('role', 'tooltip');
-  const content = document.createElement('div');
-  content.className = 'fui-tooltip-content';
-  content.textContent = handle.text;
-  const arrowEl = document.createElement('div');
-  arrowEl.className = 'fui-tooltip-arrow';
-  tip.append(content, arrowEl);
+  const { tip, content, arrowEl } = createTipElements(handle.text);
   document.body.append(tip);
   handle.tip = tip;
   handle.content = content;
@@ -54,19 +68,19 @@ function show(el: HTMLElement): void {
     void computePosition(el, tip, {
       placement: 'top',
       middleware: [
-        offset(8),
+        offset(TOOLTIP_OFFSET),
         flip(),
-        shift({ padding: 6 }),
+        shift({ padding: VIEWPORT_PADDING }),
         arrow({ element: arrowEl }),
       ],
     }).then(({ x, y, placement, middlewareData }) => {
       Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
       const side = placement.split('-')[0];
+      const arrowX = middlewareData.arrow?.x;
+      const arrowY = middlewareData.arrow?.y;
       Object.assign(arrowEl.style, {
-        left:
-          middlewareData.arrow?.x != null ? `${middlewareData.arrow.x}px` : '',
-        top:
-          middlewareData.arrow?.y != null ? `${middlewareData.arrow.y}px` : '',
+        left: typeof arrowX === 'number' ? `${arrowX}px` : '',
+        top: typeof arrowY === 'number' ? `${arrowY}px` : '',
         right: '',
         bottom: '',
         [STATIC_SIDE[side]]: '-4px',

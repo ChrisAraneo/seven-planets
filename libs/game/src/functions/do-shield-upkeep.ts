@@ -7,7 +7,6 @@ import {
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
-
 import { log } from './log';
 import { updatePlanet } from './update-planet';
 import { updatePlayer } from './update-player';
@@ -64,12 +63,12 @@ function setUnpowered(
   planet: Planet,
   unpowered: boolean,
 ): GameState {
-  return match(planet.shieldUnpowered === unpowered)
+  return match(planet.isShieldUnpowered === unpowered)
     .with(true, () => state)
     .otherwise(() =>
-      updatePlanet(state, planet.id, (planet) => ({
-        ...planet,
-        shieldUnpowered: unpowered,
+      updatePlanet(state, planet.id, (current) => ({
+        ...current,
+        isShieldUnpowered: unpowered,
       })),
     );
 }

@@ -1,6 +1,5 @@
 import type { ActionType } from '../interfaces/action-type';
 import type { GameState } from '../interfaces/game-state';
-
 import { updatePlayer } from './update-player';
 
 export function spendActionCard(

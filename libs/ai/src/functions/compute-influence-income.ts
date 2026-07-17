@@ -1,8 +1,8 @@
-import { PACIFIST_INFLUENCE } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { PACIFIST_INFLUENCE } from '@seven-planets/game';
 
-import { hasBuilding } from './has-building';
 import { getOwnedPlanets } from './get-owned-planets';
+import { hasBuilding } from './has-building';
 
 export function computeInfluenceIncome(player: Player): number {
   let income = 0;

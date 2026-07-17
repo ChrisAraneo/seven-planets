@@ -1,9 +1,10 @@
 import { assign } from 'lodash-es';
-import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
 
 import { CARDS, INFLUENCE_CARDS } from '../../config/constants';
 import { buildBuilding } from '../../functions/build-building';
+import { isBuildingType } from '../../functions/is-building-type';
+import { isInfluenceType } from '../../functions/is-influence-type';
 import { log } from '../../functions/log';
 import type { BuildingType } from '../../interfaces/building-type';
 import type { GameState } from '../../interfaces/game-state';
@@ -11,6 +12,7 @@ import type { InfluenceType } from '../../interfaces/influence-type';
 import type { Planet } from '../../interfaces/planet';
 import type { Player } from '../../interfaces/player';
 import type { PoolType } from '../../interfaces/pool-type';
+import { chain } from '../../utils/chain';
 
 export function applyPick(
   state: GameState,
@@ -25,15 +27,11 @@ export function applyPick(
   })
     .tap(({ player, planet, type }) =>
       match(type)
-        .when(
-          (poolType) => Boolean(CARDS[poolType].building),
-          (poolType) =>
-            applyBuildingPick(state, player, planet, poolType as BuildingType),
+        .when(isBuildingType, (poolType) =>
+          applyBuildingPick(state, player, planet, poolType),
         )
-        .when(
-          (poolType) => Boolean(CARDS[poolType].influenceCard),
-          (poolType) =>
-            applyInfluencePick(state, player, poolType as InfluenceType),
+        .when(isInfluenceType, (poolType) =>
+          applyInfluencePick(state, player, poolType),
         )
         .otherwise((poolType) =>
           applyCardPick(state, player, planet, poolType, slot),

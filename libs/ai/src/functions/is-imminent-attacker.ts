@@ -1,12 +1,12 @@
-import { COMBAT } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { COMBAT } from '@seven-planets/game';
 
+import { canTarget } from './can-target';
 import { computeBattleWinProbability } from './compute-battle-win-probability';
 import { computeDefenseBase } from './compute-defense-base';
-import { canTarget } from './can-target';
 import { computeMinimumTroopsToConquer } from './compute-minimum-troops-to-conquer';
-import { getOwnedPlanets } from './get-owned-planets';
 import { computeProjectedStrike } from './compute-projected-strike';
+import { getOwnedPlanets } from './get-owned-planets';
 import { isUnderTruce } from './is-under-truce';
 
 export function isImminentAttacker(owner: Player, attacker: Player): boolean {
@@ -17,19 +17,17 @@ export function isImminentAttacker(owner: Player, attacker: Player): boolean {
     return false;
   }
   for (const planet of getOwnedPlanets(owner)) {
-    if (isUnderTruce(planet)) {
-      continue;
-    }
-    const strike = computeProjectedStrike(attacker, 0, planet.id);
-    if (strike.n < computeMinimumTroopsToConquer(planet.troops)) {
-      continue;
-    }
-    const winProbability = computeBattleWinProbability(
-      COMBAT.attackPerTroop * strike.n + strike.bonus,
-      computeDefenseBase(planet),
-    );
-    if (winProbability >= 0.35) {
-      return true;
+    if (!isUnderTruce(planet)) {
+      const strike = computeProjectedStrike(attacker, 0, planet.id);
+      if (strike.n >= computeMinimumTroopsToConquer(planet.troops)) {
+        const winProbability = computeBattleWinProbability(
+          COMBAT.attackPerTroop * strike.n + strike.bonus,
+          computeDefenseBase(planet),
+        );
+        if (winProbability >= 0.35) {
+          return true;
+        }
+      }
     }
   }
   return false;

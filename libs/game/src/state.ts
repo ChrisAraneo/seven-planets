@@ -10,11 +10,12 @@ import {
   queueScheduler,
   Subject,
 } from 'rxjs';
-import { chain } from './utils/chain';
+
+import type { Action } from './actions/action';
 import { createInitialGameState } from './functions/create-initial-game-state';
 import type { GameState } from './interfaces/game-state';
 import { reduce } from './reducers/reduce';
-import type { Action } from './actions/action';
+import { chain } from './utils/chain';
 
 const actionSubject = new Subject<Action>();
 const stateSubject = new BehaviorSubject<GameState>(createInitialGameState());
@@ -26,7 +27,7 @@ actionSubject
       defer(() => of(reduce(stateSubject.getValue(), action))).pipe(
         catchError((error: unknown) =>
           chain(error)
-            .tap((error) =>
+            .tap(() =>
               console.error(
                 '[seven-planets] action reduced to a no-op:',
                 error,

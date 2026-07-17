@@ -2,7 +2,7 @@ import { dispatch } from '../../state';
 
 export interface ResolveOfferPayload {
   playerId: number;
-  accept: boolean;
+  isAccepted: boolean;
 }
 
 /** Answer a pending trade offer. Event creator: validation and application

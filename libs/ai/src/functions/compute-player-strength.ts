@@ -1,8 +1,8 @@
-import { BUILD_ORDER, BUILDINGS, computeHandValue } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { BUILD_ORDER, BUILDINGS, computeHandValue } from '@seven-planets/game';
 
-import { getOwnedPlanets } from './get-owned-planets';
 import { computeTotalTroops } from './compute-total-troops';
+import { getOwnedPlanets } from './get-owned-planets';
 
 export function computePlayerStrength(player: Player): number {
   const resources = computeHandValue(player.hand);

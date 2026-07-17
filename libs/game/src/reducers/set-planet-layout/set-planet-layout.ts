@@ -1,6 +1,7 @@
 import { match, P } from 'ts-pattern';
-import type { GameState } from '../../interfaces/game-state';
+
 import type { PlanetLayout } from '../../actions/set-planet-layout/set-planet-layout';
+import type { GameState } from '../../interfaces/game-state';
 
 const { nullish } = P;
 

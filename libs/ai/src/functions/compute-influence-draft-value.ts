@@ -1,61 +1,83 @@
-import { getAiState } from '../state';
-import { INFLUENCE_CARDS } from '@seven-planets/game';
 import type { InfluenceType, Player } from '@seven-planets/game';
+import { INFLUENCE_CARDS } from '@seven-planets/game';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
+import { getAiState } from '../state';
 import { computeAverageStrength } from './compute-average-strength';
-import { getBestCoupTarget } from './get-best-coup-target';
-import type { Plan } from './plan-types';
 import { computePlayerStrength } from './compute-player-strength';
+import { getBestCoupTarget } from './get-best-coup-target';
 import { getSkipTarget } from './get-skip-target';
+import type { Plan } from './plan-types';
 
 export function computeInfluenceDraftValue(
   player: Player,
   influenceType: InfluenceType,
   plan: Plan,
 ): number {
-  const aiState = getAiState();
   const { cost } = INFLUENCE_CARDS[influenceType];
   const starCost =
     cost * (plan.kind === 'COUP_BANK' && influenceType !== 'COUP' ? 1.2 : 0.35);
-  let value = 0;
   switch (influenceType) {
     case 'COUP': {
       const coupTarget = getBestCoupTarget(player);
-      if (coupTarget && coupTarget.value >= aiState.W.coupValueFloor) {
+      if (coupTarget && coupTarget.value >= getAiState().W.coupValueFloor) {
         return 12 - ((player.hand.COUP || 0) > 0 ? 6 : 0);
       }
-      value = -2;
-      break;
+      return finishValue(player, influenceType, -2, starCost);
     }
     case 'STEAL_ACTION': {
-      const canLoot = getAlivePlayers().some(
-        (rival) =>
-          rival.id !== player.id &&
-          (['ATTACK', 'RECRUIT', 'MOVE', 'TRADE'] as const).some(
-            (cardType) => (rival.hand[cardType] || 0) > 0,
-          ),
+      return finishValue(
+        player,
+        influenceType,
+        canLootActionCard(player) ? 1.5 : -2,
+        starCost,
       );
-      value = canLoot ? 1.5 : -2;
-      break;
     }
     case 'PEACE': {
-      value = 1 + plan.threat * 0.4;
-      break;
+      return finishValue(
+        player,
+        influenceType,
+        1 + plan.threat * 0.4,
+        starCost,
+      );
     }
     default: {
-      const target = getSkipTarget(player, influenceType);
-      if (!target) {
-        return -2;
-      }
-      const averageStrength = computeAverageStrength();
-      value =
-        1 +
-        (computePlayerStrength(target) / Math.max(1, averageStrength)) * 1.5;
+      return finishSkipValue(player, influenceType, starCost);
     }
   }
-  if ((player.hand[influenceType] || 0) > 0) {
-    value -= 1.5;
+}
+
+// Held copies discourage stacking; the star cost is paid either way.
+function finishValue(
+  player: Player,
+  influenceType: InfluenceType,
+  value: number,
+  starCost: number,
+): number {
+  return value - ((player.hand[influenceType] || 0) > 0 ? 1.5 : 0) - starCost;
+}
+
+function finishSkipValue(
+  player: Player,
+  influenceType: InfluenceType,
+  starCost: number,
+): number {
+  const target = getSkipTarget(player, influenceType);
+  if (!target) {
+    return -2;
   }
-  return value - starCost;
+  const averageStrength = computeAverageStrength();
+  const value =
+    1 + (computePlayerStrength(target) / Math.max(1, averageStrength)) * 1.5;
+  return finishValue(player, influenceType, value, starCost);
+}
+
+function canLootActionCard(player: Player): boolean {
+  return getAlivePlayers().some(
+    (rival) =>
+      rival.id !== player.id &&
+      (['ATTACK', 'RECRUIT', 'MOVE', 'TRADE'] as const).some(
+        (cardType) => (rival.hand[cardType] || 0) > 0,
+      ),
+  );
 }

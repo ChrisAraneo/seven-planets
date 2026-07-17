@@ -1,8 +1,7 @@
-import { createPinia, setActivePinia } from 'pinia';
-import { distinctUntilChanged, map } from 'rxjs';
-
 import { installAi } from '@seven-planets/ai';
 import { getGameState } from '@seven-planets/game';
+import { createPinia, setActivePinia } from 'pinia';
+import { distinctUntilChanged, map } from 'rxjs';
 
 import { useUiStore } from './ui-store';
 import { useUnlocksStore } from './unlocks-store';
@@ -29,7 +28,7 @@ setActivePinia(pinia);
 
 export { useEffectsStore } from './effects-store';
 export { useGameStore } from './game-store';
-export { useUiStore, type ModalName } from './ui-store';
+export { type ModalName, useUiStore } from './ui-store';
 export { useUnlocksStore } from './unlocks-store';
 
 // Seat the AI: subscriptions on getGameState() drive every non-human seat.

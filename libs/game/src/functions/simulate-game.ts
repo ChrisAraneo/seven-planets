@@ -1,6 +1,7 @@
 import { filter, firstValueFrom } from 'rxjs';
 import { match, P } from 'ts-pattern';
 
+import { getGameOverObject } from '..';
 import { getTurn } from '../getters/get-turn';
 import type { GameOver } from '../interfaces/game-over';
 import {
@@ -11,7 +12,6 @@ import {
   setGameState,
 } from '../state';
 import { assignKamikazes } from './assign-kamikazes';
-import { getGameOverObject } from '..';
 
 const { nonNullable } = P;
 
@@ -44,10 +44,7 @@ export async function simulateGame(
   return getGameResult(getGameOverObject(), getTurn());
 }
 
-function getGameResult(
-  over: GameOver | undefined,
-  turns: number,
-): SimulationResult {
+function getGameResult(over: GameOver | null, turns: number): SimulationResult {
   return {
     turns,
     winner: match(over?.winner)
@@ -58,7 +55,7 @@ function getGameResult(
       }))
       .otherwise(() => null),
     reason: match(over)
-      .with(nonNullable, (gameOver) => gameOver.reason || 'timeout')
+      .with(nonNullable, (gameOver) => gameOver.reason)
       .otherwise(() => 'timeout'),
   };
 }

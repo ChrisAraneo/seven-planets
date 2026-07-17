@@ -1,16 +1,30 @@
 import { fromPairs } from 'lodash-es';
-import { chain } from '../utils/chain';
+
 import {
-  CARD_TYPES,
-  INFLUENCE_TYPES,
-  shuffleArray,
+  AI_COLORS,
   AI_NAMES,
   AI_PLANET_NAMES,
-  AI_COLORS,
+  CARD_TYPES,
+  INFLUENCE_TYPES,
   PLANET_STYLES,
+  shuffleArray,
 } from '../config/constants';
-import type { Hand } from '../interfaces/hand';
 import type { GameState } from '../interfaces/game-state';
+import type { Hand } from '../interfaces/hand';
+import type { Planet } from '../interfaces/planet';
+import type { Player } from '../interfaces/player';
+import { chain } from '../utils/chain';
+
+// Six AI rivals join the single human seat.
+const AI_SEATS = 6;
+
+interface SeatDefinition {
+  name: string;
+  planet: string;
+  color: string;
+  isHuman: boolean;
+  styleIdx: number;
+}
 
 // Held influence cards (played later) start at 0 alongside resources/actions.
 function createStartingHand(): Hand {
@@ -20,33 +34,7 @@ function createStartingHand(): Hand {
 }
 
 export function createInitialGameState(): GameState {
-  // Name, homeworld, color and planet style are all randomized,
-  // so no AI is a fixed character.
-  return chain({
-    names: shuffleArray(AI_NAMES).slice(0, 6),
-    planetNames: shuffleArray(AI_PLANET_NAMES).slice(0, 6),
-    colors: shuffleArray(AI_COLORS).slice(0, 6),
-    // The human owns planet style 0 (Terra Prime); AI draw distinct styles from the rest.
-    styles: shuffleArray(
-      PLANET_STYLES.map((_, index) => index).filter((index) => index !== 0),
-    ).slice(0, 6),
-  })
-    .thru(({ names, planetNames, colors, styles }) => [
-      {
-        name: 'You',
-        planet: 'Terra Prime',
-        color: '#3df0ff',
-        human: true,
-        styleIdx: 0,
-      },
-      ...names.map((name: string, index: number) => ({
-        name,
-        planet: planetNames[index],
-        color: colors[index],
-        styleIdx: styles[index],
-        human: false,
-      })),
-    ])
+  return chain(createSeatDefinitions())
     .thru(
       (gameDefs): GameState => ({
         turn: 0,
@@ -56,47 +44,87 @@ export function createInitialGameState(): GameState {
         over: null,
         pool: [],
         activeId: -1,
-        draftPlanetId: -1, // The planet whose draft turn it is (buildings land here)
-        singularityAnnounced: false,
+        // The planet whose draft turn it is (buildings land here)
+        draftPlanetId: -1,
+        isSingularityAnnounced: false,
         startIdx: 0,
-        players: gameDefs.map((definition, index) => ({
-          id: index,
-          name: definition.name,
-          color: definition.color,
-          isHuman: Boolean(definition.human),
-          hand: createStartingHand(),
-          influence: 0,
-          skipTurns: 0,
-          skippedNow: false,
-          isAlive: true,
-          hasTradedCurrentTurn: false,
-          lastAttackTurn: 0,
-          hasPacifistStatus: false,
-          pacifismForfeited: false,
-          isKamikaze: false,
-        })),
-        planets: gameDefs.map((definition, index) => ({
-          id: index,
-          name: definition.planet,
-          ownerId: index,
-          buildings: {},
-          troops: 3,
-          protectedUntil: 0,
-          shieldUnpowered: false,
-          x: 0,
-          y: 0,
-          r: 30,
-          styleIdx: definition.styleIdx,
-        })),
+        players: createPlayers(gameDefs),
+        planets: createPlanets(gameDefs),
         log: [],
         effects: [],
         effectSeq: 0,
         status: '—',
-        awaitingPick: false,
-        awaitingAction: false,
+        isAwaitingPick: false,
+        isAwaitingAction: false,
         inputSeq: 0,
         pendingOffer: null,
       }),
     )
     .value();
+}
+
+// Name, homeworld, color and planet style are all randomized,
+// So no AI is a fixed character.
+function createSeatDefinitions(): SeatDefinition[] {
+  return chain({
+    names: shuffleArray(AI_NAMES).slice(0, AI_SEATS),
+    planetNames: shuffleArray(AI_PLANET_NAMES).slice(0, AI_SEATS),
+    colors: shuffleArray(AI_COLORS).slice(0, AI_SEATS),
+    // The human owns planet style 0 (Terra Prime); AI draw distinct styles from the rest.
+    styles: shuffleArray(
+      PLANET_STYLES.map((_, index) => index).filter((index) => index !== 0),
+    ).slice(0, AI_SEATS),
+  })
+    .thru(({ names, planetNames, colors, styles }): SeatDefinition[] => [
+      {
+        name: 'You',
+        planet: 'Terra Prime',
+        color: '#3df0ff',
+        isHuman: true,
+        styleIdx: 0,
+      },
+      ...names.map((name: string, index: number) => ({
+        name,
+        planet: planetNames[index],
+        color: colors[index],
+        styleIdx: styles[index],
+        isHuman: false,
+      })),
+    ])
+    .value();
+}
+
+function createPlayers(gameDefs: SeatDefinition[]): Player[] {
+  return gameDefs.map((definition, index) => ({
+    id: index,
+    name: definition.name,
+    color: definition.color,
+    isHuman: definition.isHuman,
+    hand: createStartingHand(),
+    influence: 0,
+    skipTurns: 0,
+    isSkippedNow: false,
+    isAlive: true,
+    hasTradedCurrentTurn: false,
+    lastAttackTurn: 0,
+    hasPacifistStatus: false,
+    hasForfeitedPacifism: false,
+    isKamikaze: false,
+  }));
+}
+
+function createPlanets(gameDefs: SeatDefinition[]): Planet[] {
+  return gameDefs.map((definition, index) => ({
+    id: index,
+    name: definition.planet,
+    ownerId: index,
+    buildings: {},
+    troops: 3,
+    protectedUntil: 0,
+    isShieldUnpowered: false,
+    x: 0,
+    y: 0,
+    r: 30,
+    styleIdx: definition.styleIdx,
+  }));
 }

@@ -1,8 +1,9 @@
-import { cloneDeep, assign } from 'lodash-es';
-import { chain } from '../../utils/chain';
+import { assign, cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
+
 import type { EndTurnPayload } from '../../actions/end-turn';
 import type { GameState } from '../../interfaces/game-state';
+import { chain } from '../../utils/chain';
 
 /* Reducer branch. Consumes the parked action turn and steps the cursor to
    the next seat — advance resumes from there. Allowed after game over (the
@@ -13,12 +14,12 @@ export function applyEndTurn(
 ): GameState {
   return match(state)
     .when(
-      (state) => payload.playerId !== state.activeId || !state.awaitingAction,
-      (state) => state,
+      () => payload.playerId !== state.activeId || !state.isAwaitingAction,
+      () => state,
     )
-    .otherwise((state) =>
+    .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) => assign(clone, { awaitingAction: false }))
+        .tap((clone) => assign(clone, { isAwaitingAction: false }))
         .tap((clone) =>
           match(clone.cursor)
             .with({ phase: 'action' }, (cursor) =>

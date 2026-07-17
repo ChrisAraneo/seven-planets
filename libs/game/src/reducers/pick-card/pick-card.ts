@@ -1,8 +1,9 @@
 import { assign, cloneDeep } from 'lodash-es';
-import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
-import type { GameState } from '../../interfaces/game-state';
+
 import type { PickCardPayload } from '../../actions/pick-card/pick-card';
+import type { GameState } from '../../interfaces/game-state';
+import { chain } from '../../utils/chain';
 import { applyPick } from './apply-pick';
 import { isValidPick } from './is-valid-pick';
 
@@ -18,23 +19,23 @@ export function applyPickCard(
 ): GameState {
   return match(state)
     .when(
-      (state) =>
-        !state.awaitingPick ||
+      () =>
+        !state.isAwaitingPick ||
         state.phase !== 'draft' ||
         payload.playerId !== state.activeId,
-      (state) => state,
+      () => state,
     )
     .when(
-      (state) => Boolean(state.over),
-      (state) => assign(cloneDeep(state), { awaitingPick: false }),
+      () => Boolean(state.over),
+      () => assign(cloneDeep(state), { isAwaitingPick: false }),
     )
     .when(
-      (state) => !isValidPick(state, payload),
-      (state) => state,
+      () => !isValidPick(state, payload),
+      () => state,
     )
-    .otherwise((state) =>
+    .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) => assign(clone, { awaitingPick: false }))
+        .tap((clone) => assign(clone, { isAwaitingPick: false }))
         .tap((clone) =>
           applyPick(
             clone,

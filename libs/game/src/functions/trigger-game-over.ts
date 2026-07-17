@@ -1,8 +1,8 @@
-import { chain } from '../utils/chain';
 import { match, P } from 'ts-pattern';
+
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-
+import { chain } from '../utils/chain';
 import { log } from './log';
 import { setStatus } from './set-status';
 
@@ -12,9 +12,9 @@ type GameOverReason = 'conquest' | 'eliminated';
 
 // End the game. Pure w.r.t. GameState — returns a new state carrying the result.
 // It does NOT touch the engine or its parked-input flags: the coroutine unwinds
-// on its own once `over` is set. A win taken during the draft aborts the current
-// step synchronously; one taken during an action turn is unwound by the seat's
-// own `endTurn` (the AI always ends its turn; the UI's turn is already over).
+// On its own once `over` is set. A win taken during the draft aborts the current
+// Step synchronously; one taken during an action turn is unwound by the seat's
+// Own `endTurn` (the AI always ends its turn; the UI's turn is already over).
 export function triggerGameOver(
   state: GameState,
   winnerId: number | null,
@@ -22,12 +22,10 @@ export function triggerGameOver(
 ): GameState {
   return match(state)
     .when(
-      (state) => Boolean(state.over),
-      (state) => state,
+      () => Boolean(state.over),
+      () => state,
     )
-    .otherwise((state) =>
-      endGame(state, getWinnerFor(state, winnerId), reason),
-    );
+    .otherwise(() => endGame(state, getWinnerFor(state, winnerId), reason));
 }
 
 function getWinnerFor(
@@ -45,9 +43,9 @@ function endGame(
   reason: GameOverReason,
 ): GameState {
   return chain({ ...state, over: { winner, reason } } as GameState)
-    .thru((state) => logOutcome(state, winner, reason))
-    .thru((state) => setStatus(state, getStatusLine(winner, reason)))
-    .thru((state) => ({ ...state, pendingOffer: null }) as GameState)
+    .thru((current) => logOutcome(current, winner, reason))
+    .thru((current) => setStatus(current, getStatusLine(winner, reason)))
+    .thru((current) => ({ ...current, pendingOffer: null }))
     .value();
 }
 

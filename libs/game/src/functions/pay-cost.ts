@@ -1,8 +1,7 @@
-import { chain } from '../utils/chain';
 import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
 import type { Hand } from '../interfaces/hand';
-
+import { chain } from '../utils/chain';
 import { updatePlayer } from './update-player';
 
 interface PaymentProgress {

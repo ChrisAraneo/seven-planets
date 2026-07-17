@@ -9,7 +9,7 @@ export function computePacifistDefenseBonus(
   planet: Planet,
 ): number {
   return (
-    Number(Boolean(state.players[planet.ownerId]?.hasPacifistStatus)) *
+    Number(state.players[planet.ownerId]?.hasPacifistStatus ?? false) *
     PACIFIST_DEF_BONUS
   );
 }

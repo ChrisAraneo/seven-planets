@@ -1,10 +1,10 @@
-import { getAiState } from '../state';
-import { BUILD_ORDER, computeBuildingCost } from '@seven-planets/game';
 import type { BuildingType, Cost, Planet, Player } from '@seven-planets/game';
+import { BUILD_ORDER, computeBuildingCost } from '@seven-planets/game';
 
-import { computeTurnsToAfford } from './compute-turns-to-afford';
+import { getAiState } from '../state';
 import { computeBuildingWorth } from './compute-building-worth';
 import { computeCardAppearProbability } from './compute-card-appear-probability';
+import { computeTurnsToAfford } from './compute-turns-to-afford';
 import { getNextAllowedLevel } from './get-next-allowed-level';
 import { getOwnedPlanets } from './get-owned-planets';
 
@@ -18,31 +18,13 @@ export interface BuildCandidate {
 }
 
 export function getBuildCandidates(player: Player): BuildCandidate[] {
-  const aiState = getAiState();
   const candidates: BuildCandidate[] = [];
   for (const planet of getOwnedPlanets(player)) {
     for (const buildingType of BUILD_ORDER) {
-      const level = getNextAllowedLevel(player, planet, buildingType);
-      if (!level) {
-        continue;
+      const candidate = createBuildCandidate(player, planet, buildingType);
+      if (candidate) {
+        candidates.push(candidate);
       }
-      const cost = computeBuildingCost(buildingType, level);
-      const worth = computeBuildingWorth(player, buildingType, planet, level);
-      if (worth <= 0) {
-        continue;
-      }
-      const turnsToAfford = computeTurnsToAfford(player, cost);
-      const pComplete =
-        computeCardAppearProbability(buildingType, aiState.W.planHorizon) *
-        Math.max(0.1, Math.min(1, 1.2 - turnsToAfford / aiState.W.planHorizon));
-      candidates.push({
-        id: buildingType,
-        planet,
-        level,
-        cost,
-        worth,
-        pComplete,
-      });
     }
   }
   candidates.sort(
@@ -60,4 +42,26 @@ export function getBuildCandidates(player: Player): BuildCandidate[] {
     }
   }
   return queue;
+}
+
+function createBuildCandidate(
+  player: Player,
+  planet: Planet,
+  buildingType: BuildingType,
+): BuildCandidate | null {
+  const aiState = getAiState();
+  const level = getNextAllowedLevel(player, planet, buildingType);
+  if (!level) {
+    return null;
+  }
+  const cost = computeBuildingCost(buildingType, level);
+  const worth = computeBuildingWorth(player, buildingType, planet, level);
+  if (worth <= 0) {
+    return null;
+  }
+  const turnsToAfford = computeTurnsToAfford(player, cost);
+  const pComplete =
+    computeCardAppearProbability(buildingType, aiState.W.planHorizon) *
+    Math.max(0.1, Math.min(1, 1.2 - turnsToAfford / aiState.W.planHorizon));
+  return { id: buildingType, planet, level, cost, worth, pComplete };
 }

@@ -1,18 +1,18 @@
-import { chain } from '../utils/chain';
 import { match, P } from 'ts-pattern';
+
 import {
   computeBuildingCost,
   getMaxLevel,
   PRIORITIES,
 } from '../config/constants';
+import { getSingularityReadyPlanet } from '../functions/get-singularity-ready-planet';
 import type { BuildingType } from '../interfaces/building-type';
 import type { Cost } from '../interfaces/cost';
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
-
+import { chain } from '../utils/chain';
 import { getOwnedPlanets } from './get-owned-planets';
-import { getSingularityReadyPlanet } from '../functions/get-singularity-ready-planet';
 import { getTechLevel } from './get-tech-level';
 
 const { nonNullable, nullish } = P;
@@ -51,7 +51,7 @@ function getNextBuildGoal(state: GameState, player: Player): BuildGoal | null {
           // SINGULARITY handled above — needs a Lab of the same level
           .filter((id) => id !== 'SINGULARITY')
           .map((id) => getBuildGoalFor(state, player, id, tech))
-          .find((goal) => goal !== undefined) ?? null,
+          .find((goal) => goal !== null) ?? null,
     )
     .value();
 }
@@ -61,7 +61,7 @@ function getBuildGoalFor(
   player: Player,
   id: BuildingType,
   tech: number,
-): BuildGoal | undefined {
+): BuildGoal | null {
   return chain(Math.min(getMaxLevel(id), tech))
     .thru((capacity) =>
       getOwnedPlanets(state, player).find(
@@ -70,7 +70,7 @@ function getBuildGoalFor(
     )
     .thru((planet) =>
       match(planet)
-        .with(nullish, (): BuildGoal | undefined => undefined)
+        .with(nullish, (): BuildGoal | null => null)
         .otherwise((eachPlanet) => ({
           id,
           planet: eachPlanet,

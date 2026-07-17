@@ -4,7 +4,7 @@ export interface CardDefinition {
   color: string;
   weight: number;
   value: number;
-  action?: boolean;
-  building?: boolean;
-  influenceCard?: boolean;
+  isAction?: boolean;
+  isBuilding?: boolean;
+  isInfluenceCard?: boolean;
 }

@@ -1,13 +1,14 @@
 import { assign, cloneDeep, noop } from 'lodash-es';
-import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
-import { hasActionCard } from '../../functions/has-action-card';
-import type { GameState } from '../../interfaces/game-state';
-import { emitEffect } from '../../functions/emit-effect';
-import { log } from '../../functions/log';
-import { getPluralSuffix } from '../../functions/get-plural-suffix';
-import { spendActionCard } from '../../functions/spend-action-card';
+
 import type { MoveTroopsPayload } from '../../actions/move-troops/move-troops';
+import { emitEffect } from '../../functions/emit-effect';
+import { getPluralSuffix } from '../../functions/get-plural-suffix';
+import { hasActionCard } from '../../functions/has-action-card';
+import { log } from '../../functions/log';
+import { spendActionCard } from '../../functions/spend-action-card';
+import type { GameState } from '../../interfaces/game-state';
+import { chain } from '../../utils/chain';
 
 /* Reducer branch. Resolves the redeploy SYNCHRONOUSLY on a private clone;
    the rocket flight and arrival banner are effect events the presentation
@@ -18,14 +19,14 @@ export function applyMoveTroops(
 ): GameState {
   return match(state)
     .when(
-      (state) => payload.playerId !== state.activeId || Boolean(state.over),
-      (state) => state,
+      () => payload.playerId !== state.activeId || Boolean(state.over),
+      () => state,
     )
     .when(
-      (state) => !hasActionCard(state.players[payload.playerId], 'MOVE'),
-      (state) => state,
+      () => !hasActionCard(state.players[payload.playerId], 'MOVE'),
+      () => state,
     )
-    .otherwise((state) =>
+    .otherwise(() =>
       chain(cloneDeep(state))
         .tap((clone) => executeMove(clone, payload))
         .value(),
@@ -33,29 +34,29 @@ export function applyMoveTroops(
 }
 
 // Applies pure engine results onto the private clone via assign so the
-// object identity (and the caller's `state` reference) stays stable.
+// Object identity (and the caller's `state` reference) stays stable.
 function executeMove(
   state: GameState,
   { playerId, fromId, toId, troops }: MoveTroopsPayload,
 ): void {
   // Troops can only be redeployed FROM a planet that has a Spaceport —
-  // the launch pad, mirroring how rockets launch only from Silo planets.
+  // The launch pad, mirroring how rockets launch only from Silo planets.
   return match(Boolean(state.planets[fromId].buildings.SPACEPORT))
     .with(false, noop)
     .otherwise(
       () =>
         void chain(assign(state, spendActionCard(state, playerId, 'MOVE')))
-          .tap((state) =>
+          .tap(() =>
             assign(state.planets[fromId], {
               troops: state.planets[fromId].troops - troops,
             }),
           )
-          .tap((state) =>
+          .tap(() =>
             assign(state.planets[toId], {
               troops: state.planets[toId].troops + troops,
             }),
           )
-          .tap((state) =>
+          .tap(() =>
             assign(
               state,
               log(
@@ -65,7 +66,7 @@ function executeMove(
               ),
             ),
           )
-          .tap((state) =>
+          .tap(() =>
             assign(
               state,
               emitEffect(state, {
@@ -76,7 +77,7 @@ function executeMove(
               }),
             ),
           )
-          .tap((state) =>
+          .tap(() =>
             assign(
               state,
               emitEffect(state, {

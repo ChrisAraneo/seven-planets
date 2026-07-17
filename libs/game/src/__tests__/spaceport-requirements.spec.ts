@@ -4,10 +4,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { canPickCard } from '../functions/can-pick-card';
-import { applyMoveTroops } from '../reducers/move-troops/move-troops';
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
+import { applyMoveTroops } from '../reducers/move-troops/move-troops';
 
 function player(hand: Record<string, number> = {}): Player {
   return {
@@ -48,7 +48,7 @@ function state(
     pool: [],
     activeId: 0,
     draftPlanetId: 0,
-    singularityAnnounced: false,
+    isSingularityAnnounced: false,
     startIdx: 0,
     players: [player(hand)],
     planets,
@@ -56,8 +56,8 @@ function state(
     effects: [],
     effectSeq: 0,
     status: '',
-    awaitingPick: false,
-    awaitingAction: true,
+    isAwaitingPick: false,
+    isAwaitingAction: true,
     inputSeq: 0,
     pendingOffer: null,
   } as unknown as GameState;
@@ -68,13 +68,15 @@ describe('Move requires a Spaceport on the SOURCE planet', () => {
 
   it('blocks a move launched from a planet with no Spaceport', () => {
     const s = state(
-      [planet(0, 5, {}), planet(1, 0, { SPACEPORT: 1 })], // Spaceport on the DEST, not source
+      // Spaceport on the DEST, not source
+      [planet(0, 5, {}), planet(1, 0, { SPACEPORT: 1 })],
       { MOVE: 1 },
     );
     const after = applyMoveTroops(s, move);
     expect(after.planets[0].troops).toBe(5);
     expect(after.planets[1].troops).toBe(0);
-    expect(after.players[0].hand.MOVE).toBe(1); // card not spent
+    // Card not spent
+    expect(after.players[0].hand.MOVE).toBe(1);
   });
 
   it('allows a move launched from a Spaceport planet', () => {
@@ -84,12 +86,14 @@ describe('Move requires a Spaceport on the SOURCE planet', () => {
     const after = applyMoveTroops(s, move);
     expect(after.planets[0].troops).toBe(2);
     expect(after.planets[1].troops).toBe(3);
-    expect(after.players[0].hand.MOVE).toBe(0); // card spent
+    // Card spent
+    expect(after.players[0].hand.MOVE).toBe(0);
   });
 });
 
 describe('Embassy requires a Spaceport on the SAME planet', () => {
-  const hand = { ORE: 5, CRYSTAL: 5, ENERGY: 5 }; // affords the Embassy
+  // Affords the Embassy
+  const hand = { ORE: 5, CRYSTAL: 5, ENERGY: 5 };
 
   it('cannot pick an Embassy on a planet without a Spaceport', () => {
     const p = planet(0, 0, {});

@@ -1,7 +1,6 @@
+import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-
-import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
 
 /* =====================================================================
    SEVEN PLANETS — difficulty unlocks.
@@ -34,9 +33,12 @@ function read(): Set<Difficulty> {
   const unlocked = new Set<Difficulty>(ALWAYS_UNLOCKED);
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      for (const id of JSON.parse(raw) as Difficulty[]) {
-        unlocked.add(id);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      for (const difficultyDef of DIFFICULTIES) {
+        if (parsed.includes(difficultyDef.id)) {
+          unlocked.add(difficultyDef.id);
+        }
       }
     }
   } catch {
@@ -69,7 +71,8 @@ export const useUnlocksStore = defineStore('unlocks', () => {
       return null;
     }
     if (unlocked.value.has(next)) {
-      return null; // Already earned in a previous game
+      // Already earned in a previous game
+      return null;
     }
     unlocked.value.add(next);
     write(unlocked.value);

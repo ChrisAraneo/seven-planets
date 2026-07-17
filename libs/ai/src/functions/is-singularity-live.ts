@@ -2,8 +2,8 @@ import { getMaxLevel } from '@seven-planets/game';
 import { isSingularityLabOk } from '@seven-planets/game';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
-import { getOwnedPlanets } from './get-owned-planets';
 import { computeTechLevel } from './compute-tech-level';
+import { getOwnedPlanets } from './get-owned-planets';
 
 export function isSingularityLive(): boolean {
   return getAlivePlayers().some((player) =>

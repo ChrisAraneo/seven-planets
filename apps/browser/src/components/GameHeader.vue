@@ -20,17 +20,19 @@ const turnLabel = computed(() => {
 });
 
 function newGame(): void {
-  if (window.confirm('Abandon this game and start over?')) ui.newGame();
+  if (window.confirm('Abandon this game and start over?')) ui.restartGame();
 }
 </script>
 
 <template>
   <header>
     <h1>SEVEN <span>PLANETS</span></h1>
-    <div id="turn-ind">{{ turnLabel }}</div>
-    <div class="spacer"></div>
+    <div id="turn-ind">
+      {{ turnLabel }}
+    </div>
+    <div class="spacer" />
     <label id="fast-label">
-      <input type="checkbox" v-model="effects.fastMode" />
+      <input v-model="effects.fastMode" type="checkbox" />
       ⏩ fast animations
     </label>
     <button class="btn small" @click="ui.openModal('help')">❓ Rules</button>

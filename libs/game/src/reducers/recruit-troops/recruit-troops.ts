@@ -1,17 +1,18 @@
 import { assign, cloneDeep, noop } from 'lodash-es';
-import { chain } from '../../utils/chain';
 import { match } from 'ts-pattern';
-import type { GameState } from '../../interfaces/game-state';
-import type { Planet } from '../../interfaces/planet';
-import { emitEffect } from '../../functions/emit-effect';
-import { hasActionCard } from '../../functions/has-action-card';
-import { computeRecruitableTroops } from '../../functions/compute-recruitable-troops';
+
+import type { RecruitTroopsPayload } from '../../actions/recruit-troops/recruit-troops';
 import { computeRecruitYield } from '../../functions/compute-recruit-yield';
+import { computeRecruitableTroops } from '../../functions/compute-recruitable-troops';
+import { emitEffect } from '../../functions/emit-effect';
+import { getPluralSuffix } from '../../functions/get-plural-suffix';
+import { hasActionCard } from '../../functions/has-action-card';
 import { log } from '../../functions/log';
 import { payCost } from '../../functions/pay-cost';
-import { getPluralSuffix } from '../../functions/get-plural-suffix';
 import { spendActionCard } from '../../functions/spend-action-card';
-import type { RecruitTroopsPayload } from '../../actions/recruit-troops/recruit-troops';
+import type { GameState } from '../../interfaces/game-state';
+import type { Planet } from '../../interfaces/planet';
+import { chain } from '../../utils/chain';
 
 /* Reducer branch. Resolves the recruitment on a private clone; illegal
    intents reduce to the unchanged state. */
@@ -21,14 +22,14 @@ export function applyRecruitTroops(
 ): GameState {
   return match(state)
     .when(
-      (state) => payload.playerId !== state.activeId || Boolean(state.over),
-      (state) => state,
+      () => payload.playerId !== state.activeId || Boolean(state.over),
+      () => state,
     )
     .when(
-      (state) => !hasActionCard(state.players[payload.playerId], 'RECRUIT'),
-      (state) => state,
+      () => !hasActionCard(state.players[payload.playerId], 'RECRUIT'),
+      () => state,
     )
-    .otherwise((state) =>
+    .otherwise(() =>
       chain(cloneDeep(state))
         .tap((clone) =>
           executeRecruit(clone, payload.playerId, payload.planetId),
@@ -38,7 +39,7 @@ export function applyRecruitTroops(
 }
 
 // Applies pure engine results onto the private clone via assign so the
-// object identity (and the caller's `state` reference) stays stable.
+// Object identity (and the caller's `state` reference) stays stable.
 function executeRecruit(
   state: GameState,
   playerId: number,
@@ -53,25 +54,21 @@ function executeRecruit(
       noop,
     )
     .otherwise(
+      // Short on Ore, the Barracks still musters what the hand CAN pay.
       (planet) =>
-        // Short on Ore, the Barracks still musters what the hand CAN pay.
         void chain(
           computeRecruitableTroops(planet, state.players[playerId].hand),
         )
-          .thru((count) => ({
-            s: assign(state, spendActionCard(state, playerId, 'RECRUIT')),
-            n: count,
-          }))
-          .thru(({ s: state, n: count }) => ({
-            s: assign(state, payCost(state, playerId, { ORE: count })),
-            n: count,
-          }))
-          .tap(({ s: state, n: count }) =>
+          .tap(() => assign(state, spendActionCard(state, playerId, 'RECRUIT')))
+          .tap((count) =>
+            assign(state, payCost(state, playerId, { ORE: count })),
+          )
+          .tap((count) =>
             assign(state.planets[planetId], {
               troops: state.planets[planetId].troops + count,
             }),
           )
-          .tap(({ s: state, n: count }) =>
+          .tap((count) =>
             assign(
               state,
               log(
@@ -81,7 +78,7 @@ function executeRecruit(
               ),
             ),
           )
-          .tap(({ s: state, n: count }) =>
+          .tap((count) =>
             assign(
               state,
               emitEffect(state, {

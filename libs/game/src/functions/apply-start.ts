@@ -1,8 +1,8 @@
 import { assign, cloneDeep } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
+import { chain } from '../utils/chain';
 import { log } from './log';
 
 /* Reducer branch for the 'start' intent: log the welcome lines and step the
@@ -11,10 +11,10 @@ import { log } from './log';
 export function applyStart(state: GameState): GameState {
   return match(state)
     .when(
-      (state) => state.cursor.phase !== 'setup',
-      (state) => state,
+      () => state.cursor.phase !== 'setup',
+      () => state,
     )
-    .otherwise((state) =>
+    .otherwise(() =>
       chain(cloneDeep(state))
         .thru((clone) =>
           assign(

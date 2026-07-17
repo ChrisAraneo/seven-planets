@@ -1,5 +1,4 @@
 import { getAiState } from '../state';
-
 import { WEIGHTS } from '../weights';
 
 export function resetAiWeights(): void {

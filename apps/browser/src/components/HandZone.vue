@@ -19,7 +19,7 @@ const regular = computed(() =>
     const hint =
       cardType === 'RELIC'
         ? ' (wildcard — substitutes any resource)'
-        : CARDS[cardType].action
+        : CARDS[cardType].isAction
           ? ` (action card — spent to ${CARDS[cardType].name.toLowerCase()})`
           : '';
     return {
@@ -28,7 +28,7 @@ const regular = computed(() =>
       icon: CARDS[cardType].icon,
       name: CARDS[cardType].name,
       color: CARDS[cardType].color,
-      action: !!CARDS[cardType].action,
+      action: !!CARDS[cardType].isAction,
       title: `${CARDS[cardType].name}${hint}`,
     };
   }),
@@ -55,23 +55,35 @@ const influence = computed(() =>
       <div
         v-for="card in regular"
         :key="card.cardType"
+        v-tooltip="card.title"
         class="card"
         :class="{ dim: card.count === 0, action: card.action }"
-        :style="{ borderColor: card.color }"
-        v-tooltip="card.title">
-        <div class="ic">{{ card.icon }}</div>
-        <div class="nm">{{ card.name }}</div>
-        <div class="ct">{{ card.count }}</div>
+        :style="{ borderColor: card.color }">
+        <div class="ic">
+          {{ card.icon }}
+        </div>
+        <div class="nm">
+          {{ card.name }}
+        </div>
+        <div class="ct">
+          {{ card.count }}
+        </div>
       </div>
       <div
         v-for="card in influence"
         :key="card.cardType"
+        v-tooltip="card.title"
         class="card action"
-        :style="{ borderColor: card.color }"
-        v-tooltip="card.title">
-        <div class="ic">{{ card.icon }}</div>
-        <div class="nm">{{ card.name }}</div>
-        <div class="ct">{{ card.count }}</div>
+        :style="{ borderColor: card.color }">
+        <div class="ic">
+          {{ card.icon }}
+        </div>
+        <div class="nm">
+          {{ card.name }}
+        </div>
+        <div class="ct">
+          {{ card.count }}
+        </div>
       </div>
     </div>
   </div>

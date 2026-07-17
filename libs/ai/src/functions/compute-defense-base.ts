@@ -1,7 +1,7 @@
+import type { Planet } from '@seven-planets/game';
 import { COMBAT, HOME_FIELD, PACIFIST_DEF_BONUS } from '@seven-planets/game';
 import { computeShieldDefense } from '@seven-planets/game';
 import { computeSingularityDefenseBonus } from '@seven-planets/game';
-import type { Planet } from '@seven-planets/game';
 
 import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 

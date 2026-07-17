@@ -53,10 +53,14 @@ export const DIFFICULTIES: DifficultyDef[] = [
     blurb: 'No pressure.',
     ai: {
       ...NO_HANDICAP,
-      randomPickChance: 0.8, // 80% of AI draft picks are random
-      minConquerProbMult: 1.25, // AI attacks only at very high odds
-      planHorizonDelta: -4, // AI barely plans ahead
-      denialWeightMult: 0.05, // Effectively never hate-drafts the cards you need
+      // 80% of AI draft picks are random
+      randomPickChance: 0.8,
+      // AI attacks only at very high odds
+      minConquerProbMult: 1.25,
+      // AI barely plans ahead
+      planHorizonDelta: -4,
+      // Effectively never hate-drafts the cards you need
+      denialWeightMult: 0.05,
     },
     kamikazeCount: 0,
   },
@@ -67,10 +71,14 @@ export const DIFFICULTIES: DifficultyDef[] = [
     blurb: 'Best for new players.',
     ai: {
       ...NO_HANDICAP,
-      randomPickChance: 0.6, // 60% of AI draft picks are random
-      minConquerProbMult: 0.82, // AI attacks at lower odds
-      planHorizonDelta: -3, // AI plans three turns less far ahead
-      denialWeightMult: 0.35, // Rarely hate-drafts the cards rivals need
+      // 60% of AI draft picks are random
+      randomPickChance: 0.6,
+      // AI attacks at lower odds
+      minConquerProbMult: 0.82,
+      // AI plans three turns less far ahead
+      planHorizonDelta: -3,
+      // Rarely hate-drafts the cards rivals need
+      denialWeightMult: 0.35,
     },
     kamikazeCount: 0,
   },
@@ -81,10 +89,14 @@ export const DIFFICULTIES: DifficultyDef[] = [
     blurb: 'The standard challenge.',
     ai: {
       ...NO_HANDICAP,
-      randomPickChance: 0.2, // 20% of AI draft picks are random
-      minConquerProbMult: 0.875, // AI attacks at lower odds
-      planHorizonDelta: -2, // AI plans one turn less far ahead
-      denialWeightMult: 0.5, // Rarely hate-drafts the cards rivals need
+      // 20% of AI draft picks are random
+      randomPickChance: 0.2,
+      // AI attacks at lower odds
+      minConquerProbMult: 0.875,
+      // AI plans one turn less far ahead
+      planHorizonDelta: -2,
+      // Rarely hate-drafts the cards rivals need
+      denialWeightMult: 0.5,
     },
     kamikazeCount: 0,
   },
@@ -94,7 +106,8 @@ export const DIFFICULTIES: DifficultyDef[] = [
     icon: '🔥',
     blurb: 'Good luck commander!',
     ai: NO_HANDICAP,
-    kamikazeCount: 0, // One AI hunt only the human; every other AI ignores them
+    // One AI hunt only the human; every other AI ignores them
+    kamikazeCount: 0,
   },
   {
     id: 'impossible',
@@ -102,7 +115,8 @@ export const DIFFICULTIES: DifficultyDef[] = [
     icon: '🖤',
     blurb: 'There is no hope.',
     ai: NO_HANDICAP,
-    kamikazeCount: 1, // Three AI hunt only the human; every other AI ignores them
+    // Three AI hunt only the human; every other AI ignores them
+    kamikazeCount: 1,
   },
 ];
 
@@ -114,6 +128,7 @@ export function getDifficulty(id: Difficulty): DifficultyDef {
     DIFFICULTIES.find((difficultyDef) => difficultyDef.id === id) ??
     DIFFICULTIES.find(
       (difficultyDef) => difficultyDef.id === DEFAULT_DIFFICULTY,
-    )!
+    ) ??
+    DIFFICULTIES[0]
   );
 }

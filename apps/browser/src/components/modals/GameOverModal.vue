@@ -44,7 +44,7 @@ const sub = computed(() => {
       {{ computeTotalTroops(game.state, human) }}
     </div>
     <div class="mbtns" style="justify-content: center">
-      <button class="btn" @click="ui.newGame()">🔄 Play Again</button>
+      <button class="btn" @click="ui.restartGame()">🔄 Play Again</button>
     </div>
   </ModalShell>
 </template>

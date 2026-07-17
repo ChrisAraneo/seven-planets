@@ -1,33 +1,40 @@
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
+
 import {
   ACTION_CARDS_FROM_TURN,
   ADVANCED_FROM_TURN,
   BUILD_ORDER,
   BUILDINGS_FROM_TURN,
   choice,
-  INFLUENCE_CARDS,
   INFLUENCE_CARDS_FROM_TURN,
+  INFLUENCE_TYPES,
   shuffleArray,
 } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
-import type { InfluenceType } from '../interfaces/influence-type';
 import type { PoolType } from '../interfaces/pool-type';
-
-import { filterAlivePlayers } from './filter-alive-players';
+import { chain } from '../utils/chain';
+import { computeSingularityTotal } from './compute-singularity-total';
 import { drawActionCard } from './draw-action-card';
 import { drawResourceCard } from './draw-resource-card';
+import { filterAlivePlayers } from './filter-alive-players';
 import { isSingularityInPlay } from './is-singularity-in-play';
-import { computeSingularityTotal } from './compute-singularity-total';
+
+// Mid-game pool shape: 5 unique building slots + 11 other cards (6 of which
+// Become action cards once those are dealt).
+const BUILDING_SLOT_COUNT = 5;
+const OTHER_CARD_COUNT = 11;
+const ACTION_CARD_COUNT = 6;
+
+// Odds that a Singularity bonus slot is a resource card (else an action card).
+const SINGULARITY_RESOURCE_ODDS = 0.55;
 
 export function createPool(state: GameState): PoolType[] {
   return match(state.turn)
     .when(
       // Turns 1–5: pure resource draft, 14 random resource cards.
       (turn) => turn < BUILDINGS_FROM_TURN,
-      (): PoolType[] =>
-        Array.from({ length: 14 }, () => drawResourceCard(state)),
+      (): PoolType[] => Array.from({ length: 14 }, () => drawResourceCard()),
     )
     .otherwise(() => createMidGamePool(state));
 }
@@ -35,18 +42,21 @@ export function createPool(state: GameState): PoolType[] {
 // Turn 6+: 5 unique buildings + 11 other cards = 16 total.
 function createMidGamePool(state: GameState): PoolType[] {
   return chain({
-    buildingSlots: shuffleArray([...getEligibleBuildings(state)]).slice(0, 5),
+    buildingSlots: shuffleArray([...getEligibleBuildings(state)]).slice(
+      0,
+      BUILDING_SLOT_COUNT,
+    ),
     actionCount: match(state.turn)
       .when(
         (turn) => turn >= ACTION_CARDS_FROM_TURN,
-        (): number => 6,
+        (): number => ACTION_CARD_COUNT,
       )
       .otherwise((): number => 0),
   })
     .thru(({ buildingSlots, actionCount }): PoolType[] => [
       ...buildingSlots,
-      ...Array.from({ length: 11 - actionCount }, () =>
-        drawResourceCard(state),
+      ...Array.from({ length: OTHER_CARD_COUNT - actionCount }, () =>
+        drawResourceCard(),
       ),
       ...Array.from({ length: actionCount }, () => drawActionCard(state)),
       ...getInfluenceSlots(state),
@@ -71,9 +81,7 @@ function getInfluenceSlots(state: GameState): PoolType[] {
     .when(
       (turn) => turn >= INFLUENCE_CARDS_FROM_TURN,
       (): PoolType[] =>
-        Array.from({ length: 2 }, () =>
-          choice(Object.keys(INFLUENCE_CARDS) as InfluenceType[]),
-        ),
+        Array.from({ length: 2 }, () => choice(INFLUENCE_TYPES)),
     )
     .otherwise((): PoolType[] => []);
 }
@@ -90,8 +98,8 @@ function getSingularityBonusSlots(state: GameState): PoolType[] {
     () =>
       match(Math.random())
         .when(
-          (roll) => roll < 0.55,
-          () => drawResourceCard(state),
+          (roll) => roll < SINGULARITY_RESOURCE_ODDS,
+          () => drawResourceCard(),
         )
         .otherwise(() => drawActionCard(state)),
   );

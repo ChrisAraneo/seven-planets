@@ -1,10 +1,10 @@
 import { assign, noop } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
+import { chain } from '../utils/chain';
 import { log } from './log';
 import { setStatus } from './set-status';
 
@@ -17,7 +17,7 @@ export function passSlot(
   isHumanControlled: boolean,
 ): void {
   return chain(state)
-    .tap((state) =>
+    .tap(() =>
       match(isHumanControlled)
         .with(
           true,
@@ -29,7 +29,7 @@ export function passSlot(
         )
         .otherwise(noop),
     )
-    .tap((state) =>
+    .tap(() =>
       assign(
         state,
         log(

@@ -2,6 +2,6 @@ export interface PlayerDefinition {
   name: string;
   planet: string;
   color: string;
-  human?: boolean;
+  isHuman?: boolean;
   styleIdx: number;
 }

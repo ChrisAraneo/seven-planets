@@ -1,10 +1,9 @@
 import { getMaxLevel } from '../config/constants';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
 import type { GameState } from '../interfaces/game-state';
-
 import { filterAlivePlayers } from './filter-alive-players';
 import { getOwnedPlanets } from './get-owned-planets';
 import { getTechLevel } from './get-tech-level';
+import { isSingularityLabOk } from './is-singularity-lab-ok';
 
 // The Singularity card is only dealt while someone can still build or upgrade one:
 // The next level must be within their technology and satisfy the Lab requirement.

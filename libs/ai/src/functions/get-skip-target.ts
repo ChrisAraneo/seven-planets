@@ -1,9 +1,9 @@
 import type { InfluenceType, Player } from '@seven-planets/game';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
-import { getOwnedPlanets } from './get-owned-planets';
 import { computeTechLevel } from './compute-tech-level';
 import { computeTotalTroops } from './compute-total-troops';
+import { getOwnedPlanets } from './get-owned-planets';
 
 export function getSkipTarget(
   player: Player,

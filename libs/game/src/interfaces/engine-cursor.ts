@@ -3,7 +3,8 @@
    exactly where the game is, which makes every snapshot serializable,
    resumable and inspectable (no suspended call stacks anywhere). */
 export type EngineCursor =
-  | { phase: 'setup' } // Before the 'start' intent
+  // Before the 'start' intent
+  | { phase: 'setup' }
   | {
       phase: 'draft';
       /** Snapshot of getDraftOrder (player ids), taken when the draft starts. */
@@ -26,4 +27,5 @@ export type EngineCursor =
       seatQueue: number[];
       seatIdx: number;
     }
-  | { phase: 'done' }; // Game over or turn cap
+  // Game over or turn cap
+  | { phase: 'done' };

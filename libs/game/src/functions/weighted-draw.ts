@@ -1,4 +1,5 @@
 import { sumBy } from 'lodash-es';
+
 import { CARDS } from '../config/constants';
 import type { PoolType } from '../interfaces/pool-type';
 
@@ -20,6 +21,7 @@ function pickByRoll<T extends PoolType>(
   return types.find(
     (type, index) =>
       roll <
-      sumBy(types.slice(0, index + 1), (eachType) => CARDS[eachType].weight),
+      sumBy(types.slice(0, index), (eachType) => CARDS[eachType].weight) +
+        CARDS[type].weight,
   );
 }

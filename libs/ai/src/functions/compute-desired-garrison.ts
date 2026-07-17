@@ -1,5 +1,5 @@
-import { getTurn } from '@seven-planets/game';
 import type { Planet, Player } from '@seven-planets/game';
+import { getTurn } from '@seven-planets/game';
 
 import { computeHoldProbability } from './compute-hold-probability';
 import { getOwnedPlanets } from './get-owned-planets';

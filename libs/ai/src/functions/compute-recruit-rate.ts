@@ -1,5 +1,5 @@
-import { computeRecruitYield } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { computeRecruitYield } from '@seven-planets/game';
 
 import { computeActionDrawProbability } from './compute-action-draw-probability';
 import { computeIncomePerTurn } from './compute-income-per-turn';

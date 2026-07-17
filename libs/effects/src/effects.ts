@@ -42,9 +42,21 @@ let sink: EffectsSink | null = null;
 // The last event seq already played, so each call only plays new events.
 let playedSeq = 0;
 
+// Fast-animations toggle: everything plays at 30% duration.
+const FAST_MODE_SPEED = 0.3;
+
+// Base/minimum animation durations (ms) and the gap after a rocket lands.
+const ROCKET_DURATION = 1000;
+const ROCKET_MIN_DURATION = 50;
+const ROCKET_SETTLE_GAP = 60;
+const BOOM_DURATION = 600;
+const BOOM_MIN_DURATION = 200;
+const TEXT_DURATION = 1500;
+const TEXT_MIN_DURATION = 400;
+
 // Animation speed multiplier (the fast-animations toggle).
 function speedMult(): number {
-  return sink?.isFastMode() ? 0.3 : 1;
+  return sink?.isFastMode() ? FAST_MODE_SPEED : 1;
 }
 
 function now(): number {
@@ -80,7 +92,7 @@ export function playNewEffects(state: GameState): void {
   const fresh = state.effects.filter((event) => event.seq > playedSeq);
   playedSeq = state.effectSeq;
   // Delay accumulates across the batch: effects emitted after a rocket
-  // play once the rocket lands.
+  // Play once the rocket lands.
   fresh.reduce((delay, event) => playEffect(state, event, delay), 0);
 }
 
@@ -91,53 +103,80 @@ function playEffect(
 ): number {
   switch (event.kind) {
     case 'rocket': {
-      const from = state.planets[event.fromId];
-      const to = state.planets[event.toId];
-      const dur = Math.max(50, 1000 * speedMult());
-      enqueue(
-        {
-          type: 'rocket',
-          fx: from.x,
-          fy: from.y,
-          tx: to.x,
-          ty: to.y,
-          color: event.color,
-          t0: now(),
-          dur,
-        },
-        delay,
-      );
-      return delay + dur + 60;
+      return playRocket(state, event, delay);
     }
     case 'boom': {
-      const planet = state.planets[event.planetId];
-      enqueue(
-        {
-          type: 'boom',
-          x: planet.x,
-          y: planet.y,
-          t0: now(),
-          dur: Math.max(200, 600 * speedMult()),
-        },
-        delay,
-      );
-      return delay;
+      return playBoom(state, event, delay);
     }
     case 'floatText': {
-      const planet = state.planets[event.planetId];
-      enqueue(
-        {
-          type: 'text',
-          x: planet.x,
-          y: planet.y - planet.r,
-          txt: event.text,
-          color: event.color,
-          t0: now(),
-          dur: Math.max(400, 1500 * speedMult()),
-        },
-        delay,
-      );
+      return playFloatText(state, event, delay);
+    }
+    default: {
       return delay;
     }
   }
+}
+
+function playRocket(
+  state: GameState,
+  event: Extract<EffectEvent, { kind: 'rocket' }>,
+  delay: number,
+): number {
+  const from = state.planets[event.fromId];
+  const to = state.planets[event.toId];
+  const dur = Math.max(ROCKET_MIN_DURATION, ROCKET_DURATION * speedMult());
+  enqueue(
+    {
+      type: 'rocket',
+      fx: from.x,
+      fy: from.y,
+      tx: to.x,
+      ty: to.y,
+      color: event.color,
+      t0: now(),
+      dur,
+    },
+    delay,
+  );
+  return delay + dur + ROCKET_SETTLE_GAP;
+}
+
+function playBoom(
+  state: GameState,
+  event: Extract<EffectEvent, { kind: 'boom' }>,
+  delay: number,
+): number {
+  const planet = state.planets[event.planetId];
+  enqueue(
+    {
+      type: 'boom',
+      x: planet.x,
+      y: planet.y,
+      t0: now(),
+      dur: Math.max(BOOM_MIN_DURATION, BOOM_DURATION * speedMult()),
+    },
+    delay,
+  );
+  return delay;
+}
+
+function playFloatText(
+  state: GameState,
+  event: Extract<EffectEvent, { kind: 'floatText' }>,
+  delay: number,
+): number {
+  const planet = state.planets[event.planetId];
+  enqueue(
+    {
+      type: 'text',
+      x: planet.x,
+      y: planet.y - planet.r,
+      txt: event.text,
+      color: event.color,
+      t0: now(),
+      dur: Math.max(TEXT_MIN_DURATION, TEXT_DURATION * speedMult()),
+    },
+    delay,
+  );
+  return delay;
 }

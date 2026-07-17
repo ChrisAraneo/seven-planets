@@ -1,13 +1,13 @@
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
-import { computeBuildingCost, BUILDINGS } from '../config/constants';
+
+import { BUILDINGS, computeBuildingCost } from '../config/constants';
 import type { BuildingType } from '../interfaces/building-type';
 import type { GameState } from '../interfaces/game-state';
-
+import { chain } from '../utils/chain';
 import { emitEffect } from './emit-effect';
+import { getTechLevel } from './get-tech-level';
 import { log } from './log';
 import { payCost } from './pay-cost';
-import { getTechLevel } from './get-tech-level';
 import { updatePlanet } from './update-planet';
 
 export function buildBuilding(
@@ -59,8 +59,8 @@ export function buildBuilding(
 function getBuildVerb(buildingType: BuildingType, level: number): string {
   return match(level)
     .when(
-      (level) => level > 1,
-      (level) =>
+      () => level > 1,
+      () =>
         `upgrades ${BUILDINGS[buildingType].icon} ${BUILDINGS[buildingType].name} to level ${level}`,
     )
     .otherwise(
@@ -72,8 +72,8 @@ function getBuildVerb(buildingType: BuildingType, level: number): string {
 function getLevelSuffix(level: number): string {
   return match(level)
     .when(
-      (level) => level > 1,
-      (level) => ` L${level}`,
+      () => level > 1,
+      () => ` L${level}`,
     )
     .otherwise(() => '');
 }

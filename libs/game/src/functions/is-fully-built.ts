@@ -5,11 +5,14 @@ import type { Planet } from '../interfaces/planet';
 // Maximum level and the Singularity itself has reached level 3. Owning one grants
 // TECHNOLOGY 4 — the tier that unlocks the level-4 Singularity.
 // Short-circuit expressions instead of a branch: AI planning hot loop.
+// The Singularity level that counts as "built" for the FULLY BUILT check.
+const SINGULARITY_BUILT_LEVEL = 3;
+
 export function isFullyBuilt(planet: Planet): boolean {
   return BUILD_ORDER.every(
     (building) =>
       (building === 'SINGULARITY' &&
-        (planet.buildings.SINGULARITY || 0) >= 3) ||
+        (planet.buildings.SINGULARITY || 0) >= SINGULARITY_BUILT_LEVEL) ||
       (building !== 'SINGULARITY' &&
         (planet.buildings[building] || 0) >= getMaxLevel(building)),
   );

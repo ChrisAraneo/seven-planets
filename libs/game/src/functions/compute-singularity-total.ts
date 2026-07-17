@@ -1,6 +1,5 @@
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-
 import { getOwnedPlanets } from './get-owned-planets';
 
 // Sum of all Singularity levels across every planet the player owns (stacks).

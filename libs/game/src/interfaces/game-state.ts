@@ -20,7 +20,7 @@ export interface GameState {
   pool: PoolType[];
   activeId: number;
   draftPlanetId: number;
-  singularityAnnounced: boolean;
+  isSingularityAnnounced: boolean;
   startIdx: number;
   players: Player[];
   planets: Planet[];
@@ -33,9 +33,9 @@ export interface GameState {
   /** UI status line shown in the pool zone (reactive). */
   status: string;
   /** True while the seat in play must pick a pool card (reactive). */
-  awaitingPick: boolean;
+  isAwaitingPick: boolean;
   /** True while it is the human's action turn (reactive). */
-  awaitingAction: boolean;
+  isAwaitingAction: boolean;
   /** Monotonic count of input requests: bumped each time the engine parks
       awaiting a pick/action (reactive) — the AI watches this the same way
       the effects player watches effectSeq. */

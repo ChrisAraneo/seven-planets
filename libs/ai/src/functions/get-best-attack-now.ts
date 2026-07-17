@@ -1,7 +1,7 @@
-import { getTurn } from '@seven-planets/game';
-import { getAiState } from '../state';
 import type { Player } from '@seven-planets/game';
+import { getTurn } from '@seven-planets/game';
 
+import { getAiState } from '../state';
 import { computeEffectiveMinimumConquerProbability } from './compute-effective-minimum-conquer-probability';
 import type { AttackPlan } from './get-attack-plans';
 import { getAttackPlans } from './get-attack-plans';
@@ -12,7 +12,7 @@ export function getBestAttackNow(player: Player): AttackPlan | null {
     return null;
   }
   // A kamikaze barely cares about keeping what it takes — hurting the human
-  // is the whole point — so its hold requirements all but vanish.
+  // Is the whole point — so its hold requirements all but vanish.
   const holdFloor = player.isKamikaze ? 0.01 : 0.2;
   const minimumHold = Math.max(
     holdFloor,
@@ -25,7 +25,7 @@ export function getBestAttackNow(player: Player): AttackPlan | null {
     if (plan.score <= 0) {
       break;
     }
-    if (plan.conquers) {
+    if (plan.willConquer) {
       if (
         plan.pWin >= computeEffectiveMinimumConquerProbability(player) &&
         plan.holdProb >= minimumHold
