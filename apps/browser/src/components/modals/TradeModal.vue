@@ -31,8 +31,6 @@ const note = ref<{ msg: string; cls: 'info' | 'ok' | 'warn' }>({
   cls: 'info',
 });
 
-/** Snapshot of the human's influence taken just before sending an offer,
-    used to detect whether the partner accepted (influence goes up by 1). */
 const offerPending = ref(false);
 const influenceSnapshot = ref(0);
 
@@ -97,7 +95,6 @@ function propose(): void {
     gives,
     gets,
   });
-  // If the AI responded synchronously the offer is already resolved.
   if (game.state.pendingOffer === null) {
     const accepted = game.state.players[0].influence > influenceBefore;
     if (accepted) {
@@ -116,7 +113,6 @@ function propose(): void {
       };
     }
   } else {
-    // Human partner — watch will fire when they respond via TradeOfferModal.
     offerPending.value = true;
     influenceSnapshot.value = influenceBefore;
     note.value = {

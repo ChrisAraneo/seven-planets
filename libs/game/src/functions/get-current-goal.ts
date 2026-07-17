@@ -23,7 +23,6 @@ interface BuildGoal {
   cost: Cost;
 }
 
-// The next thing this player is saving for (used for drafting, trading, refusals).
 export function getCurrentGoal(
   state: GameState,
   player: Player,
@@ -47,9 +46,7 @@ function getNextBuildGoal(state: GameState, player: Player): BuildGoal | null {
   return chain(getTechLevel(state, player))
     .thru(
       (tech) =>
-        PRIORITIES
-          // SINGULARITY handled above — needs a Lab of the same level
-          .filter((id) => id !== 'SINGULARITY')
+        PRIORITIES.filter((id) => id !== 'SINGULARITY')
           .map((id) => getBuildGoalFor(state, player, id, tech))
           .find((goal) => goal !== null) ?? null,
     )

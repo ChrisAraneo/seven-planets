@@ -9,7 +9,6 @@ import { filterAlivePlayers } from './filter-alive-players';
 import { getOwnedPlanets } from './get-owned-planets';
 import { getTechLevel } from './get-tech-level';
 
-// Whom would this skip card hit? Always a RIVAL — the caster is never a target.
 export function getInfluenceTarget(
   state: GameState,
   player: Player,

@@ -27,8 +27,6 @@ export function getTradeOffer(
   return { partner, gives, gets: { [wantedResource]: 1 } };
 }
 
-// The resource the current build goal is short of; militant plans also
-// Hoard Ore for recruiting.
 function findWantedResource(
   player: Player,
   plan: Plan,
@@ -50,7 +48,6 @@ function findWantedResource(
     : null;
 }
 
-// Spare cards (goal costs reserved), cheapest first.
 function collectSurplus(
   player: Player,
   head: BuildCandidate | undefined,
@@ -90,7 +87,6 @@ function buildGives(
   return givenValue < targetValue ? null : gives;
 }
 
-// Prefer the weakest partner who holds the card (never feed a runaway rival).
 function findPartner(player: Player, wantedResource: string): Player | null {
   const averageStrength = computeAverageStrength();
   const partners = getAlivePlayers()

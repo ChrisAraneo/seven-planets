@@ -2,7 +2,6 @@ import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
 
-// The status line shown while a draft pick is parked awaiting its answer.
 interface PickProgress {
   picks: number;
   counter: number;

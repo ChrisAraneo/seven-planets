@@ -20,10 +20,6 @@ import { isSingularityInPlay } from './is-singularity-in-play';
 import { log } from './log';
 import { updatePacifistStatus } from './update-pacifist-status';
 
-/* Everything that happens between turns: bump the turn counter, reset the
-   per-turn player flags, promote pacifists, pay income, refill the pool and
-   announce the turn. Mutates the reducer's private clone in place — the
-   caller (advance) emits it once the game next parks. */
 export function turnPrelude(state: GameState): void {
   assign(state, { turn: state.turn + 1 });
   state.players.forEach((player) => beginPlayerTurn(state, player));
@@ -50,7 +46,6 @@ function beginPlayerTurn(state: GameState, player: Player): void {
   return chain(
     assign(player, {
       hasTradedCurrentTurn: false,
-      // Influence skip cards: paralysed players sit out draft AND action phases.
       isSkippedNow: player.isAlive && player.skipTurns > 0,
     }),
   )

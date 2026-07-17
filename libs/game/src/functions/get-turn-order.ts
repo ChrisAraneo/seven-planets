@@ -4,8 +4,6 @@ import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 import { chain } from '../utils/chain';
 
-// Reads startIdx from ITS argument (never the live snapshot): the reducer
-// Calls this on private clones whose startIdx the prelude just rolled.
 export function getTurnOrder(state: GameState): Player[] {
   return chain(range(state.players.length))
     .map(

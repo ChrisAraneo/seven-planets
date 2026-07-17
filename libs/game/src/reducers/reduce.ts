@@ -51,31 +51,13 @@ function applyAction(state: GameState, action: Action): GameState {
     .exhaustive();
 }
 
-/* THE ENGINE. Advance the game from `state` until it next needs player
-   input: run turn preludes, draft passes and phase transitions, then park by
-   raising `isAwaitingPick`/`isAwaitingAction` and bumping `inputSeq` exactly once.
-   The cursor on the state is the engine's whole position — each recursive
-   step performs one small cursor transition and hands the state straight
-   back to advance, so no suspended call stack outlives an emission and any
-   emitted snapshot can resume the game by itself.
-
-   Mutates its argument in place: each reducer branch (applyPickCard,
-   applyEndTurn, ...) hands it a private clone for every legal intent, and
-   every path that reaches a mutation goes through a legal apply. A state
-   that is already parked, unstarted or finished advances to itself,
-   untouched — so an illegal intent's no-op state passes through unharmed. */
 export function advance(state: GameState): GameState {
-  return (
-    match(state)
-      .when(isSettled, () => state)
-      /* Game over settles the cursor wherever it is — including mid-draft,
-       where draftPlanetId is deliberately left as-is (§ the old early return). */
-      .when(() => state.over !== null, finishGame)
-      .otherwise(() => advance(stepCursor(state)))
-  );
+  return match(state)
+    .when(isSettled, () => state)
+    .when(() => state.over !== null, finishGame)
+    .otherwise(() => advance(stepCursor(state)));
 }
 
-/* Parked on player input, unstarted or finished: advance leaves it untouched. */
 function isSettled(state: GameState): boolean {
   return (
     state.isAwaitingPick ||
@@ -85,8 +67,6 @@ function isSettled(state: GameState): boolean {
   );
 }
 
-/* One cursor transition. The settled check above guarantees the cursor is
-   mid-game here; the otherwise arm is unreachable. */
 function stepCursor(state: GameState): GameState {
   return match(state.cursor)
     .with({ phase: 'draft' }, (cursor) => draftStep(state, cursor))

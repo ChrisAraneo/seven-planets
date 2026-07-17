@@ -21,7 +21,6 @@ import { isSingularityLabOk } from './is-singularity-lab-ok';
 
 const { nullish } = P;
 
-// Can this player take pool card `t` during `planet`'s draft turn?
 export function canPickCard(
   state: GameState,
   player: Player,
@@ -33,7 +32,6 @@ export function canPickCard(
       canPickBuilding(state, player, type, planet),
     )
     .when(
-      // Influence cards cost ⭐ at pick time and go to hand; targets resolved later.
       isInfluenceType,
       (type) => player.influence >= INFLUENCE_CARDS[type].cost,
     )
@@ -70,7 +68,6 @@ function canPickBuilding(
           () => false,
         )
         .when(
-          // Upgrades are gated by technology
           (next) => next > getTechLevel(state, player),
           () => false,
         )
@@ -80,7 +77,6 @@ function canPickBuilding(
           () => false,
         )
         .when(
-          // An Embassy needs a Spaceport already standing on the same planet.
           () => buildingType === 'EMBASSY' && !target.buildings.SPACEPORT,
           () => false,
         )

@@ -1,14 +1,7 @@
 {
   "compilerOptions": {
-    // ES2023 for the change-by-copy array methods (toSorted) the lint setup
-    // prefers over mutating sorts; every supported runtime has them.
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    // The ported game engine is built on dynamic dictionary access keyed by
-    // runtime card/building strings; noUncheckedIndexedAccess would force
-    // pervasive `?? 0` / `!` noise across the tuned logic, so it is left off.
     "noUncheckedIndexedAccess": false,
-    // Workspace path mappings. Cross-lib/app imports go through the lib
-    // barrels; the app's own code uses the `@/` alias.
     "paths": {
       "@/*": ["./apps/browser/src/*"],
       "@seven-planets/game": ["./libs/game/src/index.ts"],

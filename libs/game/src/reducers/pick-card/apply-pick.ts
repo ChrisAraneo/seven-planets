@@ -40,7 +40,6 @@ export function applyPick(
     .value();
 }
 
-// Pays cost from hand, may win the game
 function applyBuildingPick(
   state: GameState,
   player: Player,

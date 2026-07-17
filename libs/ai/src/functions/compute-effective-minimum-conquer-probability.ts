@@ -11,8 +11,6 @@ export function computeEffectiveMinimumConquerProbability(
   const aiState = getAiState();
   const duelBonus = getAlivePlayers().length === 2 ? 0.1 : 0;
   const recklessBonus = player?.isKamikaze ? KAMIKAZE_RISK : 0;
-  // A kamikaze's floor is far lower: it keeps throwing troops at the human
-  // Even when a strike is likely to fail.
   return Math.max(
     player?.isKamikaze ? KAMIKAZE_MIN_CONQUER_FLOOR : 0.25,
     aiState.W.minConquerProb -

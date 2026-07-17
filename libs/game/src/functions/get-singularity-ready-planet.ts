@@ -6,7 +6,6 @@ import { getOwnedPlanets } from './get-owned-planets';
 import { getTechLevel } from './get-tech-level';
 import { isSingularityLabOk } from './is-singularity-lab-ok';
 
-// The owned planet where the Singularity can still be built or upgraded.
 export function getSingularityReadyPlanet(
   state: GameState,
   player: Player,

@@ -19,24 +19,16 @@ import type { ActionCursor, DraftCursor, DraftFrame } from './seat-frame';
 import { isQueueExhausted, seatPlayer } from './seat-frame';
 import { startNextTurn } from './turn-flow';
 
-/* One draft transition: move to the next seat/slot, enter a slot, pass, or
-   park a pick. The seat queue is the draft-order snapshot; a seat's owned
-   planets are re-resolved live per slot (conquests mid-draft change what a
-   seat drafts for). */
 export function draftStep(state: GameState, cursor: DraftCursor): GameState {
-  return (
-    match({ state, cursor })
-      .when(isQueueExhausted, () => finishDraft(state))
-      .when(isSeatFinished, nextSeat)
-      .when(isSlotFinished, nextSlot)
-      .when(isSlotUnentered, enterSlot)
-      // Pass slots do not park: log and move on.
-      .when(negate(hasPickableCard), passAndSkipSlot)
-      .otherwise(parkPick)
-  );
+  return match({ state, cursor })
+    .when(isQueueExhausted, () => finishDraft(state))
+    .when(isSeatFinished, nextSeat)
+    .when(isSlotFinished, nextSlot)
+    .when(isSlotUnentered, enterSlot)
+    .when(negate(hasPickableCard), passAndSkipSlot)
+    .otherwise(parkPick);
 }
 
-/* Skipped, dead or out of owned planets: this seat drafts no further slots. */
 function isSeatFinished(frame: DraftFrame): boolean {
   return chain(seatPlayer(frame))
     .thru(
@@ -48,7 +40,6 @@ function isSeatFinished(frame: DraftFrame): boolean {
     .value();
 }
 
-/* Pool empty, or the entered slot has used all its picks. */
 function isSlotFinished({ state, cursor }: DraftFrame): boolean {
   return (
     state.pool.length === 0 ||
@@ -56,7 +47,6 @@ function isSlotFinished({ state, cursor }: DraftFrame): boolean {
   );
 }
 
-/** PicksTotal stays -1 until enterSlot captures it. */
 function isSlotUnentered({ cursor }: DraftFrame): boolean {
   return cursor.picksTotal === -1;
 }
@@ -101,8 +91,6 @@ function nextSlot({ state, cursor }: DraftFrame): GameState {
   });
 }
 
-/* Slot entry: capture picksTotal once (getMainPicks for slot 0, else 1) and
-   point the draft at this slot's planet. */
 function enterSlot(frame: DraftFrame): GameState {
   return chain(seatPlayer(frame))
     .thru((player) =>
@@ -120,7 +108,6 @@ function enterSlot(frame: DraftFrame): GameState {
     .value();
 }
 
-/* GetMainPicks for the seat's first slot; every later slot gets one pick. */
 function computeSlotPicksTotal(frame: DraftFrame, player: Player): number {
   return match(frame.cursor.slot)
     .with(0, () => getMainPicks(frame.state, player))
@@ -141,8 +128,6 @@ function passAndSkipSlot(frame: DraftFrame): GameState {
     .value();
 }
 
-/* PARK: raise isAwaitingPick and bump inputSeq — the emission that carries
-   this snapshot is the whole notification; a `pick` intent answers it. */
 function parkPick({ state, cursor }: DraftFrame): GameState {
   return chain(seatPlayer({ state, cursor }))
     .tap((player) =>
@@ -170,8 +155,6 @@ function parkPick({ state, cursor }: DraftFrame): GameState {
     .value();
 }
 
-/* The draft ran to completion (every seat settled — not a game-over abort):
-   only now does the draft-planet marker reset. */
 function finishDraft(state: GameState): GameState {
   return chain(assign(state, { draftPlanetId: -1 }))
     .thru(() =>
@@ -182,7 +165,6 @@ function finishDraft(state: GameState): GameState {
     .value();
 }
 
-// Nobody can hold an action card before they exist, so skip the action phase.
 function skipActionPhase(state: GameState): GameState {
   return chain(
     assign(

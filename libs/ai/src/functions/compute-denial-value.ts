@@ -36,7 +36,6 @@ export function computeDenialValue(player: Player, poolType: PoolType): number {
   return worstValue;
 }
 
-// How much this rival would profit from drafting the card themselves.
 function computeRivalGain(rival: Player, poolType: PoolType): number {
   if (isBuildingType(poolType)) {
     if (poolType === 'SINGULARITY' && isSingularityReadyFor(rival)) {

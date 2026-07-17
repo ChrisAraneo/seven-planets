@@ -9,8 +9,6 @@ interface PaymentProgress {
   relicsNeeded: number;
 }
 
-// Spend `cost` from a player's hand, drawing on RELIC wildcards for any shortfall.
-// Pure: returns a new state with the player's hand rewritten.
 export function payCost(
   state: GameState,
   playerId: number,

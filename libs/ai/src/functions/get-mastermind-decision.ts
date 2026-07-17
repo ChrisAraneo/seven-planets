@@ -68,7 +68,6 @@ function getAttackDecision(player: Player): MastermindDecision | null {
   };
 }
 
-// The plan's staging planet, re-resolved on the live snapshot.
 function getStagingPlanet(player: Player): Planet | null {
   const plan = getPlan(player);
   return plan.stagingId === null
@@ -76,8 +75,6 @@ function getStagingPlanet(player: Player): Planet | null {
     : getGameStateLastValue().planets[plan.stagingId];
 }
 
-// Partial recruits are legal (short Ore musters fewer troops), so any
-// Barracks planet with 1⛏️ payable is worth an order.
 function canRecruitAt(player: Player, planet: Planet): boolean {
   return (
     (planet.buildings.BARRACKS || 0) > 0 &&

@@ -8,16 +8,10 @@ import {
 } from '@floating-ui/dom';
 import type { Directive } from 'vue';
 
-/* V-tooltip="text" — a floating-ui replacement for the native `title`
-   attribute: instant, styled to match the game, and kept inside the
-   viewport by floating-ui's flip/shift middleware (with an arrow).
-   An empty/undefined value shows nothing. */
-
 interface TooltipHandle {
   text: string;
   tip: HTMLDivElement | null;
   content: HTMLDivElement | null;
-  /** AutoUpdate disposer while the tooltip is visible. */
   stop: (() => void) | null;
   listeners: [keyof HTMLElementEventMap, EventListener][];
 }
@@ -31,8 +25,6 @@ const STATIC_SIDE: Record<string, string> = {
   left: 'right',
 };
 
-// How far the tooltip floats from its anchor, and the viewport padding
-// Shift() keeps around it.
 const TOOLTIP_OFFSET = 8;
 const VIEWPORT_PADDING = 6;
 
@@ -76,7 +68,6 @@ function show(el: HTMLElement): void {
     }).then(({ x, y, placement, middlewareData }) => {
       Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
       const side = placement.split('-')[0];
-      // The CSS borders the arrow's two outward-facing edges per side.
       tip.dataset.side = side;
       const arrowX = middlewareData.arrow?.x;
       const arrowY = middlewareData.arrow?.y;
@@ -89,7 +80,6 @@ function show(el: HTMLElement): void {
       });
     });
 
-  // Track scrolls/resizes/layout shifts for as long as the tooltip lives.
   handle.stop = autoUpdate(el, tip, reposition);
 }
 
@@ -117,7 +107,6 @@ export const vTooltip: Directive<HTMLElement, string | undefined> = {
         ['mouseleave', () => hide(el)],
         ['focus', () => show(el)],
         ['blur', () => hide(el)],
-        // Clicks open modals / re-render zones: never leave a stale tooltip.
         ['click', () => hide(el)],
       ],
     };

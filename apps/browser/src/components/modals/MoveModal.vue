@@ -11,7 +11,6 @@ const ui = useUiStore();
 
 const human = game.state.players[0];
 
-// Troops launch only FROM a Spaceport planet — those are the valid origins.
 const sources = computed(() =>
   getOwnedPlanets(game.state, human).filter(
     (planet) => planet.buildings.SPACEPORT,

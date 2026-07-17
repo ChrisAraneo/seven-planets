@@ -6,7 +6,6 @@ import type { GameState } from '../interfaces/game-state';
 import type { PoolType } from '../interfaces/pool-type';
 import { weightedDraw } from './weighted-draw';
 
-// Draw one action card. Attack/Recruit/Trade from turn 10; Move from turn 20.
 export function drawActionCard(state: GameState): PoolType {
   return weightedDraw(getDrawableActionTypes(state), 'ATTACK');
 }

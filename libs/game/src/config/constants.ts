@@ -1,8 +1,3 @@
-/* =====================================================================
-   SEVEN PLANETS — game data tables and pure (state-independent) helpers.
-   Ported from the original vanilla-JS game.js.
-   ===================================================================== */
-
 import { assign, fromPairs, mapValues } from 'lodash-es';
 import { match } from 'ts-pattern';
 
@@ -35,13 +30,9 @@ export const ACTION_TYPES: ActionType[] = [
 ];
 export const CARD_TYPES: CardType[] = [...RESOURCE_TYPES, ...ACTION_TYPES];
 
-// Turns 1-5 deal only resource cards; buildings join at 6
 export const BUILDINGS_FROM_TURN = 6;
-// ⚔️ Attack, 🪖 Recruit & 🔁 Trade cards are dealt from turn 10
 export const ACTION_CARDS_FROM_TURN = 10;
-// 🛸 Move cards join the action deck at turn 20
 export const MOVE_CARDS_FROM_TURN = 20;
-// The Research Lab card is dealt from turn 10
 export const ADVANCED_FROM_TURN = 10;
 export const INFLUENCE_CARDS_FROM_TURN = 30;
 
@@ -69,7 +60,6 @@ export const CARDS: Record<string, CardDefinition> = {
     value: 2.2,
   },
   RELIC: { name: 'Relic', icon: '🔮', color: '#c77dff', weight: 5, value: 3 },
-  // Action cards — performing an action spends the matching card.
   RECRUIT: {
     name: 'Recruit',
     icon: '🪖',
@@ -104,7 +94,6 @@ export const CARDS: Record<string, CardDefinition> = {
   },
 };
 
-// Every building has up to 3 LEVELS — picking its card again upgrades it.
 export const BUILDINGS: Record<BuildingType, BuildingDefinition> = {
   MINE: {
     name: 'Ore Mine',
@@ -225,7 +214,6 @@ export const BUILD_ORDER: BuildingType[] = [
   'SINGULARITY',
 ];
 
-// Max level per building (default 3). Income buildings, Spaceport and Embassy cap at level 2.
 const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   MINE: 2,
   EXTRACTOR: 2,
@@ -233,14 +221,12 @@ const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   HARVESTER: 2,
   SPACEPORT: 2,
   EMBASSY: 2,
-  // L4 is the apex, unlocked only by TECHNOLOGY 4 (a fully-built planet)
   SINGULARITY: 4,
 };
 export function getMaxLevel(id: BuildingType): number {
   return BUILDING_MAX_LEVEL[id] || 3;
 }
 
-// Level N of a building costs N× its base cost.
 export function computeBuildingCost(id: BuildingType, level: number): Cost {
   return match(level)
     .when(
@@ -250,7 +236,6 @@ export function computeBuildingCost(id: BuildingType, level: number): Cost {
     .otherwise(() => mapValues(BUILDINGS[id].cost, (amount) => amount * level));
 }
 
-// Per-turn income of an income building at the given level (Ore Mine L2 yields 3).
 export function computeIncomeAmount(id: BuildingType, lvl: number): number {
   return match({ id, lvl })
     .when(
@@ -260,7 +245,6 @@ export function computeIncomeAmount(id: BuildingType, lvl: number): number {
     .otherwise((candidate) => candidate.lvl);
 }
 
-// Building cards live in the pool alongside resources & actions.
 assign(
   CARDS,
   fromPairs(
@@ -278,7 +262,6 @@ assign(
   ),
 );
 
-// INFLUENCE CARDS — dealt into the pool from turn 30.
 export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDefinition> = {
   SKIP_ARMY: {
     name: 'Sabotage',
@@ -354,98 +337,52 @@ export const POOL_TYPES: PoolType[] = [
   ...INFLUENCE_TYPES,
 ];
 
-// Each Silo LEVEL doubles it: 3 → 6 → 12 → 24
 export const BASE_ROCKET_CAP = 3;
-// ...and adds +2 strike per level
 export const SILO_HIT_BONUS = 2;
-// Defense by shield level (L1:+4, L2:+8, L3:+16)
 export const SHIELD_DEFENSE = [0, 4, 8, 16] as const;
-// From this level the shield needs upkeep...
 export const SHIELD_UPKEEP_LEVEL = 3;
-// ...draining this many 💎 every turn
 export const SHIELD_UPKEEP_CRYSTAL = 2;
-// An L3 shield that missed its upkeep falls back to this
 export const SHIELD_UNPOWERED_DEFENSE = 8;
-// Flat defense bonus for defenders
 export const HOME_FIELD = 2;
-// A level-4 Singularity warps local space: +8 planet defense
 export const SINGULARITY_DEF_BONUS = 8;
 
-// COMBAT MATH — the single source of truth for battle resolution, shared by
-// The engine (doAttack) and every AI that predicts battle outcomes (./ai).
-// Change these numbers and both the game AND the AI's risk calculations
-// Follow automatically. Casualty fractions are exact integer num/den pairs.
 export const COMBAT = {
-  // Strike power contributed by each attacking troop
   attackPerTroop: 2,
-  // Defense contributed by each defending troop
   defensePerTroop: 2,
-  // Attacker adds randomInt(0, attackRoll) to the strike (more swing)
   attackRoll: 4,
-  // Defender adds randomInt(0, defenseRoll) to the defense (more swing)
   defenseRoll: 4,
-  // Win: defenders lose ceil(n/2) — conquest iff this wipes the garrison
   winDefLoss: { num: 1, den: 2 },
-  // Win: attackers lose floor(n/3)
   winAttLoss: { num: 1, den: 3 },
-  // Loss: attackers lose ceil(3n/4)
   loseAttLoss: { num: 3, den: 4 },
-  // Loss: defenders lose floor(n/4)
   loseDefLoss: { num: 1, den: 4 },
 } as const;
-// A freshly conquered planet cannot be attacked for this many turns
 export const CONQUEST_TRUCE = 3;
-// Peace Treaty card: planets are under truce for this many turns
 export const PEACE_TRUCE = 1;
-// ⏭️ skip influence cards (Sabotage/Uprising/…) paralyse a rival for this many turns
 export const SKIP_TURNS = 1;
 
-// PACIFIST STATUS — a player who launches no attack for this many turns turns
-// Permanently pacifist: they can never attack again, but each of their planets
-// Gains a flat defense bonus and produces extra influence every turn.
 export const PACIFIST_TURNS = 50;
-// Added to every pacifist planet's defense
 export const PACIFIST_DEF_BONUS = 4;
-// Extra ⭐ per pacifist planet every turn
 export const PACIFIST_INFLUENCE = 2;
 
 export const PLANET_STYLES: PlanetStyle[] = [
-  // 0 Terra Prime (human)
   { light: '#4fd8c0', dark: '#0e4f63', feature: 'continents' },
-  // 1 arid desert world
   { light: '#f0c070', dark: '#8a4416', feature: 'desert' },
-  // 2 machine city world
   { light: '#c9d6e8', dark: '#43485e', feature: 'city' },
-  // 3 lush moon world
   { light: '#8fe08a', dark: '#1e5c33', feature: 'moon' },
-  // 4 frozen world
   { light: '#d8f0ff', dark: '#3a6d94', feature: 'ice' },
-  // 5 ringed gas giant
   { light: '#ffd76e', dark: '#a33f14', feature: 'rings' },
-  // 6 storm world
   { light: '#9a7fd0', dark: '#2a1e4d', feature: 'storm' },
-  // 7 volcanic world
   { light: '#ff8060', dark: '#6a1a05', feature: 'lava' },
-  // 8 dense jungle world
   { light: '#60d890', dark: '#105030', feature: 'forest' },
-  // 9 toxic swamp world
   { light: '#c0e070', dark: '#304010', feature: 'toxic' },
-  // 10 crystal spire world
   { light: '#a0c8ff', dark: '#102060', feature: 'crystal' },
-  // 11 sand-band desert
   { light: '#f0d090', dark: '#604010', feature: 'bands' },
-  // 12 void / dark matter
   { light: '#c0c8f8', dark: '#1a1a40', feature: 'void' },
-  // 13 endless ocean world
   { light: '#30c0d8', dark: '#0a3048', feature: 'ocean' },
-  // 14 nebula heart world
   { light: '#ffb0d8', dark: '#503060', feature: 'nebula' },
-  // 15 irradiated world
   { light: '#b8ff70', dark: '#204010', feature: 'radiation' },
 ];
 
-// Full roster of possible AI opponents. Six are drawn at random each game.
-// Independent pools: each game randomizes a commander's name, homeworld and
 export const AI_NAMES = [
   'Baron Harkan',
   'Feyd Rakeen',
@@ -548,8 +485,6 @@ export const AI_COLORS = [
   '#f25f5c',
 ];
 
-// Build/upgrade priorities — the AI uses this as a static fallback only;
-// The advanced AI (./ai) plans dynamically by expected return-on-investment.
 export const PRIORITIES: BuildingType[] = [
   'MINE',
   'EXTRACTOR',
@@ -570,8 +505,6 @@ export const TAUNTS: string[] = [
   '"Probability favors the prepared."',
 ];
 
-/* ---------------- pure numeric / formatting helpers ---------------- */
-
 export function randomInt(minimum: number, maximum: number): number {
   return minimum + Math.floor(Math.random() * (maximum - minimum + 1));
 }
@@ -579,7 +512,6 @@ export function choice<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-// Uniform shuffle (sort by random keys) — returns a NEW array, does not mutate input.
 export function shuffleArray<T>(items: T[]): T[] {
   return chain(items.map((item) => ({ item, key: Math.random() })))
     .sortBy(({ key }) => key)
@@ -594,7 +526,6 @@ export function computeHandValue(map: Hand | Cost): number {
   );
 }
 
-// Relics are wildcards: they can stand in for any missing resource.
 export function canAfford(hand: Hand, cost: Cost): boolean {
   return (
     Object.entries(cost).reduce(

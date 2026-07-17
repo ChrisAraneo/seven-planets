@@ -1,21 +1,3 @@
-/* =====================================================================
-   SEVEN PLANETS — MASTERMIND weight tuner.
-
-   Run this after changing the game's numbers (constants.ts): the mastermind
-   AI derives its core math from those constants automatically, and this
-   script recalibrates the residual judgment weights (ai/weights.ts) so its
-   risk appetite matches the new balance.
-
-   Method: coordinate descent. For every tunable weight it tries a step up
-   and a step down, measures the mastermind's win rate over a batch of
-   headless games, and keeps any change
-   that beats the incumbent by more than sampling noise. The winner is
-   written back to src/ai/weights.ts plus a markdown report.
-
-   Run with:  npm run tune              (240 games/candidate, 2 passes)
-              npm run tune 500 3        (custom games-per-eval, passes)
-   ===================================================================== */
-
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -23,24 +5,20 @@ import { getAiWeights } from '@seven-planets/ai';
 import { setAiWeights } from '@seven-planets/ai';
 import type { Weights as AiWeights } from '@seven-planets/ai';
 import { simulateGame } from '@seven-planets/game';
-// The game state lives in the Vuex store — importing it creates the store,
-// installs the state accessor, and seats the AI (the ai module's plugin).
 import '@/stores';
 
-const SEATS = 7; // seat 0 = the human proxy (standard mastermind) + 6 AI opponents
+const SEATS = 7;
 const DEFAULT_GAMES = 240;
 const DEFAULT_PASSES = 2;
 
 interface ParamSpec {
   key: keyof AiWeights;
-  step: number; // absolute step size tried in both directions
+  step: number;
   min: number;
   max: number;
-  int?: boolean; // keep the value an integer (turn counts, troop counts)
+  int?: boolean;
 }
 
-// The search space. holdHorizon stays >= 5 by design: the retention forecast
-// must always look at least 5 turns ahead.
 const SPECS: ParamSpec[] = [
   { key: 'planHorizon', step: 2, min: 5, max: 12, int: true },
   { key: 'holdHorizon', step: 1, min: 5, max: 10, int: true },
@@ -64,7 +42,6 @@ function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
-/** Win rate of the AI seats against the human-proxy seat. */
 async function winRate(weights: AiWeights, games: number): Promise<number> {
   setAiWeights(weights);
   let wins = 0;
@@ -75,7 +52,6 @@ async function winRate(weights: AiWeights, games: number): Promise<number> {
   return wins / games;
 }
 
-/** Regenerate src/ai/weights.ts with the tuned values. */
 function weightsFileContent(w: AiWeights): string {
   const doc: Record<keyof AiWeights, string> = {
     planHorizon:
@@ -163,7 +139,6 @@ async function main(): Promise<void> {
         const value = spec.int ? Math.round(clamped) : round3(clamped);
         if (value === best[spec.key]) continue;
         const rate = await winRate({ ...best, [spec.key]: value }, games);
-        // Only adopt improvements that clear half a standard error of noise.
         const se = Math.sqrt((bestRate * (1 - bestRate)) / games);
         const keep = rate > bestRate + 0.5 * se;
         console.log(

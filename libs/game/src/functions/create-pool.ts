@@ -20,26 +20,21 @@ import { drawResourceCard } from './draw-resource-card';
 import { filterAlivePlayers } from './filter-alive-players';
 import { isSingularityInPlay } from './is-singularity-in-play';
 
-// Mid-game pool shape: 5 unique building slots + 11 other cards (6 of which
-// Become action cards once those are dealt).
 const BUILDING_SLOT_COUNT = 5;
 const OTHER_CARD_COUNT = 11;
 const ACTION_CARD_COUNT = 6;
 
-// Odds that a Singularity bonus slot is a resource card (else an action card).
 const SINGULARITY_RESOURCE_ODDS = 0.55;
 
 export function createPool(state: GameState): PoolType[] {
   return match(state.turn)
     .when(
-      // Turns 1–5: pure resource draft, 14 random resource cards.
       (turn) => turn < BUILDINGS_FROM_TURN,
       (): PoolType[] => Array.from({ length: 14 }, () => drawResourceCard()),
     )
     .otherwise(() => createMidGamePool(state));
 }
 
-// Turn 6+: 5 unique buildings + 11 other cards = 16 total.
 function createMidGamePool(state: GameState): PoolType[] {
   return chain({
     buildingSlots: shuffleArray([...getEligibleBuildings(state)]).slice(
@@ -75,7 +70,6 @@ function getEligibleBuildings(state: GameState): BuildingType[] {
   );
 }
 
-// From turn 30: 2 random influence cards join every pool.
 function getInfluenceSlots(state: GameState): PoolType[] {
   return match(state.turn)
     .when(
@@ -86,7 +80,6 @@ function getInfluenceSlots(state: GameState): PoolType[] {
     .otherwise((): PoolType[] => []);
 }
 
-// Each Singularity level across all alive players adds 1 extra random card.
 function getSingularityBonusSlots(state: GameState): PoolType[] {
   return Array.from(
     {

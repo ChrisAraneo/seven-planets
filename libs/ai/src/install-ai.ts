@@ -26,43 +26,12 @@ import { computeMastermindDraftPick } from './functions/compute-mastermind-draft
 import { getMastermindDecision } from './functions/get-mastermind-decision';
 import { shouldAcceptTrade } from './functions/should-accept-trade';
 
-/* =====================================================================
-   The mastermind AI driver.
-
-   The AI has no bespoke bridge into the game loop — it only SUBSCRIBES
-   to the game's state stream, exactly like the effects player:
-
-     getGameState() | distinctUntilKeyChanged('inputSeq')  → answer picks/turns
-     getGameState() | map(pendingOffer) | distinct         → answer trade offers
-
-   The engine bumps `inputSeq` and publishes a snapshot every time it
-   parks awaiting the seat in play; when that seat is AI-controlled the
-   subscription answers by calling the very same game actions the
-   human's clicks call. The AI never mutates game state directly, and
-   the game core registers no callbacks — its output is getGameState(), its
-   input is the actions.
-
-   Pacing is entirely the AI's concern (the engine never waits on time):
-   in the browser the AI defers its answers with timers so its play
-   reads at a human pace; headless it answers synchronously — RxJS
-   subjects deliver synchronously and the engine stream's queueScheduler
-   flattens the loop, so whole simulated games run without timers,
-   promises or a Vue scheduler.
-
-   The AI's private tuning memory (weights, plan cache) deliberately
-   stays a plain non-reactive singleton in ./state — its hottest loops
-   read it millions of times per simulated game.
-   ===================================================================== */
-
-/** Paced (timer-deferred) answers in the browser; instant headless. */
 const IS_PACED = typeof document !== 'undefined';
 
 const TURN_START_DELAY = 350;
 const BETWEEN_ACTIONS_DELAY = 320;
 const PICK_DELAY = 300;
 
-/** A seat is AI-controlled when it is not the human, or in demo mode
-    (IS_AUTO_HUMAN) when even the human proxy is driven by the AI. */
 export function isAiSeat(seatId: number): boolean {
   const players = getPlayers();
   if (seatId < 0 || seatId >= players.length) {
@@ -124,8 +93,6 @@ function performDecision(playerId: number, decision: Decision): void {
   }
 }
 
-/** The engine parked a draft pick for AI seat `playerId`: choose a pool
-    card and answer with the shared pickCard action. */
 function aiPickCard(playerId: number): void {
   const state = getGameStateLastValue();
   const player = state.players[playerId];
@@ -136,14 +103,11 @@ function aiPickCard(playerId: number): void {
   );
   let index = computeMastermindDraftPick(player, planet, pickable);
   if (index < 0 || !pickable[index]) {
-    // The engine only parks when something is pickable — fall back to
-    // The first legal card rather than leave the draft stuck.
     index = pickable.indexOf(true);
   }
   pickCard({ playerId, index });
 }
 
-/** Decide and perform one action, returning false when the turn is done. */
 function takeOneAction(playerId: number): boolean {
   if (getIsOver()) {
     return false;
@@ -166,12 +130,6 @@ function takeOneAction(playerId: number): boolean {
   return true;
 }
 
-/* Headless action turns run ONE intent per emission: dispatching from
-   inside a getGameState() subscriber queues the intent (queueScheduler), so the
-   NEXT snapshot — the one carrying that intent's outcome — is what
-   re-triggers this driver for the following decision. Deciding several
-   actions off one snapshot would plan them all against stale state. The
-   12-action budget is keyed to the park's inputSeq. */
 const HEADLESS_ACTION_BUDGET = 12;
 let headlessTurnKey = -1;
 let headlessActionsLeft = 0;
@@ -180,12 +138,9 @@ function headlessTurnStep(snapshot: GameState): void {
   if (IS_PACED || !snapshot.isAwaitingAction || !isAiSeat(snapshot.activeId)) {
     return;
   }
-  // A trade offer is out: resume when the partner's answer is reduced.
   if (snapshot.pendingOffer) {
     return;
   }
-  // The AI always ends its turn — even a game-ending action must be
-  // Followed by endTurn so the engine can settle the cursor to 'done'.
   if (snapshot.over) {
     dispatch(createEndTurnAction({ playerId: snapshot.activeId }));
     return;
@@ -203,8 +158,6 @@ function headlessTurnStep(snapshot: GameState): void {
   dispatch(createEndTurnAction({ playerId: snapshot.activeId }));
 }
 
-/** Browser version of the same turn, paced with timers so the AI's play
-    is visible. The timers live HERE, not in the game core. */
 function aiTakeTurnPaced(playerId: number, remaining = 12): void {
   setTimeout(
     () => {
@@ -219,8 +172,6 @@ function aiTakeTurnPaced(playerId: number, remaining = 12): void {
   );
 }
 
-/** A trade offer appeared on the state for AI seat `playerId`: judge it
-    and answer with the shared resolveOffer action. */
 function aiConsiderOffer(playerId: number): void {
   const state = getGameStateLastValue();
   const offer = state.pendingOffer;
@@ -229,7 +180,6 @@ function aiConsiderOffer(playerId: number): void {
   }
   const player = state.players[playerId];
   const proposer = state.players[offer.fromId];
-  // PendingOffer is from the proposer's perspective; flip it to `p`'s.
   const isAccepted = shouldAcceptTrade(
     player,
     offer.gets,
@@ -239,10 +189,6 @@ function aiConsiderOffer(playerId: number): void {
   resolveOffer({ playerId, isAccepted });
 }
 
-/** The engine parked awaiting input (a snapshot with a fresh inputSeq
-    arrived) — answer if the seat in play is ours. Headless action turns
-    are driven by headlessTurnStep on every emission instead, so the AI
-    always decides on the freshly reduced state. */
 function respond(snapshot: GameState): void {
   if (snapshot.over || !isAiSeat(snapshot.activeId)) {
     return;
@@ -261,19 +207,9 @@ function respond(snapshot: GameState): void {
   }
 }
 
-/* ---------------------------------------------------------------------
-   The subscriptions. The AI's ONLY connection to the running game — the
-   engine treats AI seats exactly like the human, publishing the same
-   snapshots and resumed by the same actions. Pure RxJS: no Vue, no
-   reactivity, works identically in the browser and headless.
-   --------------------------------------------------------------------- */
 export function installAi(): void {
-  // The engine parked awaiting the seat in play (pick or action turn).
   getGameState().pipe(distinctUntilKeyChanged('inputSeq')).subscribe(respond);
 
-  // A trade offer awaits its target seat's answer. Subscribed BEFORE the
-  // Headless turn driver so the answer is queued (and thus reduced) ahead
-  // Of the offerer's next decision.
   getGameState()
     .pipe(
       map((snapshot) => snapshot.pendingOffer),
@@ -285,6 +221,5 @@ export function installAi(): void {
       }
     });
 
-  // Headless action turns: one intent per emission (see headlessTurnStep).
   getGameState().subscribe(headlessTurnStep);
 }

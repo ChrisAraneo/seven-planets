@@ -53,7 +53,6 @@ const capacity = computed(() =>
   Math.min(getRocketCapacity(source.value), source.value.troops),
 );
 
-// Keep the selected target valid and the troop count within capacity.
 watch(
   [openTargets, sourceId],
   () => {
@@ -86,7 +85,6 @@ const preview = computed(() => {
     computePacifistDefenseBonus(game.state, target.value) +
     computeSingularityDefenseBonus(target.value) +
     HOME_FIELD;
-  // exact P(win), same math the dice roll
   const winProbability = computeBattleWinProbability(attackPower, defensePower);
   const winPercent = Math.round(winProbability * 100);
   const note =

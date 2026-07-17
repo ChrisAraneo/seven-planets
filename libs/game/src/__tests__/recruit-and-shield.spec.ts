@@ -1,6 +1,3 @@
-/* Pins the ore-limited partial recruit and the shield rework:
-   +4/+8/+16 by level, with the L3 shield drinking 2💎 upkeep per turn
-   (unpaid → unpowered → only +8 that turn). */
 import { describe, expect, it } from 'vitest';
 
 import { computeRecruitableTroops } from '../functions/compute-recruitable-troops';
@@ -70,7 +67,6 @@ function state(
 
 describe('partial recruit (ore-limited)', () => {
   it('recruits only as many troops as the hand can pay', () => {
-    // Barracks L3 yields 4, but only 3⛏️ in hand → 3 troops for 3⛏️.
     const s = state([planet(0, 2, { BARRACKS: 3 })], { RECRUIT: 1, ORE: 3 });
     const after = applyRecruitTroops(s, { playerId: 0, planetId: 0 });
     expect(after.planets[0].troops).toBe(5);
@@ -88,7 +84,6 @@ describe('partial recruit (ore-limited)', () => {
   it('no-ops when not a single troop is payable', () => {
     const s = state([planet(0, 1, { BARRACKS: 2 })], { RECRUIT: 1 });
     const after = applyRecruitTroops(s, { playerId: 0, planetId: 0 });
-    // The reducer clones before the planet-level guards; content is unchanged.
     expect(after).toStrictEqual(s);
   });
 
@@ -133,7 +128,6 @@ describe('L3 shield upkeep: 2💎 per turn or the shield runs unpowered', () => 
   it('marks the shield unpowered when crystals are short', () => {
     const s = state([planet(0, 0, { SHIELD: 3 })], { CRYSTAL: 1 });
     const after = doShieldUpkeep(s);
-    // Nothing drained
     expect(after.players[0].hand.CRYSTAL).toBe(1);
     expect(after.planets[0].isShieldUnpowered).toBe(true);
     expect(after.log.some((entry) => entry.message.includes('UNPOWERED'))).toBe(

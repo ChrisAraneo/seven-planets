@@ -10,9 +10,6 @@ import { spendActionCard } from '../../functions/spend-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 
-/* Reducer branch. Resolves the redeploy SYNCHRONOUSLY on a private clone;
-   the rocket flight and arrival banner are effect events the presentation
-   layer plays in response. Illegal intents reduce to the unchanged state. */
 export function applyMoveTroops(
   state: GameState,
   payload: MoveTroopsPayload,
@@ -33,14 +30,10 @@ export function applyMoveTroops(
     );
 }
 
-// Applies pure engine results onto the private clone via assign so the
-// Object identity (and the caller's `state` reference) stays stable.
 function executeMove(
   state: GameState,
   { playerId, fromId, toId, troops }: MoveTroopsPayload,
 ): void {
-  // Troops can only be redeployed FROM a planet that has a Spaceport —
-  // The launch pad, mirroring how rockets launch only from Silo planets.
   return match(Boolean(state.planets[fromId].buildings.SPACEPORT))
     .with(false, noop)
     .otherwise(

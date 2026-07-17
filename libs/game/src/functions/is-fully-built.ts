@@ -1,11 +1,6 @@
 import { BUILD_ORDER, getMaxLevel } from '../config/constants';
 import type { Planet } from '../interfaces/planet';
 
-// A planet is FULLY BUILT once every building except the Singularity sits at its
-// Maximum level and the Singularity itself has reached level 3. Owning one grants
-// TECHNOLOGY 4 — the tier that unlocks the level-4 Singularity.
-// Short-circuit expressions instead of a branch: AI planning hot loop.
-// The Singularity level that counts as "built" for the FULLY BUILT check.
 const SINGULARITY_BUILT_LEVEL = 3;
 
 export function isFullyBuilt(planet: Planet): boolean {

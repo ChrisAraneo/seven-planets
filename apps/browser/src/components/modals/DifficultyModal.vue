@@ -5,18 +5,15 @@ import { useUiStore, useUnlocksStore } from '@/stores';
 
 const ui = useUiStore();
 
-// Unlocks live in the unlocks store; they only change on a win, which
-// reloads the page, so reading the set once here is safe.
 const unlocked = useUnlocksStore().unlocked;
 
 function choose(level: Difficulty): void {
-  if (!unlocked.has(level)) return; // locked — earn it by winning the level below
+  if (!unlocked.has(level)) return;
   ui.chooseDifficulty(level);
 }
 </script>
 
 <template>
-  <!-- No overlay-close: the human must pick a difficulty to begin. -->
   <ModalShell>
     <h2>🌌 CHOOSE YOUR DIFFICULTY</h2>
     <p class="dimtx">

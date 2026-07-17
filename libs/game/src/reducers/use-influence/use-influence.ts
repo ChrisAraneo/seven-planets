@@ -11,9 +11,6 @@ import { playPeace } from './play-peace';
 import { playSkip } from './play-skip';
 import { playStealAction } from './play-steal-action';
 
-/* Reducer branch. Resolves the play on a private clone; illegal intents
-   (including refused plays inside playInfluence) reduce to a state with no
-   gameplay change. */
 export function applyUseInfluence(
   state: GameState,
   payload: UseInfluencePayload,
@@ -37,9 +34,6 @@ export function applyUseInfluence(
     );
 }
 
-// Applies pure engine results onto the private clone via assign and reads
-// Entities by id (options carry frozen selector clones — we use only their ids), so the
-// Whole play resolves consistently on the state that gets written back.
 function playInfluence(
   state: GameState,
   playerId: number,

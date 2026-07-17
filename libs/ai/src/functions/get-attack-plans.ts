@@ -59,8 +59,6 @@ export function getAttackPlans(player: Player): AttackPlan[] {
   );
 }
 
-// A kamikaze does not fear losing troops — expected losses barely register
-// When it scores a strike, so even long-shot attacks stay on the table.
 function getLossWeight(player: Player): number {
   return getAiState().W.troopValue * (player.isKamikaze ? 0.25 : 1);
 }

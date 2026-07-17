@@ -8,8 +8,6 @@ import { chain } from '../utils/chain';
 import { log } from './log';
 import { setStatus } from './set-status';
 
-/* Nothing in the pool is pickable for this slot: log a pass (and tell the
-   human why) — the draft moves straight on without parking. */
 export function passSlot(
   state: GameState,
   player: Player,

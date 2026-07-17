@@ -25,7 +25,6 @@ const hasPort = computed(() =>
 const hasEmbassy = computed(() =>
   hasBuilding(game.state, human.value, 'EMBASSY'),
 );
-// Partial recruits are legal: 1⛏️ payable on any Barracks planet is enough.
 const canRecruitSomewhere = computed(() =>
   getOwnedPlanets(game.state, human.value).some(
     (pl) =>
@@ -78,8 +77,6 @@ const influenceTitle = computed(() =>
     : 'No influence cards in hand — draft them from the pool (turn 30+) by paying their ⭐ cost.',
 );
 
-// Always open the planet picker — the player chooses where to recruit,
-// even when only one planet currently qualifies.
 function onRecruit(): void {
   if (canRecruitSomewhere.value) ui.openModal('recruit');
 }

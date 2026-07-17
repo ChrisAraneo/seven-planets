@@ -25,8 +25,6 @@ interface BattleContext {
   defLoss: number;
 }
 
-// Battle resolution reads every coefficient from constants.COMBAT so the
-// Planning AI (./ai) predicts with the exact numbers the dice use.
 export function resolveBattle(
   state: GameState,
   attackerId: number,
@@ -83,7 +81,6 @@ function computeBattlePowers(
         randomInt(0, COMBAT.attackRoll),
       defensePower:
         COMBAT.defensePerTroop * target.troops +
-        // 0/+4/+8/+16 (an unpowered L3 gives +8)
         computeShieldDefense(target) +
         computePacifistDefenseBonus(state, target) +
         computeSingularityDefenseBonus(target) +
@@ -150,9 +147,7 @@ function applyOutcome(
 ): void {
   return match(eachBattle)
     .when(
-      // No spoils for merely winning a battle — only conquest pays
       ({ didWin, target }) => didWin && target.troops <= 0,
-      // The surviving strike force garrisons it
       ({ attLoss }) =>
         conquerPlanet(state, attackerId, targetId, troops - attLoss),
     )
@@ -160,7 +155,6 @@ function applyOutcome(
       ({ didWin }) => didWin,
       ({ source, target, attLoss }) =>
         void chain(
-          // Raiders fly home
           assign(source, { troops: source.troops + (troops - attLoss) }),
         )
           .tap(() =>

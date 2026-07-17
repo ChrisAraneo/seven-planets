@@ -17,7 +17,6 @@ import type { GameState } from '../../interfaces/game-state';
 import type { Hand } from '../../interfaces/hand';
 import { chain } from '../../utils/chain';
 
-// Loot caps: a fleeing defender loses at most 5 cards, a wiped-out one 6.
 const FLEE_LOOT_CAP = 5;
 const ELIMINATION_LOOT_CAP = 6;
 

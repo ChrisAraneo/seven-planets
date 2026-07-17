@@ -62,8 +62,6 @@ export function playStealAction(
     );
 }
 
-// The play is only legal against an alive rival holding at least one copy of a
-// Real action card; anything else yields no context and the play is refused.
 function getStealContext(
   state: GameState,
   options: InfluenceOptions,

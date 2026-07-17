@@ -93,7 +93,6 @@ function computeDevelopScore(queue: BuildCandidate[]): number {
   );
 }
 
-// The silo with the biggest rocket (troops break capacity ties).
 function getStagingPlanet(player: Player): Planet | null {
   const silos = getOwnedPlanets(player).filter(
     (planet) => planet.buildings.SILO,
@@ -172,8 +171,6 @@ function scoreInvasion(
   };
 }
 
-// Turns to muster the strike force (plus reserve) on the staging silo;
-// Building a staging silo first costs four extra turns.
 function computeTurnsToStage(
   player: Player,
   staging: Planet | null,
@@ -192,8 +189,6 @@ function computeTurnsToStage(
   );
 }
 
-// Smallest strike force with acceptable conquest odds against the garrison
-// Projected a few turns out.
 function computeNeededTroops(
   target: Planet,
   defenderOwner: Player,
@@ -275,7 +270,6 @@ function pickStrategy(
   return kind;
 }
 
-// Militant plans bump their enabling buildings to the head of the queue.
 function prioritizeEnablers(
   queue: BuildCandidate[],
   kind: StrategyKind,

@@ -17,25 +17,16 @@ import { updatePlayers } from './update-players';
 const { number, string } = P;
 
 interface IncomeTally {
-  // Cards actually added to hands
   handAdd: Partial<Record<number, Record<string, number>>>;
-  // Influence actually added
   infAdd: Partial<Record<number, number>>;
-  // Production, for the log
   gains: Partial<Record<number, Record<string, number>>>;
-  // L2 Spaceport: free Move card every SPACEPORT_MOVE_PERIOD turns
   moveGains: Partial<Record<number, number>>;
-  // L2 Embassy: +1 ⭐ Influence every turn
   infGains: Partial<Record<number, number>>;
-  // Pacifist: +PACIFIST_INFLUENCE ⭐ per planet
   pacGains: Partial<Record<number, number>>;
 }
 
-// L2 Spaceport perk cadence: a free Move card every 3rd turn.
 const SPACEPORT_MOVE_PERIOD = 3;
 
-// Grant every alive owner their per-turn production. Pure: accumulate each player's
-// Hand/influence deltas, apply them in one structural-sharing pass, then log.
 export function doIncome(state: GameState): GameState {
   return chain(
     state.planets.reduce<IncomeTally>(
@@ -87,7 +78,6 @@ function addBuildingIncome(
       })
         .with(
           { level: number.positive(), income: string },
-          // Scales with level (Mine L2: 3)
           ({ level, income }) =>
             chain(computeIncomeAmount(buildingType, level))
               .thru((amount) => ({
@@ -102,7 +92,6 @@ function addBuildingIncome(
   );
 }
 
-// L2 Spaceport perk: grant 1 free Move card every 3rd turn
 function addSpaceportPerk(
   tally: IncomeTally,
   turn: number,
@@ -121,7 +110,6 @@ function addSpaceportPerk(
     .otherwise(() => tally);
 }
 
-// L2 Embassy perk: +1 Influence per turn
 function addEmbassyPerk(
   tally: IncomeTally,
   ownerId: number,
@@ -139,7 +127,6 @@ function addEmbassyPerk(
     .otherwise(() => tally);
 }
 
-// Pacifist perk: every planet radiates extra influence every turn.
 function addPacifistPerk(tally: IncomeTally, owner: Player): IncomeTally {
   return match(owner.hasPacifistStatus)
     .with(true, () => ({

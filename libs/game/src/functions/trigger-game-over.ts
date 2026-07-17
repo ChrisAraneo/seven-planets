@@ -10,11 +10,6 @@ const { nonNullable } = P;
 
 type GameOverReason = 'conquest' | 'eliminated';
 
-// End the game. Pure w.r.t. GameState — returns a new state carrying the result.
-// It does NOT touch the engine or its parked-input flags: the coroutine unwinds
-// On its own once `over` is set. A win taken during the draft aborts the current
-// Step synchronously; one taken during an action turn is unwound by the seat's
-// Own `endTurn` (the AI always ends its turn; the UI's turn is already over).
 export function triggerGameOver(
   state: GameState,
   winnerId: number | null,

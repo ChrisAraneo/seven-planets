@@ -20,8 +20,6 @@ import type {
 
 const game = useGameStore();
 
-// AwaitingPick is raised for every drafting seat, so scope the human's pool
-// clicks to the human's own draft turn (seat 0).
 const isPicking = computed(
   () =>
     game.state.isAwaitingPick && game.state.activeId === 0 && !game.state.over,

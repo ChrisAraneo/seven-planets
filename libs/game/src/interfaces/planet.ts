@@ -7,8 +7,6 @@ export interface Planet {
   buildings: BuildingLevels;
   troops: number;
   protectedUntil: number;
-  /** True when an L3 Shield missed its per-turn 💎 upkeep this turn —
-      the shield projects only SHIELD_UNPOWERED_DEFENSE until next upkeep. */
   isShieldUnpowered: boolean;
   x: number;
   y: number;

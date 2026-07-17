@@ -13,8 +13,6 @@ import { getOwnedPlanets } from './get-owned-planets';
 import { log } from './log';
 import { updatePlayer } from './update-player';
 
-// Promote any player who has gone PACIFIST_TURNS without attacking. A player who
-// Has once broken a pacifist vow (hasForfeitedPacifism) can never be promoted again.
 export function updatePacifistStatus(state: GameState): GameState {
   return state.players.reduce(
     (eachState, player) => promoteIfVowKept(eachState, player, state.turn),

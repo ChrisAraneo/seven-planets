@@ -8,7 +8,6 @@ import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';
 import type { DraftCursor } from './seat-frame';
 
-// The turn cap stops the game BEFORE a new prelude starts (never mid-turn).
 export function startNextTurn(state: GameState): GameState {
   return match(state)
     .when(() => state.turn >= state.maxTurns, finishGame)
@@ -33,8 +32,6 @@ function getDraftCursor(state: GameState): DraftCursor {
   };
 }
 
-/* Terminal settle (game over or turn cap): clear the parked-input flags and
-   the seat marker; the cursor rests at 'done'. */
 export function finishGame(state: GameState): GameState {
   return assign(state, {
     isAwaitingPick: false,

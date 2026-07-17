@@ -7,12 +7,6 @@ import { chain } from '../../utils/chain';
 import { applyPick } from './apply-pick';
 import { isValidPick } from './is-valid-pick';
 
-/* Reducer branch. An illegal pick reduces to the unchanged state (still
-   parked — the seat must answer again); a pick arriving after game over
-   consumes the park without applying the card (the old mid-draft abort),
-   so advance can settle the cursor. A legal pick applies the card and
-   bumps the cursor's pick counter — the recorded answer advance resumes
-   from. */
 export function applyPickCard(
   state: GameState,
   payload: PickCardPayload,

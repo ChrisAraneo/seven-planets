@@ -14,8 +14,6 @@ import type { GameState } from '../../interfaces/game-state';
 import type { Planet } from '../../interfaces/planet';
 import { chain } from '../../utils/chain';
 
-/* Reducer branch. Resolves the recruitment on a private clone; illegal
-   intents reduce to the unchanged state. */
 export function applyRecruitTroops(
   state: GameState,
   payload: RecruitTroopsPayload,
@@ -38,8 +36,6 @@ export function applyRecruitTroops(
     );
 }
 
-// Applies pure engine results onto the private clone via assign so the
-// Object identity (and the caller's `state` reference) stays stable.
 function executeRecruit(
   state: GameState,
   playerId: number,
@@ -48,13 +44,11 @@ function executeRecruit(
   return match(state.planets[planetId])
     .when((planet) => !planet.buildings.BARRACKS, noop)
     .when(
-      // Not a single troop payable (1⛏️ each, relics stand in): no-op.
       (planet) =>
         computeRecruitableTroops(planet, state.players[playerId].hand) < 1,
       noop,
     )
     .otherwise(
-      // Short on Ore, the Barracks still musters what the hand CAN pay.
       (planet) =>
         void chain(
           computeRecruitableTroops(planet, state.players[playerId].hand),
@@ -93,7 +87,6 @@ function executeRecruit(
     );
 }
 
-// "(ore-limited, Barracks yields 4)" when the hand couldn't pay the full yield.
 function getOreLimitedSuffix(planet: Planet, count: number): string {
   return match(count < computeRecruitYield(planet))
     .with(

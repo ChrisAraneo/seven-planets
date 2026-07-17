@@ -1,6 +1,3 @@
-/* Spaceport is a prerequisite in two places:
-   - a 🛸 Move launches only FROM a planet that has a Spaceport;
-   - a 🤝 Embassy can only be built on a planet that already has one. */
 import { describe, expect, it } from 'vitest';
 
 import { canPickCard } from '../functions/can-pick-card';
@@ -67,15 +64,12 @@ describe('Move requires a Spaceport on the SOURCE planet', () => {
   const move = { playerId: 0, fromId: 0, toId: 1, troops: 3 };
 
   it('blocks a move launched from a planet with no Spaceport', () => {
-    const s = state(
-      // Spaceport on the DEST, not source
-      [planet(0, 5, {}), planet(1, 0, { SPACEPORT: 1 })],
-      { MOVE: 1 },
-    );
+    const s = state([planet(0, 5, {}), planet(1, 0, { SPACEPORT: 1 })], {
+      MOVE: 1,
+    });
     const after = applyMoveTroops(s, move);
     expect(after.planets[0].troops).toBe(5);
     expect(after.planets[1].troops).toBe(0);
-    // Card not spent
     expect(after.players[0].hand.MOVE).toBe(1);
   });
 
@@ -86,13 +80,11 @@ describe('Move requires a Spaceport on the SOURCE planet', () => {
     const after = applyMoveTroops(s, move);
     expect(after.planets[0].troops).toBe(2);
     expect(after.planets[1].troops).toBe(3);
-    // Card spent
     expect(after.players[0].hand.MOVE).toBe(0);
   });
 });
 
 describe('Embassy requires a Spaceport on the SAME planet', () => {
-  // Affords the Embassy
   const hand = { ORE: 5, CRYSTAL: 5, ENERGY: 5 };
 
   it('cannot pick an Embassy on a planet without a Spaceport', () => {

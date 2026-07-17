@@ -146,8 +146,6 @@ function computeSiloWorth(
   return grossValue;
 }
 
-// Worth 7 when this level-up unlocks a rocket big enough for a conquest that
-// The current capacity cannot carry.
 function computeCapacityUnlockWorth(
   player: Player,
   planet: Planet,
@@ -180,7 +178,6 @@ function computeShieldWorth(
   level: number,
 ): number {
   const risk = 1 - computeHoldProbability(player, planet, planet.troops);
-  // Marginal defense of THIS level-up (+4/+4/+8 for L1/L2/L3).
   return (
     (SHIELD_DEFENSE[level] - SHIELD_DEFENSE[level - 1]) * 0.35 +
     risk * computePlanetValue(planet) * 0.6

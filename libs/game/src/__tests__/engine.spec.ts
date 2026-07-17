@@ -9,7 +9,6 @@ describe('Seven Planets engine', () => {
     expect(state.players).toHaveLength(7);
     expect(state.planets).toHaveLength(7);
     expect(state.players[0].isHuman).toBe(true);
-    // Everyone starts with 3 troops and no resources.
     expect(state.planets.every((planet) => planet.troops === 3)).toBe(true);
     expect(state.players[0].hand.ORE).toBe(0);
   });

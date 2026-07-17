@@ -11,11 +11,6 @@ import { log } from './log';
 import { updatePlanet } from './update-planet';
 import { updatePlayer } from './update-player';
 
-/* Per-turn shield upkeep (runs right after income): every L3 Shield drains
-   SHIELD_UPKEEP_CRYSTAL 💎 from its owner's hand. An owner who cannot pay
-   (crystals only — relics are never burned on upkeep) leaves that shield
-   UNPOWERED for the turn: it projects only SHIELD_UNPOWERED_DEFENSE.
-   Pure: returns a new state via structural sharing. */
 export function doShieldUpkeep(state: GameState): GameState {
   return state.planets.reduce(
     (acc, planet) => settleShield(acc, planet.id),
@@ -57,7 +52,6 @@ function payUpkeep(state: GameState, ownerId: number): GameState {
   }));
 }
 
-// Only rewrite the planet when the flag actually flips (structural sharing).
 function setUnpowered(
   state: GameState,
   planet: Planet,

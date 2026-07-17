@@ -9,8 +9,6 @@ import type { ActionCursor, ActionFrame } from './seat-frame';
 import { isQueueExhausted, seatPlayer } from './seat-frame';
 import { startNextTurn } from './turn-flow';
 
-/* One action-phase transition: skip dead/paralysed seats, park the next
-   seat's action turn, or — with the queue exhausted — start the next turn. */
 export function actionStep(state: GameState, cursor: ActionCursor): GameState {
   return match({ state, cursor })
     .when(isQueueExhausted, () => startNextTurn(state))
@@ -18,7 +16,6 @@ export function actionStep(state: GameState, cursor: ActionCursor): GameState {
     .otherwise(parkAction);
 }
 
-/* Dead or paralysed seats take no action turn. */
 function isSeatSittingOut(frame: ActionFrame): boolean {
   return chain(seatPlayer(frame))
     .thru((player) => !player.isAlive || player.isSkippedNow)
@@ -31,7 +28,6 @@ function skipSeat({ state, cursor }: ActionFrame): GameState {
   });
 }
 
-/* PARK: raise isAwaitingAction and bump inputSeq — answered by `endTurn`. */
 function parkAction(frame: ActionFrame): GameState {
   return chain(seatPlayer(frame))
     .tap((player) => assign(frame.state, { activeId: player.id }))

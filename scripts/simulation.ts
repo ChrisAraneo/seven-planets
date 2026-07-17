@@ -1,35 +1,14 @@
-/* =====================================================================
-   SEVEN PLANETS — difficulty win-rate simulation.
-
-   Measures how a STANDARD "mastermind" — the same full-strength planning
-   AI, standing in for a skilled human — fares at every difficulty level.
-
-   Each game seats a standard mastermind at seat 0 (the human seat, never
-   handicapped) against six mastermind opponents weakened by the chosen
-   difficulty's handicap (and hunted by that difficulty's kamikazes). The
-   report is the human proxy's WIN % at each difficulty.
-
-   Run with:  npm run simulation            (default games per difficulty)
-              npm run simulation 5000        (custom games per difficulty)
-
-   Headless (no `document`), so every seat is driven by AI logic.
-   ===================================================================== */
-
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { setAiDifficulty } from '@seven-planets/ai';
 import { DIFFICULTIES } from '@seven-planets/game';
 import { simulateGame } from '@seven-planets/game';
-// The game state lives in the Vuex store — importing it creates the store,
-// installs the state accessor, and seats the AI (the ai module's plugin).
-// No presentation layer, so the engine's pacing/animation hooks are no-ops
-// and games run at pure logic speed.
 import '@/stores';
 
-const SEATS = 7; // seat 0 = the human proxy (standard mastermind) + 6 AI opponents
+const SEATS = 7;
 const HUMAN_SEAT = 0;
-const DEFAULT_GAMES = 3_000; // games PER difficulty
+const DEFAULT_GAMES = 3_000;
 
 function median(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -53,9 +32,9 @@ interface DiffStat {
   icon: string;
   kamikaze: number;
   games: number;
-  humanWins: number; // seat-0 (human proxy) conquest wins
-  humanWinTurns: number[]; // turns of each human-proxy win
-  decisive: number; // games that ended in a conquest (by anyone)
+  humanWins: number;
+  humanWinTurns: number[];
+  decisive: number;
   allTurns: number[];
 }
 
@@ -69,7 +48,7 @@ async function main(): Promise<void> {
   const progressEvery = Math.max(1, Math.floor(totalGames / 40));
 
   for (const def of DIFFICULTIES) {
-    setAiDifficulty(def.ai); // handicaps the AI opponents; the human seat stays standard
+    setAiDifficulty(def.ai);
     const st: DiffStat = {
       id: def.id,
       name: def.name,
@@ -131,7 +110,6 @@ interface Summary {
   elapsed: number;
 }
 
-/** Render an ASCII table with every column padded to a uniform width. */
 function asciiTable(
   headers: string[],
   aligns: ('l' | 'r')[],

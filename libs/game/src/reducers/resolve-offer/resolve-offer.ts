@@ -12,10 +12,6 @@ import { chain } from '../../utils/chain';
 
 const { nullish } = P;
 
-/* Reducer branch. The target seat of pendingOffer accepts or declines it:
-   executes the trade when accepted, logs the decline otherwise, then clears
-   the flag — all on a private clone. Illegal intents reduce to the
-   unchanged state. */
 export function applyResolveOffer(
   state: GameState,
   payload: ResolveOfferPayload,

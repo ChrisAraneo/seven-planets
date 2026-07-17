@@ -47,7 +47,6 @@ export function computeInfluenceDraftValue(
   }
 }
 
-// Held copies discourage stacking; the star cost is paid either way.
 function finishValue(
   player: Player,
   influenceType: InfluenceType,

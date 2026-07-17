@@ -8,7 +8,6 @@ export function computeAggression(player: Player): number {
     return 0;
   }
   if (player.isKamikaze) {
-    // A kamikaze attacks whenever it can — model it as maximally aggressive.
     return 1;
   }
   return aiState.W.willNeutral;

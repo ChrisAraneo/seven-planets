@@ -10,12 +10,8 @@ import { setPlanetLayout } from '@seven-planets/game';
 import { useEffectsStore } from '@/stores';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
-// The engine pushes animations into the effects store; this render loop
-// drains them. The array reference is stable, so destructuring is safe.
 const { anims } = useEffectsStore();
 
-// DEBUG: set localStorage['seven-planets:debug-black-holes'] = 'true' to render
-// EVERY planet as a black hole (visual testing only). Read once at load.
 const FORCE_BLACK_HOLES = (() => {
   try {
     return localStorage.getItem('seven-planets:debug-black-holes') === 'true';
@@ -122,8 +118,6 @@ function drawFrame(now: number): void {
   drawAnims(now);
 }
 
-// A collapsed Singularity: a black event horizon wrapped in a glowing, spinning
-// accretion disk with a lensing halo. Drawn in place of the normal planet body.
 function drawBlackHole(
   x: number,
   y: number,
@@ -133,7 +127,6 @@ function drawBlackHole(
   if (!context) return;
   const seconds = now / 1000;
 
-  // Gravitational lensing halo — light bending into a warm/violet glow.
   const halo = context.createRadialGradient(
     x,
     y,
@@ -150,8 +143,6 @@ function drawBlackHole(
   circle(x, y, radius * 2.1);
   context.fill();
 
-  // Accretion disk — bright tilted rings of infalling matter, plus a superheated
-  // hotspot orbiting the plane to sell the spin.
   context.save();
   context.translate(x, y);
   context.rotate(-0.4);
@@ -188,7 +179,6 @@ function drawBlackHole(
   context.fill();
   context.restore();
 
-  // Event horizon — pure black, rimmed by a faint photon ring.
   context.fillStyle = '#000';
   circle(x, y, radius);
   context.fill();
@@ -206,8 +196,6 @@ function drawPlanet(planet: Planet, now: number): void {
     ] || PLANET_STYLES[0];
   const owner = getPlayers()[planet.ownerId];
   const { x, y, r: radius } = planet;
-  // A maxed Singularity (level 3) collapses the planet into a black hole; the
-  // debug flag forces the look on every planet.
   const blackHole =
     FORCE_BLACK_HOLES || (planet.buildings.SINGULARITY || 0) >= 3;
 
@@ -501,7 +489,7 @@ function drawPlanet(planet: Planet, now: number): void {
       );
       context.fill();
     }
-  } // end normal-planet body (skipped when rendered as a black hole)
+  }
 
   context.strokeStyle = owner.color;
   context.lineWidth = 2;

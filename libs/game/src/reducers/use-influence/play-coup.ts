@@ -24,7 +24,6 @@ import { spendInfluenceCard } from './spend-influence-card';
 
 const { nullish } = P;
 
-// A toppled regime is looted for at most this many cards.
 const TOPPLE_LOOT_CAP = 6;
 
 export function playCoup(
@@ -47,7 +46,6 @@ export function playCoup(
         .tap(() =>
           assign(planet, {
             ownerId: playerId,
-            // Half disbands, the rest defect
             troops: Math.max(1, Math.floor(planet.troops / 2)),
             protectedUntil: state.turn + CONQUEST_TRUCE,
           }),

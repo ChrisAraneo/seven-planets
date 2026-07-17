@@ -35,7 +35,6 @@ export function shouldMastermindAcceptTrade(
   return valueIn >= valueOut * getAiState().W.tradeAcceptRatio;
 }
 
-// Incoming cards the build goal is short of count extra.
 function computeValueIn(
   aiPlayer: Player,
   gets: Cost,
@@ -54,7 +53,6 @@ function computeValueIn(
   );
 }
 
-// Affording the goal now but not after the trade makes giving pricier.
 function wouldBlockGoal(
   aiPlayer: Player,
   head: BuildCandidate | undefined,

@@ -12,10 +12,6 @@ import type { GameState } from '../../interfaces/game-state';
 import type { Player } from '../../interfaces/player';
 import { chain } from '../../utils/chain';
 
-/* Reducer branch. Sets pendingOffer on a private clone — the emission that
-   carries it is the whole notification. The partner seat (human via
-   TradeOfferModal, or the AI watcher) must answer by dispatching
-   resolveOffer, which executes or declines the trade. */
 export function applyMakeOffer(
   state: GameState,
   payload: MakeOfferPayload,
@@ -57,14 +53,9 @@ function sendOffer(
   { playerId, partnerId, gives, gets }: MakeOfferPayload,
 ): void {
   return void chain(state)
-    // Note the attempt; the AI plans at most one trade per turn off this flag
-    // (nothing restricts the human's seat, matching the original behavior).
     .tap(() => assign(player, { hasTradedCurrentTurn: true }))
     .thru(() => logSeeking(state, player, gets))
     .thru(() => getStatusIfHuman(state, player, partner))
-    // The emitted snapshot IS the notification: the partner seat reacts to
-    // PendingOffer appearing on it (TradeOfferModal for the human, the AI's
-    // Watcher for AI seats) and answers by dispatching resolveOffer.
     .thru(() =>
       assign(state, {
         pendingOffer: { fromId: playerId, toId: partnerId, gives, gets },

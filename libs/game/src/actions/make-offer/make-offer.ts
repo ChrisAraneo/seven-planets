@@ -8,8 +8,6 @@ export interface MakeOfferPayload {
   gets: Cost;
 }
 
-/** Open a trade offer. Event creator: validation and application live in
-    the reducer (applyMakeOffer). */
 export function makeOffer(payload: MakeOfferPayload): void {
   dispatch({ kind: 'MAKE_OFFER', payload });
 }

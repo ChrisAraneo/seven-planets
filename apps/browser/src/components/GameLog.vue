@@ -5,7 +5,6 @@ import { useGameStore } from '@/stores';
 const game = useGameStore();
 const el = ref<HTMLDivElement | null>(null);
 
-// Auto-scroll to the newest entry as the log grows.
 watch(
   () => game.state.log.length,
   () => {

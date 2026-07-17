@@ -13,8 +13,6 @@ interface LootProgress {
   taken: Hand;
 }
 
-// Loot `number` random cards from one player to another, weighted by the victim's
-// Stash. Pure: returns the new state plus the `taken` tally (used in war logs).
 export function stealCards(
   state: GameState,
   fromId: number,
@@ -42,33 +40,30 @@ export function stealCards(
 }
 
 function stealOne(loot: LootProgress): LootProgress {
-  return (
-    match(CARD_TYPES.filter((cardType) => loot.fromHand[cardType] > 0))
-      .when(
-        (avail) => avail.length === 0,
-        () => loot,
-      )
-      // Weight by count so the loot reflects the victim's stash
-      .otherwise((avail) =>
-        chain(
-          choice(
-            avail.flatMap((cardType) =>
-              Array.from({ length: loot.fromHand[cardType] }, () => cardType),
-            ),
+  return match(CARD_TYPES.filter((cardType) => loot.fromHand[cardType] > 0))
+    .when(
+      (avail) => avail.length === 0,
+      () => loot,
+    )
+    .otherwise((avail) =>
+      chain(
+        choice(
+          avail.flatMap((cardType) =>
+            Array.from({ length: loot.fromHand[cardType] }, () => cardType),
           ),
-        )
-          .thru((cardType) => ({
-            fromHand: {
-              ...loot.fromHand,
-              [cardType]: loot.fromHand[cardType] - 1,
-            },
-            toHand: { ...loot.toHand, [cardType]: loot.toHand[cardType] + 1 },
-            taken: {
-              ...loot.taken,
-              [cardType]: (loot.taken[cardType] || 0) + 1,
-            },
-          }))
-          .value(),
+        ),
       )
-  );
+        .thru((cardType) => ({
+          fromHand: {
+            ...loot.fromHand,
+            [cardType]: loot.fromHand[cardType] - 1,
+          },
+          toHand: { ...loot.toHand, [cardType]: loot.toHand[cardType] + 1 },
+          taken: {
+            ...loot.taken,
+            [cardType]: (loot.taken[cardType] || 0) + 1,
+          },
+        }))
+        .value(),
+    );
 }

@@ -15,7 +15,6 @@ import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
 import { chain } from '../utils/chain';
 
-// Six AI rivals join the single human seat.
 const AI_SEATS = 6;
 
 interface SeatDefinition {
@@ -26,7 +25,6 @@ interface SeatDefinition {
   styleIdx: number;
 }
 
-// Held influence cards (played later) start at 0 alongside resources/actions.
 function createStartingHand(): Hand {
   return fromPairs(
     [...CARD_TYPES, ...INFLUENCE_TYPES].map((cardType) => [cardType, 0]),
@@ -44,7 +42,6 @@ export function createInitialGameState(): GameState {
         over: null,
         pool: [],
         activeId: -1,
-        // The planet whose draft turn it is (buildings land here)
         draftPlanetId: -1,
         isSingularityAnnounced: false,
         startIdx: 0,
@@ -63,14 +60,11 @@ export function createInitialGameState(): GameState {
     .value();
 }
 
-// Name, homeworld, color and planet style are all randomized,
-// So no AI is a fixed character.
 function createSeatDefinitions(): SeatDefinition[] {
   return chain({
     names: shuffleArray(AI_NAMES).slice(0, AI_SEATS),
     planetNames: shuffleArray(AI_PLANET_NAMES).slice(0, AI_SEATS),
     colors: shuffleArray(AI_COLORS).slice(0, AI_SEATS),
-    // The human owns planet style 0 (Terra Prime); AI draw distinct styles from the rest.
     styles: shuffleArray(
       PLANET_STYLES.map((_, index) => index).filter((index) => index !== 0),
     ).slice(0, AI_SEATS),

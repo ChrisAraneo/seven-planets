@@ -20,7 +20,6 @@ body {
   height: 100vh;
   position: relative;
 }
-/* subtle CRT scanlines */
 #app::after {
   content: '';
   position: fixed;
@@ -34,7 +33,6 @@ body {
   z-index: 99;
 }
 
-/* ---------- top bar ---------- */
 header {
   display: flex;
   align-items: center;
@@ -68,7 +66,6 @@ header h1 span {
   user-select: none;
 }
 
-/* ---------- main area ---------- */
 main {
   flex: 1;
   display: flex;
@@ -161,7 +158,6 @@ aside#side {
   font-weight: bold;
 }
 
-/* ---------- footer ---------- */
 footer {
   display: flex;
   gap: 12px;
@@ -232,7 +228,6 @@ footer {
   grid-column: 1 / -1;
 }
 
-/* ---------- cards ---------- */
 .card {
   width: 46px;
   height: 64px;
@@ -276,7 +271,6 @@ footer {
   cursor: not-allowed;
 }
 
-/* building cards in the pool: name, cost and bonus printed on the face */
 .card.bcard {
   width: 92px;
   height: 72px;
@@ -327,7 +321,6 @@ footer {
   }
 }
 
-/* ---------- buttons ---------- */
 .btn {
   background: #0c1428;
   border: 1px solid rgba(61, 240, 255, 0.35);
@@ -359,12 +352,11 @@ footer {
   color: #ffb3c0;
 }
 
-/* ---------- floating-ui tooltips (v-tooltip) ---------- */
 .fui-tooltip {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 200; /* above modals (50) and the scanline overlay (99) */
+  z-index: 200;
   max-width: 320px;
   width: max-content;
   pointer-events: none;
@@ -402,7 +394,6 @@ footer {
   border-right: none;
 }
 
-/* ---------- modals ---------- */
 #modal-root {
   position: fixed;
   inset: 0;
@@ -456,7 +447,6 @@ footer {
   color: #5a7bad;
 }
 
-/* build rows */
 .brow {
   display: flex;
   align-items: center;
@@ -507,7 +497,6 @@ footer {
   color: #3df0ff;
 }
 
-/* attack target rows */
 .trow {
   display: flex;
   align-items: center;
@@ -533,7 +522,6 @@ footer {
   flex: 1;
 }
 
-/* steppers */
 .stepper {
   display: inline-flex;
   align-items: center;
@@ -561,7 +549,6 @@ footer {
   font-size: 14px;
 }
 
-/* trade table */
 .ttable {
   width: 100%;
   border-collapse: collapse;
@@ -580,7 +567,6 @@ footer {
   font-size: 12px;
 }
 
-/* game over */
 .gameover-title {
   font-size: 26px;
   letter-spacing: 6px;
@@ -602,7 +588,6 @@ footer {
   line-height: 1.7;
 }
 
-/* rules list */
 .rules li {
   margin: 6px 0 6px 18px;
   line-height: 1.5;

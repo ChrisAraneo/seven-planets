@@ -5,7 +5,6 @@ import type { GameState } from '../../interfaces/game-state';
 
 const { nullish } = P;
 
-// Reducer branch. Pure presentation geometry — legal at any time.
 export function applySetPlanetLayout(
   state: GameState,
   layout: readonly PlanetLayout[],

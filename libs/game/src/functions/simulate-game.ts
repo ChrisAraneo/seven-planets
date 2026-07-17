@@ -25,12 +25,6 @@ export async function simulateGame(
   maxTurns = 400,
   options: { kamikazeCount?: number } = {},
 ): Promise<SimulationResult> {
-  /* Each simulated game runs on a fresh state; games run strictly
-     sequentially, so resetting between games is safe. Headless, every
-     seat is AI-driven: the AI's getGameState() subscriptions answer each park
-     synchronously (RxJS subjects deliver synchronously; the intent
-     pipeline's queueScheduler flattens the loop), so the cursor rests at
-     'done' by the time dispatch('start') returns. */
   resetGameState();
   setGameState({
     ...assignKamikazes(getGameStateLastValue(), options.kamikazeCount ?? 0),

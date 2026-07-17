@@ -46,8 +46,6 @@ const held = computed(() =>
   ),
 );
 const coupList = computed(() => getCoupTargets(game.state, human));
-// A Pacifist may coup a rival's last planet (their only path to a win); everyone
-// else is barred from eliminating a player by influence card.
 const canCoupLast = computed(() => isPacifist(human));
 const rivals = computed(() =>
   filterAlivePlayers(game.state).filter((player) => !player.isHuman),
@@ -94,7 +92,6 @@ function doSteal(
 
 <template>
   <ModalShell @close="ui.closeModal()">
-    <!-- main view -->
     <template v-if="view === 'main'">
       <h2>⭐ PLAY INFLUENCE CARD</h2>
       <p class="dimtx">
@@ -130,7 +127,6 @@ function doSteal(
       </div>
     </template>
 
-    <!-- coup view -->
     <template v-else-if="view === 'coup'">
       <h2>👑 COUP D'ÉTAT</h2>
       <p class="dimtx">
@@ -174,7 +170,6 @@ function doSteal(
       </div>
     </template>
 
-    <!-- steal view -->
     <template v-else>
       <h2>🎭 EXTORTION</h2>
       <p class="dimtx">

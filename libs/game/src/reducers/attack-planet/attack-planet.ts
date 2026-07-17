@@ -18,14 +18,8 @@ import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 import { resolveBattle } from './resolve-battle';
 
-// How often a non-human attacker fires off a taunt line.
 const TAUNT_CHANCE = 0.4;
 
-/* Reducer branch. Resolves the whole attack SYNCHRONOUSLY on a private
-   clone: the returned state carries the outcome. The rocket flight /
-   explosion / banners are emitted as effect events on the state — the
-   presentation layer plays them in response. Illegal intents reduce to the
-   unchanged state. */
 export function applyAttackPlanet(
   state: GameState,
   payload: AttackPlanetPayload,
@@ -54,16 +48,8 @@ function doAttack(
     source: state.planets[sourceId],
     target: state.planets[targetId],
   })
-    .when(
-      // Freshly conquered planets cannot be attacked
-      ({ target }) => isUnderTruce(target),
-      noop,
-    )
-    .when(
-      // No silo, no rockets
-      ({ source }) => !source.buildings.SILO,
-      noop,
-    )
+    .when(({ target }) => isUnderTruce(target), noop)
+    .when(({ source }) => !source.buildings.SILO, noop)
     .otherwise(
       ({ source }) =>
         void chain(state)
@@ -71,7 +57,6 @@ function doAttack(
           .thru(() =>
             assign(state, spendActionCard(state, attackerId, 'ATTACK')),
           )
-          // Resets the pacifist countdown
           .tap(() =>
             assign(state.players[attackerId], {
               lastAttackTurn: state.turn,
@@ -121,8 +106,6 @@ function announceLaunch(
     .value();
 }
 
-// Breaking the vow: a PACIFIST may attack, but doing so permanently strips the
-// Status and its bonuses — and hasForfeitedPacifism bars them from ever regaining it.
 function breakPacifistVow(state: GameState, attackerId: number): void {
   return match(state.players[attackerId].hasPacifistStatus)
     .with(

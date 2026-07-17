@@ -1,6 +1,5 @@
 import { match } from 'ts-pattern';
 
-// 's' when a count reads as plural in log lines (2 troops / 1 troop).
 export function getPluralSuffix(count: number): string {
   return match(count)
     .when(

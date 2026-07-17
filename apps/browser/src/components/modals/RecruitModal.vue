@@ -10,7 +10,6 @@ import { computeRecruitYield } from '@seven-planets/game';
 const game = useGameStore();
 const ui = useUiStore();
 
-// Partial recruits are legal: any Barracks planet with 1⛏️ payable qualifies.
 const barracksPls = computed(() => {
   const state = game.state;
   const human = state.players[0];
