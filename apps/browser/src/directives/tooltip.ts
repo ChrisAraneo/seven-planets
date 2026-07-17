@@ -76,6 +76,8 @@ function show(el: HTMLElement): void {
     }).then(({ x, y, placement, middlewareData }) => {
       Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
       const side = placement.split('-')[0];
+      // The CSS borders the arrow's two outward-facing edges per side.
+      tip.dataset.side = side;
       const arrowX = middlewareData.arrow?.x;
       const arrowY = middlewareData.arrow?.y;
       Object.assign(arrowEl.style, {
