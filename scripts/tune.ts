@@ -27,6 +27,7 @@ import { simulateGame } from '@seven-planets/game';
 // installs the state accessor, and seats the AI (the ai module's plugin).
 import '@/stores';
 
+const SEATS = 7; // seat 0 = the human proxy (standard mastermind) + 6 AI opponents
 const DEFAULT_GAMES = 240;
 const DEFAULT_PASSES = 2;
 
