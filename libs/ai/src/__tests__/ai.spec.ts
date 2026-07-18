@@ -346,7 +346,7 @@ describe('mastermind in full headless games', () => {
                 simulateGame().then((result) =>
                   chain(expect(result.turns).toBeGreaterThan(0))
                     .tap(() =>
-                      expect(['conquest', 'timeout']).toContain(result.reason),
+                      expect(['CONQUEST', 'timeout']).toContain(result.reason),
                     )
                     .thru(() =>
                       match(result.winner?.id)

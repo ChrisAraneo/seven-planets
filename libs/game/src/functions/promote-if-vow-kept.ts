@@ -9,7 +9,7 @@ import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 import { chain } from '../utils/chain';
 import { emitEffect } from './emit-effect';
-import { getOwnedPlanets } from './get-owned-planets';
+import { getOwnedPlanets } from './extractors/get-owned-planets';
 import { log } from './log';
 import { updatePlayer } from './update-player';
 

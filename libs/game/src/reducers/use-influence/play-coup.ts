@@ -2,7 +2,7 @@ import { assign } from 'lodash-es';
 import { match } from 'ts-pattern';
 
 import { CONQUEST_TRUCE } from '../../config/constants';
-import { getCoupTargets } from '../../functions/get-coup-targets';
+import { getCoupTargets } from '../../functions/extractors/get-coup-targets';
 import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceOptions } from '../../interfaces/influence-options';

@@ -1,8 +1,8 @@
 import { assign, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 
+import { getHandSize } from '../../functions/extractors/get-hand-size';
 import { formatCards } from '../../functions/format-cards';
-import { getHandSize } from '../../functions/get-hand-size';
 import { log } from '../../functions/log';
 import { stealCards } from '../../functions/steal-cards';
 import type { GameState } from '../../interfaces/game-state';

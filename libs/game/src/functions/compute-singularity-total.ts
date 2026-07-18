@@ -1,7 +1,7 @@
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-import { getBuildingLevel } from './get-building-level';
-import { getOwnedPlanets } from './get-owned-planets';
+import { getBuildingLevel } from './extractors/get-building-level';
+import { getOwnedPlanets } from './extractors/get-owned-planets';
 
 export const computeSingularityTotal = (
   state: GameState,

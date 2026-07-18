@@ -1,7 +1,7 @@
 import type { BuildingType, Planet, Player } from '@seven-planets/game';
 import { getBuildingLevel } from '@seven-planets/game';
 import { getMaxLevel } from '@seven-planets/game';
-import { isSingularityLabOk } from '@seven-planets/game';
+import { canBuildSingularity } from '@seven-planets/game';
 import { match } from 'ts-pattern';
 
 import { computeTechLevel } from './compute-tech-level';
@@ -23,7 +23,7 @@ export const getNextAllowedLevel = (
     .when(
       (nextLevel) =>
         buildingType === 'SINGULARITY' &&
-        !isSingularityLabOk(planet, nextLevel),
+        !canBuildSingularity(planet, nextLevel),
       () => 0,
     )
     .otherwise((nextLevel) => nextLevel);

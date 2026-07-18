@@ -5,7 +5,7 @@ import type { AttackPlanetPayload } from '../../actions/attack-planet';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
-import { doAttack } from './do-attack';
+import { doAttack } from './internal/do-attack';
 
 export const applyAttackPlanet = (
   state: GameState,
@@ -22,6 +22,6 @@ export const applyAttackPlanet = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((cl1) => doAttack(cl1, payload))
+        .tap((clonedState) => doAttack(clonedState, payload))
         .value(),
     );

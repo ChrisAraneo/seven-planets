@@ -9,7 +9,7 @@ import { reduce } from '../reducers/reduce';
 import { chain } from '../utils/chain';
 
 const isParkedAtFirstPick = (): GameState =>
-  reduce(createInitialGameState(), { kind: 'START' });
+  reduce(createInitialGameState(), { kind: 'START_GAME' });
 
 const getFirstPickableIndex = (state: GameState): number =>
   state.pool.findIndex((poolType) =>
@@ -25,10 +25,10 @@ describe('reduce/advance invariants', () => {
   it("parks turn 1's first pick with exactly 1 inputSeq bump", () =>
     chain(isParkedAtFirstPick())
       .tap((state) => expect(state.turn).toBe(1))
-      .tap((state) => expect(state.phase).toBe('draft'))
+      .tap((state) => expect(state.phase).toBe('DRAFT'))
       .tap((state) =>
         expect(state.cursor).toMatchObject({
-          phase: 'draft',
+          phase: 'DRAFT',
           slot: 0,
           pick: 0,
         }),
@@ -43,7 +43,7 @@ describe('reduce/advance invariants', () => {
   it('a multi-pick slot parks once per pick (picksTotal captured at entry)', () =>
     chain(isParkedAtFirstPick())
       .tap((state) =>
-        expect(state.cursor).toMatchObject({ phase: 'draft', picksTotal: 2 }),
+        expect(state.cursor).toMatchObject({ phase: 'DRAFT', picksTotal: 2 }),
       )
       .thru((state) => ({
         state,
@@ -56,7 +56,7 @@ describe('reduce/advance invariants', () => {
       }))
       .tap(({ seatId, afterPick }) => expect(afterPick.activeId).toBe(seatId))
       .tap(({ afterPick }) =>
-        expect(afterPick.cursor).toMatchObject({ phase: 'draft', pick: 1 }),
+        expect(afterPick.cursor).toMatchObject({ phase: 'DRAFT', pick: 1 }),
       )
       .tap(({ afterPick }) => expect(afterPick.isAwaitingPick).toBe(true))
       .tap(({ state, afterPick }) =>
@@ -95,7 +95,7 @@ describe('reduce/advance invariants', () => {
       .thru((parked) => ({ parked, crafted: cloneDeep(parked) }))
       .tap(({ crafted }) =>
         assign(crafted, {
-          over: { winner: crafted.players[0], reason: 'conquest' },
+          over: { winner: crafted.players[0], reason: 'CONQUEST' },
         }),
       )
       .thru(({ parked, crafted }) => ({
@@ -159,7 +159,7 @@ describe('reduce/advance invariants', () => {
           }),
         ).toBe(state),
       )
-      .tap(({ state }) => expect(reduce(state, { kind: 'START' })).toBe(state))
+      .tap(({ state }) => expect(reduce(state, { kind: 'START_GAME' })).toBe(state))
       .thru(noop)
       .value());
 });

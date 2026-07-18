@@ -12,7 +12,7 @@ export const logIncome = (state: GameState, tally: IncomeTally): GameState =>
           log(
             acc,
             `⚙️ ${acc.players[Number(id)].name} produces ${formatCards(produced ?? {})}`,
-            'draft',
+            'DRAFT',
           ),
         current,
       ),
@@ -23,7 +23,7 @@ export const logIncome = (state: GameState, tally: IncomeTally): GameState =>
           log(
             acc,
             `🛰️ ${acc.players[Number(id)].name} receives +${count}🛸 Move (L2 Spaceport)`,
-            'draft',
+            'DRAFT',
           ),
         current,
       ),
@@ -34,7 +34,7 @@ export const logIncome = (state: GameState, tally: IncomeTally): GameState =>
           log(
             acc,
             `⭐ ${acc.players[Number(id)].name} gains +${count} Influence (L2 Embassy)`,
-            'draft',
+            'DRAFT',
           ),
         current,
       ),
@@ -45,7 +45,7 @@ export const logIncome = (state: GameState, tally: IncomeTally): GameState =>
           log(
             acc,
             `☮️ ${acc.players[Number(id)].name} gains +${count} Influence (Pacifist)`,
-            'draft',
+            'DRAFT',
           ),
         current,
       ),

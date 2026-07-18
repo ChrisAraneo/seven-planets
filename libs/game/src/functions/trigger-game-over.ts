@@ -2,9 +2,9 @@ import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
 import { endGame } from './end-game';
-import { getWinnerFor } from './get-winner-for';
+import { getPlayerByIndex } from './extractors/get-player-by-index';
 
-export type GameOverReason = 'conquest' | 'eliminated';
+export type GameOverReason = 'CONQUEST' | 'ELIMINATED';
 
 export const triggerGameOver = (
   state: GameState,
@@ -16,4 +16,4 @@ export const triggerGameOver = (
       () => Boolean(state.over),
       () => state,
     )
-    .otherwise(() => endGame(state, getWinnerFor(state, winnerId), reason));
+    .otherwise(() => endGame(state, getPlayerByIndex(state, winnerId), reason));

@@ -7,7 +7,7 @@ import type { Player } from '../interfaces/player';
 import type { PoolType } from '../interfaces/pool-type';
 import { canPickBuilding } from './can-pick-building';
 import { computeTotalTroops } from './compute-total-troops';
-import { getOwnedPlanets } from './get-owned-planets';
+import { getOwnedPlanets } from './extractors/get-owned-planets';
 import { hasBuilding } from './has-building';
 import { isBuildingType } from './is-building-type';
 import { isInfluenceType } from './is-influence-type';

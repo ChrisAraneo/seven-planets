@@ -8,7 +8,7 @@ import type { PlanetLayout } from './set-planet-layout/set-planet-layout';
 import type { UseInfluenceAction } from './use-influence';
 
 export type Action =
-  | { kind: 'START' }
+  | { kind: 'START_GAME' }
   | { kind: 'PICK_CARD'; playerId: number; index: number }
   | EndTurnAction
   | AttackPlanetAction

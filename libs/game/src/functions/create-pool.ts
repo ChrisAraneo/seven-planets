@@ -6,6 +6,7 @@ import type { PoolType } from '../interfaces/pool-type';
 import { createMidGamePool } from './create-mid-game-pool';
 import { drawResourceCard } from './draw-resource-card';
 
+// TODO: 14 -- move to consts?
 export const createPool = (state: GameState): PoolType[] =>
   match(state.turn)
     .when(

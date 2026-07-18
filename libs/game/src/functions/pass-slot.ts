@@ -33,7 +33,7 @@ export const passSlot = (
         log(
           state,
           `🃏 ${player.name} passes (nothing pickable for ${planet.name})`,
-          'draft',
+          'DRAFT',
         ),
       ),
     )

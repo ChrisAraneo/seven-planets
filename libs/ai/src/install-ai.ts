@@ -7,7 +7,7 @@ import {
   IS_AUTO_HUMAN,
 } from '@seven-planets/game';
 import { canPickCard } from '@seven-planets/game';
-import { getHomePlanet } from '@seven-planets/game';
+import { getFirstOwnedPlanet } from '@seven-planets/game';
 import {
   createAttackPlanetAction,
   createEndTurnAction,
@@ -80,7 +80,7 @@ const aiPickCard = (playerId: number): void =>
       player: state.players[playerId],
       planet:
         state.planets[state.draftPlanetId] ??
-        getHomePlanet(state, state.players[playerId]),
+        getFirstOwnedPlanet(state, state.players[playerId]),
     }))
     .thru(({ state, player, planet }) => ({
       player,

@@ -15,7 +15,7 @@ import { applyUseInfluence } from './use-influence/apply-use-influence';
 
 export const applyAction = (state: GameState, action: Action): GameState =>
   match(action)
-    .with({ kind: 'START' }, () => applyStart(state))
+    .with({ kind: 'START_GAME' }, () => applyStart(state))
     .with({ kind: 'PICK_CARD' }, ({ playerId, index }) =>
       applyPickCard(state, { playerId, index }),
     )

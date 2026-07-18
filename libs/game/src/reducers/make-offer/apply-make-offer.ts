@@ -5,7 +5,7 @@ import type { MakeOfferPayload } from '../../actions/make-offer/make-offer';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
-import { sendOffer } from './send-offer';
+import { sendOffer } from './internal/send-offer';
 
 export const applyMakeOffer = (
   state: GameState,
@@ -29,11 +29,11 @@ export const applyMakeOffer = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((cl1) =>
+        .tap((clonedState) =>
           sendOffer(
-            cl1,
-            cl1.players[payload.playerId],
-            cl1.players[payload.partnerId],
+            clonedState,
+            clonedState.players[payload.playerId],
+            clonedState.players[payload.partnerId],
             payload,
           ),
         )

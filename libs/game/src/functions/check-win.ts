@@ -14,10 +14,10 @@ export const checkWin = (state: GameState): GameState =>
     .when(
       ({ alivePlayers }) => alivePlayers.length === 1,
       ({ state: eachState, alivePlayers }) =>
-        triggerGameOver(eachState, alivePlayers[0].id, 'conquest'),
+        triggerGameOver(eachState, alivePlayers[0].id, 'CONQUEST'),
     )
     .when(
       ({ state: eachState }) => !IS_AUTO_HUMAN && !eachState.players[0].isAlive,
-      ({ state: eachState }) => triggerGameOver(eachState, null, 'eliminated'),
+      ({ state: eachState }) => triggerGameOver(eachState, null, 'ELIMINATED'),
     )
     .otherwise(({ state: eachState }) => eachState);

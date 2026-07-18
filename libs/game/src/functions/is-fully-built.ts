@@ -1,7 +1,7 @@
 import { BUILD_ORDER } from '../config/constants';
 import type { Planet } from '../interfaces/planet';
-import { getBuildingLevel } from './get-building-level';
-import { getMaxLevel } from './get-max-level';
+import { getBuildingLevel } from './extractors/get-building-level';
+import { getMaxLevel } from './extractors/get-max-level';
 
 const SINGULARITY_BUILT_LEVEL = 3;
 

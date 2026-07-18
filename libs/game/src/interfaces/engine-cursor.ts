@@ -1,7 +1,7 @@
 export type EngineCursor =
-  | { phase: 'setup' }
+  | { phase: 'SETUP' }
   | {
-      phase: 'draft';
+      phase: 'DRAFT';
       seatQueue: number[];
       seatIdx: number;
       slot: number;
@@ -9,7 +9,7 @@ export type EngineCursor =
       picksTotal: number;
     }
   | {
-      phase: 'action';
+      phase: 'ACTION';
       seatQueue: number[];
       seatIdx: number;
     }

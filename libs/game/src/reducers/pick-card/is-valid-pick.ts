@@ -1,6 +1,6 @@
 import type { PickCardPayload } from '../../actions/pick-card/pick-card';
 import { canPickCard } from '../../functions/can-pick-card';
-import { getHomePlanet } from '../../functions/get-home-planet';
+import { getFirstOwnedPlanet } from '../../functions/extractors/get-first-owned-planet';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 
@@ -12,7 +12,8 @@ export const isValidPick = (
     .thru((player) => ({
       player,
       planet:
-        state.planets[state.draftPlanetId] || getHomePlanet(state, player),
+        state.planets[state.draftPlanetId] ||
+        getFirstOwnedPlanet(state, player),
     }))
     .thru(
       ({ player, planet }) =>

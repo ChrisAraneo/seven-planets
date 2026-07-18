@@ -27,7 +27,7 @@ export const applyInfluencePick = (
         log(
           state,
           `⭐ ${player.name} drafts ${CARDS[influenceType].icon} ${CARDS[influenceType].name} (−${INFLUENCE_CARDS[influenceType].cost}⭐) — holds it for a later action turn`,
-          'draft',
+          'DRAFT',
         ),
       ),
     )

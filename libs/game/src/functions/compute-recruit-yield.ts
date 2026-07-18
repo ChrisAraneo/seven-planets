@@ -1,5 +1,5 @@
 import type { Planet } from '../interfaces/planet';
-import { getBuildingLevel } from './get-building-level';
+import { getBuildingLevel } from './extractors/get-building-level';
 
 const BARRACKS_YIELD_CAP_LEVEL = 3;
 

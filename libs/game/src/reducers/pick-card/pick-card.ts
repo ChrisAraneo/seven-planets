@@ -16,7 +16,7 @@ export const applyPickCard = (
     .when(
       () =>
         !state.isAwaitingPick ||
-        state.phase !== 'draft' ||
+        state.phase !== 'DRAFT' ||
         payload.playerId !== state.activeId,
       () => state,
     )
@@ -37,13 +37,13 @@ export const applyPickCard = (
             payload.index,
             payload.playerId,
             match(cl1.cursor)
-              .with({ phase: 'draft' }, (cursor) => cursor.slot)
+              .with({ phase: 'DRAFT' }, (cursor) => cursor.slot)
               .otherwise(() => MAIN_SLOT),
           ),
         )
         .tap((cl1) =>
           match(cl1.cursor)
-            .with({ phase: 'draft' }, (cursor) =>
+            .with({ phase: 'DRAFT' }, (cursor) =>
               assign(cl1, { cursor: { ...cursor, pick: cursor.pick + 1 } }),
             )
             .otherwise(() => cl1),

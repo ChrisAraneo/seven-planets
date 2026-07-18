@@ -8,7 +8,7 @@ import { log } from './log';
 export const applyStart = (state: GameState): GameState =>
   match(state)
     .when(
-      () => state.cursor.phase !== 'setup',
+      () => state.cursor.phase !== 'SETUP',
       () => state,
     )
     .otherwise(() =>
@@ -31,7 +31,7 @@ export const applyStart = (state: GameState): GameState =>
         )
         .thru((cl1) =>
           assign(cl1, {
-            cursor: { phase: 'action' as const, seatQueue: [], seatIdx: 0 },
+            cursor: { phase: 'ACTION' as const, seatQueue: [], seatIdx: 0 },
           }),
         )
         .value(),

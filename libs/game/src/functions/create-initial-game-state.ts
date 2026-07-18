@@ -17,15 +17,14 @@ export const createInitialGameState = (): GameState =>
     .thru(
       (gameDefs): GameState => ({
         turn: 0,
-        phase: 'setup',
-        cursor: { phase: 'setup' },
-        maxTurns: 400,
+        phase: 'SETUP',
+        cursor: { phase: 'SETUP' },
         over: null,
         pool: [],
         activeId: -1,
         draftPlanetId: -1,
         isSingularityAnnounced: false,
-        startIdx: 0,
+        startIndex: 0,
         players: createPlayers(gameDefs),
         planets: createPlanets(gameDefs),
         log: [],

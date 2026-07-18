@@ -19,11 +19,11 @@ describe('headless game simulation', () => {
             .then((result) =>
               chain(expect(result.turns).toBeGreaterThan(0))
                 .tap(() =>
-                  expect(['conquest', 'timeout']).toContain(result.reason),
+                  expect(['CONQUEST', 'timeout']).toContain(result.reason),
                 )
                 .tap(() =>
                   match(result.reason)
-                    .with('conquest', () =>
+                    .with('CONQUEST', () =>
                       expect(result.winner).not.toBeNull(),
                     )
                     .otherwise(noop),

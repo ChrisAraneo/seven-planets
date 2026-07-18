@@ -1,7 +1,7 @@
 import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
-import { getTechLevel } from './get-tech-level';
+import { getTechLevel } from './extractors/get-tech-level';
 import { log } from './log';
 
 export const logTechAdvance = (

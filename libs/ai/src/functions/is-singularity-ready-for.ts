@@ -1,7 +1,7 @@
 import type { Player } from '@seven-planets/game';
 import { getBuildingLevel } from '@seven-planets/game';
 import { getMaxLevel } from '@seven-planets/game';
-import { isSingularityLabOk } from '@seven-planets/game';
+import { canBuildSingularity } from '@seven-planets/game';
 
 import { chain } from '../utils/chain';
 import { computeTechLevel } from './compute-tech-level';
@@ -14,7 +14,7 @@ export const isSingularityReadyFor = (player: Player): boolean =>
         chain(getBuildingLevel(planet, 'SINGULARITY') + 1)
           .thru(
             (nextLevel) =>
-              nextLevel <= cap && isSingularityLabOk(planet, nextLevel),
+              nextLevel <= cap && canBuildSingularity(planet, nextLevel),
           )
           .value(),
       ),

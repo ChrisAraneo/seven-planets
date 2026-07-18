@@ -38,15 +38,14 @@ const state = (
 ): GameState =>
   ({
     turn: 12,
-    phase: 'action',
-    cursor: { phase: 'action', seatQueue: [0], seatIdx: 0 },
-    maxTurns: 200,
+    phase: 'ACTION',
+    cursor: { phase: 'ACTION', seatQueue: [0], seatIdx: 0 },
     over: null,
     pool: [],
     activeId: 0,
     draftPlanetId: 0,
     isSingularityAnnounced: false,
-    startIdx: 0,
+    startIndex: 0,
     players: [player(hand)],
     planets,
     log: [],

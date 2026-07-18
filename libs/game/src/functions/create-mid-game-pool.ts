@@ -6,14 +6,15 @@ import type { PoolType } from '../interfaces/pool-type';
 import { chain } from '../utils/chain';
 import { drawActionCard } from './draw-action-card';
 import { drawResourceCard } from './draw-resource-card';
-import { getEligibleBuildings } from './get-eligible-buildings';
-import { getInfluenceSlots } from './get-influence-slots';
-import { getSingularityBonusSlots } from './get-singularity-bonus-slots';
+import { getEligibleBuildings } from './extractors/get-eligible-buildings';
+import { getInfluenceSlots } from './extractors/get-influence-slots';
+import { getSingularityBonusSlots } from './extractors/get-singularity-bonus-slots';
 import { shuffleArray } from './shuffle-array';
 
 const BUILDING_SLOT_COUNT = 5;
 const OTHER_CARD_COUNT = 11;
 const ACTION_CARD_COUNT = 6;
+
 export const createMidGamePool = (state: GameState): PoolType[] =>
   chain({
     buildingSlots: shuffleArray([...getEligibleBuildings(state)]).slice(

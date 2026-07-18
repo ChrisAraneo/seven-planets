@@ -6,11 +6,11 @@ import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
 import { nullish } from '../utils/p';
 import { canAfford } from './can-afford';
+import { canBuildSingularity } from './can-build-singularity';
 import { computeBuildingCost } from './compute-building-cost';
-import { getBuildingLevel } from './get-building-level';
-import { getMaxLevel } from './get-max-level';
-import { getTechLevel } from './get-tech-level';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
+import { getBuildingLevel } from './extractors/get-building-level';
+import { getMaxLevel } from './extractors/get-max-level';
+import { getTechLevel } from './extractors/get-tech-level';
 
 export const canPickBuilding = (
   state: GameState,
@@ -32,7 +32,8 @@ export const canPickBuilding = (
         )
         .when(
           (next) =>
-            buildingType === 'SINGULARITY' && !isSingularityLabOk(target, next),
+            buildingType === 'SINGULARITY' &&
+            !canBuildSingularity(target, next),
           () => false,
         )
         .when(

@@ -1,6 +1,6 @@
 import { assign } from 'lodash-es';
 
-import { getSeatStatus } from '../functions/get-seat-status';
+import { getSeatStatus } from '../functions/extractors/get-seat-status';
 import { setStatus } from '../functions/set-status';
 import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';

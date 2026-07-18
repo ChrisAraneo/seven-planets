@@ -8,10 +8,10 @@ import { choice } from './choice';
 import { createPool } from './create-pool';
 import { doIncome } from './do-income';
 import { doShieldUpkeep } from './do-shield-upkeep';
+import { getDraftOrder } from './extractors/get-draft-order';
+import { getMilestoneLogs } from './extractors/get-milestone-logs';
+import { getTurnFlavor } from './extractors/get-turn-flavor';
 import { filterAlivePlayers } from './filter-alive-players';
-import { getDraftOrder } from './get-draft-order';
-import { getMilest1Logs } from './get-milestone-logs';
-import { getTurnFlavor } from './get-turn-flavor';
 import { log } from './log';
 import { updatePacifistStatus } from './update-pacifist-status';
 
@@ -27,7 +27,7 @@ export const turnPrelude = (state: GameState): void =>
     .tap(() =>
       assign(state, {
         pool: createPool(state),
-        startIdx: choice(filterAlivePlayers(state)).id,
+        startIndex: choice(filterAlivePlayers(state)).id,
       }),
     )
     .tap(() =>
@@ -40,5 +40,5 @@ export const turnPrelude = (state: GameState): void =>
         ),
       ),
     )
-    .tap(() => assign(state, getMilest1Logs(state)))
+    .tap(() => assign(state, getMilestoneLogs(state)))
     .value();

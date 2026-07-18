@@ -2,7 +2,7 @@ import { assign } from 'lodash-es';
 import { match } from 'ts-pattern';
 
 import { PEACE_TRUCE } from '../../config/constants';
-import { getOwnedPlanets } from '../../functions/get-owned-planets';
+import { getOwnedPlanets } from '../../functions/extractors/get-owned-planets';
 import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceType } from '../../interfaces/influence-type';

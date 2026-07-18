@@ -3,7 +3,7 @@ import { match } from 'ts-pattern';
 
 import { CARD_TYPES, INFLUENCE_TYPES } from '../../config/constants';
 import { checkWin } from '../../functions/check-win';
-import { getOwnedPlanets } from '../../functions/get-owned-planets';
+import { getOwnedPlanets } from '../../functions/extractors/get-owned-planets';
 import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';

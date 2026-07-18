@@ -1,7 +1,7 @@
 import { match } from 'ts-pattern';
 
 import { MAIN_SLOT } from '../config/constants';
-import { getMainPicks } from '../functions/get-main-picks';
+import { getMainPicks } from '../functions/extractors/get-main-picks';
 import type { Player } from '../interfaces/player';
 import type { DraftFrame } from './seat-frame';
 

@@ -3,8 +3,8 @@ import { match } from 'ts-pattern';
 
 import { SKIP_TURNS } from '../../config/constants';
 import { emitEffect } from '../../functions/emit-effect';
-import { getHomePlanet } from '../../functions/get-home-planet';
-import { getInfluenceTarget } from '../../functions/get-influence-target';
+import { getFirstOwnedPlanet } from '../../functions/extractors/get-first-owned-planet';
+import { getInfluenceTarget } from '../../functions/extractors/get-influence-target';
 import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceType } from '../../interfaces/influence-type';
@@ -48,7 +48,7 @@ export const playSkip = (
             state,
             emitEffect(state, {
               kind: 'floatText',
-              planetId: getHomePlanet(state, state.players[target.id]).id,
+              planetId: getFirstOwnedPlanet(state, state.players[target.id]).id,
               text: '⏭️ SKIPPED',
               color: '#ffb0d8',
             }),

@@ -2,12 +2,12 @@ import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
 import { chain } from '../utils/chain';
+import { canBuildSingularity } from './can-build-singularity';
+import { getBuildingLevel } from './extractors/get-building-level';
+import { getMaxLevel } from './extractors/get-max-level';
+import { getOwnedPlanets } from './extractors/get-owned-planets';
+import { getTechLevel } from './extractors/get-tech-level';
 import { filterAlivePlayers } from './filter-alive-players';
-import { getBuildingLevel } from './get-building-level';
-import { getMaxLevel } from './get-max-level';
-import { getOwnedPlanets } from './get-owned-planets';
-import { getTechLevel } from './get-tech-level';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
 
 const isSingularityReadyOn = (
   state: GameState,
@@ -19,7 +19,7 @@ const isSingularityReadyOn = (
       (next) =>
         next <= getMaxLevel('SINGULARITY') &&
         next <= getTechLevel(state, player) &&
-        isSingularityLabOk(planet, next),
+        canBuildSingularity(planet, next),
     )
     .value();
 

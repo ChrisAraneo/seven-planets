@@ -1,6 +1,6 @@
 import { assign } from 'lodash-es';
 
-import { getOwnedPlanets } from '../functions/get-owned-planets';
+import { getOwnedPlanets } from '../functions/extractors/get-owned-planets';
 import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';
 import { computeSlotPicksTotal } from './compute-slot-picks-total';

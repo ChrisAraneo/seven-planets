@@ -3,10 +3,11 @@ import { match } from 'ts-pattern';
 import type { Planet } from '../interfaces/planet';
 import { bump } from './bump';
 import type { IncomeTally } from './do-income';
-import { getBuildingLevel } from './get-building-level';
+import { getBuildingLevel } from './extractors/get-building-level';
 
 const EMBASSY_PERK_LEVEL = 2;
 const EMBASSY_PERK_INFLUENCE = 1;
+
 export const addEmbassyPerk = (
   tally: IncomeTally,
   ownerId: number,

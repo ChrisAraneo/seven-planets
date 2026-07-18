@@ -2,8 +2,8 @@ import type { Player } from '../interfaces/player';
 import type { SeatDefinition } from './create-initial-game-state';
 import { createStartingHand } from './create-starting-hand';
 
-export const createPlayers = (gameDefs: SeatDefinition[]): Player[] =>
-  gameDefs.map((definition, index) => ({
+export const createPlayers = (seatDefinitions: SeatDefinition[]): Player[] =>
+  seatDefinitions.map((definition, index) => ({
     id: index,
     name: definition.name,
     color: definition.color,

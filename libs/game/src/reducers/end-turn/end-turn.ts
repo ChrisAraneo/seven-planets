@@ -1,10 +1,12 @@
-import { assign, cloneDeep } from 'lodash-es';
+import { assign, cloneDeep, get } from 'lodash-es';
 import { match } from 'ts-pattern';
 
 import type { EndTurnPayload } from '../../actions/end-turn';
+import type { EngineCursor } from '../../interfaces/engine-cursor';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 
+// TODO: OK
 export const applyEndTurn = (
   state: GameState,
   payload: EndTurnPayload,
@@ -16,15 +18,15 @@ export const applyEndTurn = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((cl1) => assign(cl1, { isAwaitingAction: false }))
-        .tap((cl1) =>
-          match(cl1.cursor)
-            .with({ phase: 'action' }, (cursor) =>
-              assign(cl1, {
-                cursor: { ...cursor, seatIdx: cursor.seatIdx + 1 },
+        .tap((clonedState) => assign(clonedState, { isAwaitingAction: false }))
+        .tap((clonedState) =>
+          match(clonedState.cursor)
+            .with({ phase: 'ACTION' }, (cursor: EngineCursor) =>
+              assign(clonedState, {
+                cursor: { ...cursor, seatIdx: get(cursor, 'seatIdx', 0) + 1 },
               }),
             )
-            .otherwise(() => cl1),
+            .otherwise(() => clonedState),
         )
         .value(),
     );

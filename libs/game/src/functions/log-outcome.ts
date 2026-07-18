@@ -12,14 +12,14 @@ export const logOutcome = (
   reason: GameOverReason,
 ): GameState =>
   match({ winner, reason })
-    .with({ reason: 'conquest', winner: nonNullable }, ({ winner: player }) =>
+    .with({ reason: 'CONQUEST', winner: nonNullable }, ({ winner: player }) =>
       log(
         state,
         `🏴 ${player.name} rules all seven planets! The galaxy has 1 master.`,
         'win',
       ),
     )
-    .with({ reason: 'eliminated' }, () =>
+    .with({ reason: 'ELIMINATED' }, () =>
       log(
         state,
         '☠️ Your homeworld has fallen. The galaxy forgets Terra Prime.',

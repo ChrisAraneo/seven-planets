@@ -1,6 +1,6 @@
 import { getBuildingLevel } from '@seven-planets/game';
 import { getMaxLevel } from '@seven-planets/game';
-import { isSingularityLabOk } from '@seven-planets/game';
+import { canBuildSingularity } from '@seven-planets/game';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { chain } from '../utils/chain';
@@ -15,7 +15,7 @@ export const isSingularityLive = (): boolean =>
           (nextLevel) =>
             nextLevel <= getMaxLevel('SINGULARITY') &&
             nextLevel <= computeTechLevel(player) &&
-            isSingularityLabOk(planet, nextLevel),
+            canBuildSingularity(planet, nextLevel),
         )
         .value(),
     ),

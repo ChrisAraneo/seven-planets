@@ -1,4 +1,4 @@
-import { getOwnedPlanets } from '../functions/get-owned-planets';
+import { getOwnedPlanets } from '../functions/extractors/get-owned-planets';
 import { chain } from '../utils/chain';
 import type { DraftFrame } from './seat-frame';
 import { seatPlayer } from './seat-player';

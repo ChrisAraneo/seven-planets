@@ -6,7 +6,7 @@ import {
 } from '@seven-planets/game';
 import { assignKamikazes } from '@seven-planets/game';
 import { IS_AUTO_HUMAN } from '@seven-planets/game';
-import { runGame } from '@seven-planets/game';
+import { startGame } from '@seven-planets/game';
 import { getGameStateLastValue, setGameState } from '@seven-planets/game';
 import { assign, noop } from 'lodash-es';
 import { defineStore } from 'pinia';
@@ -63,7 +63,7 @@ export const useUiStore = defineStore('ui', () => {
           .tap(() => assign(difficulty, { value: level }))
           .tap(applyDifficulty)
           .tap(() => assign(started, { value: true }))
-          .thru(() => runGame())
+          .thru(() => startGame())
           .thru(noop)
           .value(),
       );

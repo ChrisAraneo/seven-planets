@@ -84,7 +84,7 @@ const applyResult = (st: DiffStat, result: SimulationResult): void =>
   chain(st.allTurns.push(result.turns))
     .thru(() =>
       match(result)
-        .with({ reason: 'conquest', winner: nonNullable }, () =>
+        .with({ reason: 'CONQUEST', winner: nonNullable }, () =>
           chain(assign(st, { decisive: st.decisive + 1 }))
             .thru(() => applyHumanWin(st, result))
             .value(),

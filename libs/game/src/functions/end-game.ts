@@ -1,7 +1,7 @@
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
 import { chain } from '../utils/chain';
-import { getStatusLine } from './get-status-line';
+import { getStatusLine } from './extractors/get-status-line';
 import { logOutcome } from './log-outcome';
 import { setStatus } from './set-status';
 import type { GameOverReason } from './trigger-game-over';

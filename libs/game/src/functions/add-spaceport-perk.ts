@@ -4,7 +4,7 @@ import type { Planet } from '../interfaces/planet';
 import { bump } from './bump';
 import { bumpNested } from './bump-nested';
 import type { IncomeTally } from './do-income';
-import { getBuildingLevel } from './get-building-level';
+import { getBuildingLevel } from './extractors/get-building-level';
 
 const SPACEPORT_MOVE_PERIOD = 3;
 const SPACEPORT_PERK_LEVEL = 2;

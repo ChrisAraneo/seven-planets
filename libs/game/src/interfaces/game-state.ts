@@ -12,13 +12,11 @@ export interface GameState {
   turn: number;
   phase: Phase;
   cursor: EngineCursor;
-  maxTurns: number;
   over: GameOver | null;
   pool: PoolType[];
   activeId: number;
   draftPlanetId: number;
-  isSingularityAnnounced: boolean;
-  startIdx: number;
+  startIndex: number;
   players: Player[];
   planets: Planet[];
   log: LogEntry[];
@@ -27,6 +25,7 @@ export interface GameState {
   status: string;
   isAwaitingPick: boolean;
   isAwaitingAction: boolean;
+  isSingularityAnnounced: boolean;
   inputSeq: number;
   pendingOffer: PendingOffer | null;
 }

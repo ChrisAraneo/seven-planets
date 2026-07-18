@@ -1,6 +1,6 @@
 import { assign } from 'lodash-es';
 
-import { getPickStatus } from '../functions/get-pick-status';
+import { getPickStatus } from '../functions/extractors/get-pick-status';
 import { setStatus } from '../functions/set-status';
 import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';

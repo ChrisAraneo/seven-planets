@@ -6,7 +6,7 @@ import {
   SHIELD_UPKEEP_LEVEL,
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
-import { getBuildingLevel } from './get-building-level';
+import { getBuildingLevel } from './extractors/get-building-level';
 import { log } from './log';
 import { payUpkeep } from './pay-upkeep';
 import { setUnpowered } from './set-unpowered';

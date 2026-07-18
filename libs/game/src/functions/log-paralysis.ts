@@ -3,7 +3,7 @@ import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
-import { getRemainingSkipsSuffix } from './get-remaining-skips-suffix';
+import { getRemainingSkipsSuffix } from './extractors/get-remaining-skips-suffix';
 import { log } from './log';
 
 export const logParalysis = (state: GameState, player: Player): void =>

@@ -3,7 +3,7 @@ import { match } from 'ts-pattern';
 
 import { CARDS, INFLUENCE_CARDS } from '../../config/constants';
 import { emitEffect } from '../../functions/emit-effect';
-import { getHomePlanet } from '../../functions/get-home-planet';
+import { getFirstOwnedPlanet } from '../../functions/extractors/get-first-owned-planet';
 import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceOptions } from '../../interfaces/influence-options';
@@ -49,7 +49,7 @@ export const playStealAction = (
             state,
             emitEffect(state, {
               kind: 'floatText',
-              planetId: getHomePlanet(state, state.players[target.id]).id,
+              planetId: getFirstOwnedPlanet(state, state.players[target.id]).id,
               text: `−1${CARDS[cardType].icon}`,
               color: '#ffb0d8',
             }),

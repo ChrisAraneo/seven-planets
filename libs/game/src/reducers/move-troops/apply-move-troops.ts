@@ -5,7 +5,7 @@ import type { MoveTroopsPayload } from '../../actions/move-troops/move-troops';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
-import { executeMove } from './execute-move';
+import { executeMove } from './internal/execute-move';
 
 export const applyMoveTroops = (
   state: GameState,
@@ -22,6 +22,6 @@ export const applyMoveTroops = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((cl1) => executeMove(cl1, payload))
+        .tap((clonedState) => executeMove(clonedState, payload))
         .value(),
     );

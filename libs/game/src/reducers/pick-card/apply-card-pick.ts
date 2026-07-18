@@ -27,7 +27,7 @@ export const applyCardPick = (
         log(
           state,
           `🃏 ${player.name} drafts ${CARDS[type].icon} ${CARDS[type].name}${getPlanetTurnSuffix(planet, slot)}`,
-          'draft',
+          'DRAFT',
         ),
       ),
     )

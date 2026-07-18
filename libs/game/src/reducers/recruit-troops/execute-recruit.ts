@@ -2,8 +2,8 @@ import { assign, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 
 import { computeRecruitableTroops } from '../../functions/compute-recruitable-troops';
+import { createPluralSuffixString } from '../../functions/create-plural-suffix-string';
 import { emitEffect } from '../../functions/emit-effect';
-import { getPluralSuffix } from '../../functions/get-plural-suffix';
 import { log } from '../../functions/log';
 import { payCost } from '../../functions/pay-cost';
 import { spendActionCard } from '../../functions/spend-action-card';
@@ -42,7 +42,7 @@ export const executeRecruit = (
               state,
               log(
                 state,
-                `🪖 ${state.players[playerId].name} recruits ${count} troop${getPluralSuffix(count)}${getOreLimitedSuffix(planet, count)} on ${planet.name} (garrison now ${state.planets[planetId].troops})`,
+                `🪖 ${state.players[playerId].name} recruits ${count} troop${createPluralSuffixString(count)}${getOreLimitedSuffix(planet, count)} on ${planet.name} (garrison now ${state.planets[planetId].troops})`,
                 'build',
               ),
             ),
