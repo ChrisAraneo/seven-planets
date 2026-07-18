@@ -22,6 +22,6 @@ export const applyAttackPlanet = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) => doAttack(clone, payload))
+        .tap((cl1) => doAttack(cl1, payload))
         .value(),
     );

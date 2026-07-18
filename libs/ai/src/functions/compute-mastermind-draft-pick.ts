@@ -1,68 +1,85 @@
 import type { Planet, Player } from '@seven-planets/game';
 import { getGameStateLastValue } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
 import { getAiState } from '../state';
+import { chain } from '../utils/chain';
 import { activateWeightsFor } from './activate-weights-for';
 import { computeDenialValue } from './compute-denial-value';
 import { computeOwnDraftValue } from './compute-own-draft-value';
 import { getPlan } from './get-plan';
 
-export const computeMastermindDraftPick = (
-  player: Player,
-  draftPlanet: Planet,
-  pickable: boolean[],
-): number => {
-  const aiState = getAiState();
-  activateWeightsFor(player);
-  if (
-    aiState.randomPickChance > 0 &&
-    Math.random() < aiState.randomPickChance
-  ) {
-    const randomIndex = pickRandomIndex(pickable);
-    if (randomIndex !== -1) {
-      return randomIndex;
-    }
-  }
-  return pickBestIndex(player, draftPlanet, pickable);
-};
-
-const pickRandomIndex = (pickable: boolean[]): number => {
-  const options: number[] = [];
-  for (let index = 0; index < getGameStateLastValue().pool.length; index++) {
-    if (pickable[index]) {
-      options.push(index);
-    }
-  }
-  return options.length > 0
-    ? options[Math.floor(Math.random() * options.length)]
-    : -1;
-};
+const pickRandomIndex = (pickable: boolean[]): number =>
+  chain(
+    getGameStateLastValue()
+      .pool.map((_, index) => index)
+      .filter((index) => pickable[index]),
+  )
+    .thru((options) =>
+      match(options.length)
+        .with(0, () => -1)
+        .otherwise(() => options[Math.floor(Math.random() * options.length)]),
+    )
+    .value();
 
 const pickBestIndex = (
   player: Player,
   draftPlanet: Planet,
   pickable: boolean[],
-): number => {
-  const aiState = getAiState();
-  const plan = getPlan(player);
-  let bestIndex = -1;
-  let bestScore = -Infinity;
-  for (let index = 0; index < getGameStateLastValue().pool.length; index++) {
-    if (pickable[index]) {
-      const poolType = getGameStateLastValue().pool[index];
-      const copies = getGameStateLastValue().pool.filter(
-        (eachPoolType) => eachPoolType === poolType,
-      ).length;
-      const score =
-        computeOwnDraftValue(player, draftPlanet, poolType, plan) +
-        (computeDenialValue(player, poolType) / copies) *
-          aiState.W.denialWeight +
-        Math.random() * 0.05;
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = index;
-      }
-    }
-  }
-  return bestScore < -1 ? -1 : bestIndex;
-};
+): number =>
+  chain({
+    aiState: getAiState(),
+    plan: getPlan(player),
+    pool: getGameStateLastValue().pool,
+  })
+    .thru(({ aiState, plan, pool }) =>
+      pool.reduce(
+        (best, poolType, index) =>
+          match(pickable[index])
+            .with(true, () =>
+              chain(
+                computeOwnDraftValue(player, draftPlanet, poolType, plan) +
+                  (computeDenialValue(player, poolType) /
+                    pool.filter((eachPoolType) => eachPoolType === poolType)
+                      .length) *
+                    aiState.W.denialWeight +
+                  Math.random() * 0.05,
+              )
+                .thru((score) =>
+                  match(score > best.score)
+                    .with(true, () => ({ index, score }))
+                    .otherwise(() => best),
+                )
+                .value(),
+            )
+            .otherwise(() => best),
+        { index: -1, score: -Infinity },
+      ),
+    )
+    .thru(({ index, score }) =>
+      match(score < -1)
+        .with(true, () => -1)
+        .otherwise(() => index),
+    )
+    .value();
+
+export const computeMastermindDraftPick = (
+  player: Player,
+  draftPlanet: Planet,
+  pickable: boolean[],
+): number =>
+  chain(getAiState())
+    .tap(() => activateWeightsFor(player))
+    .thru((aiState) =>
+      match(
+        aiState.randomPickChance > 0 &&
+          Math.random() < aiState.randomPickChance,
+      )
+        .with(true, () =>
+          match(pickRandomIndex(pickable))
+            .with(-1, () => pickBestIndex(player, draftPlanet, pickable))
+            .otherwise((randomIndex) => randomIndex),
+        )
+        .otherwise(() => pickBestIndex(player, draftPlanet, pickable)),
+    )
+    .value();

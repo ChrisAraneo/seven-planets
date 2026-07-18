@@ -1,13 +1,13 @@
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import { BUILD_ORDER, BUILDINGS } from '../config/constants';
 import type { Planet } from '../interfaces/planet';
 import { chain } from '../utils/chain';
+import { number, string } from '../utils/p';
 import { bumpNested } from './bump-nested';
 import { computeIncomeAmount } from './compute-income-amount';
 import type { IncomeTally } from './do-income';
 
-const { number, string } = P;
 export const addBuildingIncome = (
   tally: IncomeTally,
   ownerId: number,

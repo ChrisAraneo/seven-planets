@@ -1,5 +1,6 @@
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
+import { getBuildingLevel } from './get-building-level';
 import { getOwnedPlanets } from './get-owned-planets';
 
 export const computeSingularityTotal = (
@@ -7,6 +8,6 @@ export const computeSingularityTotal = (
   player: Player,
 ): number =>
   getOwnedPlanets(state, player).reduce(
-    (sum, planet) => sum + (planet.buildings.SINGULARITY || 0),
+    (sum, planet) => sum + getBuildingLevel(planet, 'SINGULARITY'),
     0,
   );

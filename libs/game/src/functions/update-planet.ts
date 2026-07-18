@@ -1,3 +1,5 @@
+import { match } from 'ts-pattern';
+
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 
@@ -8,6 +10,8 @@ export const updatePlanet = (
 ): GameState => ({
   ...state,
   planets: state.planets.map((planet) =>
-    (planet.id === id ? callback(planet) : planet),
+    match(planet)
+      .when((candidate) => candidate.id === id, callback)
+      .otherwise(() => planet),
   ),
 });

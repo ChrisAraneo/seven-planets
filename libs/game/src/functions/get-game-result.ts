@@ -1,9 +1,9 @@
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import type { GameOver } from '../interfaces/game-over';
+import { nonNullable } from '../utils/p';
 import type { SimulationResult } from './simulate-game';
 
-const { nonNullable } = P;
 export const getGameResult = (
   over: GameOver | null,
   turns: number,

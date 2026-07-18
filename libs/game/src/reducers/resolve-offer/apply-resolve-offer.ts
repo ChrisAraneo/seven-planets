@@ -1,12 +1,12 @@
 import { assign, cloneDeep } from 'lodash-es';
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import type { ResolveOfferPayload } from '../../actions/resolve-offer/resolve-offer';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
+import { nullish } from '../../utils/p';
 import { applyDecision } from './apply-decision';
 
-const { nullish } = P;
 export const applyResolveOffer = (
   state: GameState,
   payload: ResolveOfferPayload,
@@ -19,7 +19,7 @@ export const applyResolveOffer = (
     )
     .otherwise((offer) =>
       chain(cloneDeep(state))
-        .thru((clone) => assign(clone, { pendingOffer: null }))
-        .thru((clone) => applyDecision(clone, offer, payload.isAccepted))
+        .thru((cl1) => assign(cl1, { pendingOffer: null }))
+        .thru((cl1) => applyDecision(cl1, offer, payload.isAccepted))
         .value(),
     );

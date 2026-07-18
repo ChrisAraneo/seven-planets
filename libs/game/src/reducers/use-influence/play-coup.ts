@@ -1,5 +1,5 @@
 import { assign } from 'lodash-es';
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import { CONQUEST_TRUCE } from '../../config/constants';
 import { getCoupTargets } from '../../functions/get-coup-targets';
@@ -8,12 +8,11 @@ import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceOptions } from '../../interfaces/influence-options';
 import type { InfluenceType } from '../../interfaces/influence-type';
 import { chain } from '../../utils/chain';
+import { nullish } from '../../utils/p';
 import { emitCoupEffects } from './emit-coup-effects';
 import { logPlay } from './log-play';
 import { maybeToppleRegime } from './maybe-topple-regime';
 import { spendInfluenceCard } from './spend-influence-card';
-
-const { nullish } = P;
 
 export const playCoup = (
   state: GameState,

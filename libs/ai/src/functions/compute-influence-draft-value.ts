@@ -1,51 +1,16 @@
 import type { InfluenceType, Player } from '@seven-planets/game';
 import { INFLUENCE_CARDS } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { getAiState } from '../state';
+import { chain } from '../utils/chain';
+import { nullish } from '../utils/p';
 import { computeAverageStrength } from './compute-average-strength';
 import { computePlayerStrength } from './compute-player-strength';
 import { getBestCoupTarget } from './get-best-coup-target';
 import { getSkipTarget } from './get-skip-target';
 import type { Plan } from './plan-types';
-
-export const computeInfluenceDraftValue = (
-  player: Player,
-  influenceType: InfluenceType,
-  plan: Plan,
-): number => {
-  const { cost } = INFLUENCE_CARDS[influenceType];
-  const starCost =
-    cost * (plan.kind === 'COUP_BANK' && influenceType !== 'COUP' ? 1.2 : 0.35);
-  switch (influenceType) {
-    case 'COUP': {
-      const coupTarget = getBestCoupTarget(player);
-      if (coupTarget && coupTarget.value >= getAiState().W.coupValueFloor) {
-        return 12 - ((player.hand.COUP || 0) > 0 ? 6 : 0);
-      }
-      return finishValue(player, influenceType, -2, starCost);
-    }
-    case 'STEAL_ACTION': {
-      return finishValue(
-        player,
-        influenceType,
-        canLootActionCard(player) ? 1.5 : -2,
-        starCost,
-      );
-    }
-    case 'PEACE': {
-      return finishValue(
-        player,
-        influenceType,
-        1 + plan.threat * 0.4,
-        starCost,
-      );
-    }
-    default: {
-      return finishSkipValue(player, influenceType, starCost);
-    }
-  }
-};
 
 const finishValue = (
   player: Player,
@@ -53,22 +18,30 @@ const finishValue = (
   value: number,
   starCost: number,
 ): number =>
-  value - ((player.hand[influenceType] || 0) > 0 ? 1.5 : 0) - starCost;
+  value -
+  match((player.hand[influenceType] || 0) > 0)
+    .with(true, () => 1.5)
+    .otherwise(() => 0) -
+  starCost;
 
 const finishSkipValue = (
   player: Player,
   influenceType: InfluenceType,
   starCost: number,
-): number => {
-  const target = getSkipTarget(player, influenceType);
-  if (!target) {
-    return -2;
-  }
-  const averageStrength = computeAverageStrength();
-  const value =
-    1 + (computePlayerStrength(target) / Math.max(1, averageStrength)) * 1.5;
-  return finishValue(player, influenceType, value, starCost);
-};
+): number =>
+  match(getSkipTarget(player, influenceType))
+    .with(nullish, () => -2)
+    .otherwise((target) =>
+      finishValue(
+        player,
+        influenceType,
+        1 +
+          (computePlayerStrength(target) /
+            Math.max(1, computeAverageStrength())) *
+            1.5,
+        starCost,
+      ),
+    );
 
 const canLootActionCard = (player: Player): boolean =>
   getAlivePlayers().some(
@@ -78,3 +51,47 @@ const canLootActionCard = (player: Player): boolean =>
         (cardType) => (rival.hand[cardType] || 0) > 0,
       ),
   );
+
+export const computeInfluenceDraftValue = (
+  player: Player,
+  influenceType: InfluenceType,
+  plan: Plan,
+): number =>
+  chain(
+    INFLUENCE_CARDS[influenceType].cost *
+      match(plan.kind === 'COUP_BANK' && influenceType !== 'COUP')
+        .with(true, () => 1.2)
+        .otherwise(() => 0.35),
+  )
+    .thru((starCost) =>
+      match(influenceType)
+        .with('COUP', () =>
+          match(getBestCoupTarget(player))
+            .when(
+              (coupTarget) =>
+                (coupTarget?.value ?? -Infinity) >=
+                getAiState().W.coupValueFloor,
+              () =>
+                12 -
+                match((player.hand.COUP || 0) > 0)
+                  .with(true, () => 6)
+                  .otherwise(() => 0),
+            )
+            .otherwise(() => finishValue(player, 'COUP', -2, starCost)),
+        )
+        .with('STEAL_ACTION', () =>
+          finishValue(
+            player,
+            'STEAL_ACTION',
+            match(canLootActionCard(player))
+              .with(true, () => 1.5)
+              .otherwise(() => -2),
+            starCost,
+          ),
+        )
+        .with('PEACE', () =>
+          finishValue(player, 'PEACE', 1 + plan.threat * 0.4, starCost),
+        )
+        .otherwise(() => finishSkipValue(player, influenceType, starCost)),
+    )
+    .value();

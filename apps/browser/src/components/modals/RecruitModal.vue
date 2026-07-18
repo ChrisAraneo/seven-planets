@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { recruitTroops } from '@seven-planets/game';
+import { noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { useGameStore, useUiStore } from '@/stores';
+import { chain } from '@/utils/chain';
 import ModalShell from './ModalShell.vue';
 import { getOwnedPlanets } from '@seven-planets/game';
 import { computeRecruitableTroops } from '@seven-planets/game';
@@ -10,35 +13,40 @@ import { computeRecruitYield } from '@seven-planets/game';
 const game = useGameStore();
 const ui = useUiStore();
 
-const barracksPls = computed(() => {
-  const state = game.state;
-  const human = state.players[0];
-  return getOwnedPlanets(state, human).filter(
+const barracksPls = computed(() =>
+  getOwnedPlanets(game.state, game.state.players[0]).filter(
     (planet) =>
       planet.buildings.BARRACKS &&
-      computeRecruitableTroops(planet, human.hand) >= 1,
-  );
-});
+      computeRecruitableTroops(planet, game.state.players[0].hand) >= 1,
+  ),
+);
 
-const troopsFor = (planetId: number): number => {
-  return computeRecruitableTroops(
+const troopsFor = (planetId: number): number =>
+  computeRecruitableTroops(
     game.state.planets[planetId],
     game.state.players[0].hand,
   );
-};
 
-const shortWarning = (planetId: number): string => {
-  const planet = game.state.planets[planetId];
-  const affordable = troopsFor(planetId);
-  return affordable < computeRecruitYield(planet)
-    ? ` ⚠️ only enough ⛏️ for ${affordable} of ${computeRecruitYield(planet)} troops`
-    : '';
-};
+const shortWarning = (planetId: number): string =>
+  chain({
+    affordable: troopsFor(planetId),
+    yieldTotal: computeRecruitYield(game.state.planets[planetId]),
+  })
+    .thru(({ affordable, yieldTotal }) =>
+      match(affordable < yieldTotal)
+        .with(
+          true,
+          () => ` ⚠️ only enough ⛏️ for ${affordable} of ${yieldTotal} troops`,
+        )
+        .otherwise(() => ''),
+    )
+    .value();
 
-const recruit = (planetId: number): void => {
-  ui.closeModal();
-  void recruitTroops({ playerId: 0, planetId });
-};
+const recruit = (planetId: number): void =>
+  chain(ui.closeModal())
+    .thru(() => recruitTroops({ playerId: 0, planetId }))
+    .thru(noop)
+    .value();
 </script>
 
 <template>
@@ -53,26 +61,22 @@ const recruit = (planetId: number): void => {
       v-for="planet in barracksPls"
       :key="planet.id"
       class="trow"
-      @click="recruit(planet.id)"
-    >
+      @click="recruit(planet.id)">
       <div class="tinfo">
         <b>{{ planet.name }}</b>
-        <span class="dimtx">🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
-          troopsFor(planet.id)
-        }}
+        <span class="dimtx"
+          >🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
+            troopsFor(planet.id)
+          }}
           troops for {{ troopsFor(planet.id) }}⛏️{{
             shortWarning(planet.id)
-          }}</span>
+          }}</span
+        >
       </div>
       <div>🪖{{ planet.troops }}</div>
     </div>
     <div class="mbtns">
-      <button
-        class="btn"
-        @click="ui.closeModal()"
-      >
-        Cancel
-      </button>
+      <button class="btn" @click="ui.closeModal()">Cancel</button>
     </div>
   </ModalShell>
 </template>

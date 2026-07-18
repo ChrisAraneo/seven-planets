@@ -8,21 +8,16 @@ export const shouldAcceptTrade = (
   gives: Cost,
   gets: Cost,
   proposer: Player | null = null,
-): boolean => {
-  for (const resourceType in gives) {
-    if (!isResourceType(resourceType) && (gives[resourceType] || 0) > 0) {
-      return false;
-    }
-  }
-  for (const resourceType in gets) {
-    if (!isResourceType(resourceType) && (gets[resourceType] || 0) > 0) {
-      return false;
-    }
-  }
-  for (const resourceType in gives) {
-    if ((aiPlayer.hand[resourceType] || 0) < gives[resourceType]) {
-      return false;
-    }
-  }
-  return shouldMastermindAcceptTrade(aiPlayer, gives, gets, proposer);
-};
+): boolean =>
+  Object.keys(gives).every(
+    (resourceType) =>
+      isResourceType(resourceType) || (gives[resourceType] || 0) <= 0,
+  ) &&
+  Object.keys(gets).every(
+    (resourceType) =>
+      isResourceType(resourceType) || (gets[resourceType] || 0) <= 0,
+  ) &&
+  Object.keys(gives).every(
+    (resourceType) => (aiPlayer.hand[resourceType] || 0) >= gives[resourceType],
+  ) &&
+  shouldMastermindAcceptTrade(aiPlayer, gives, gets, proposer);

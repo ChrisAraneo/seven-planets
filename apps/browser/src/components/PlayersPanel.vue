@@ -10,23 +10,35 @@ import { getBuildingCount } from '@seven-planets/game';
 import { getTechLevel } from '@seven-planets/game';
 import { computeTotalTroops } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
 const game = useGameStore();
 
-const resLine = (player: Player): string => {
-  return RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(
-    ' ',
-  );
-};
-const actLine = (player: Player): string => {
-  const heldInf = INFLUENCE_TYPES.filter((t) => player.hand[t] > 0)
-    .map((t) => `${CARDS[t].icon}${player.hand[t]}`)
-    .join(' ');
-  return (
-    ACTION_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(' ') +
-    (heldInf ? ` · ${heldInf}` : '')
-  );
-};
+const resLine = (player: Player): string =>
+  RESOURCE_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(' ');
+
+const toHeldInfluenceSuffix = (player: Player): string =>
+  match(
+    INFLUENCE_TYPES.filter((t) => player.hand[t] > 0)
+      .map((t) => `${CARDS[t].icon}${player.hand[t]}`)
+      .join(' '),
+  )
+    .with('', () => '')
+    .otherwise((heldInf) => ` · ${heldInf}`);
+
+const actLine = (player: Player): string =>
+  ACTION_TYPES.map((t) => `${CARDS[t].icon}${player.hand[t]}`).join(' ') +
+  toHeldInfluenceSuffix(player);
+
+const toStarSuffix = (player: Player): string =>
+  match(player.isHuman)
+    .with(true, () => ' ★')
+    .otherwise(() => '');
+
+const toSkipSuffix = (player: Player): string =>
+  match(player.skipTurns > 0 || player.isSkippedNow)
+    .with(true, () => ' ⏭️')
+    .otherwise(() => '');
 </script>
 
 <template>
@@ -39,12 +51,10 @@ const actLine = (player: Player): string => {
         active: player.id === game.state.activeId && !game.state.over,
         dead: !player.isAlive,
       }"
-      :style="{ borderLeftColor: player.color }"
-    >
-      <span
-        class="pname"
-        :style="{ color: player.color }"
-      >{{ player.name }}{{ player.isHuman ? ' ★' : '' }}</span>
+      :style="{ borderLeftColor: player.color }">
+      <span class="pname" :style="{ color: player.color }"
+        >{{ player.name }}{{ toStarSuffix(player) }}</span
+      >
       <div class="pstats">
         🪐{{
           game.state.planets.filter((planet) => planet.ownerId === player.id)
@@ -54,7 +64,7 @@ const actLine = (player: Player): string => {
           computeTotalTroops(game.state, player)
         }}
         🏛️{{ getBuildingCount(game.state, player) }} ⭐{{ player.influence
-        }}{{ player.skipTurns > 0 || player.isSkippedNow ? ' ⏭️' : '' }} ·
+        }}{{ toSkipSuffix(player) }} ·
         {{ resLine(player) }}
       </div>
       <div class="pstats">

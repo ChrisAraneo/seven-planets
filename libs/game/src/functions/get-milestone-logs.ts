@@ -8,13 +8,13 @@ import type { GameState } from '../interfaces/game-state';
 import { chain } from '../utils/chain';
 import { logWhenTurnIs } from './log-when-turn-is';
 
-export const getMilestoneLogs = (state: GameState): GameState =>
+export const getMilest1Logs = (state: GameState): GameState =>
   chain(state)
     .thru((current) =>
       logWhenTurnIs(
         current,
         BUILDINGS_FROM_TURN,
-        '🏗️ Building cards have entered the pool — pick one to construct it on the drafting planet!',
+        '🏗️ Building cards have entered the pool — pick 1 to construct it on the drafting planet!',
       ),
     )
     .thru((current) =>

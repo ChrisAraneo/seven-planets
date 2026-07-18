@@ -1,11 +1,11 @@
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
 import type { Player } from '../interfaces/player';
+import { nonNullable } from '../utils/p';
 import { log } from './log';
 import type { GameOverReason } from './trigger-game-over';
 
-const { nonNullable } = P;
 export const logOutcome = (
   state: GameState,
   winner: Player | null,
@@ -15,7 +15,7 @@ export const logOutcome = (
     .with({ reason: 'conquest', winner: nonNullable }, ({ winner: player }) =>
       log(
         state,
-        `🏴 ${player.name} rules all seven planets! The galaxy has one master.`,
+        `🏴 ${player.name} rules all seven planets! The galaxy has 1 master.`,
         'win',
       ),
     )

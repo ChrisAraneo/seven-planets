@@ -32,7 +32,10 @@ onMounted(() => ui.start());
   <GameHeader />
 
   <main>
-    <GameBoard />
+    <div id="board-col">
+      <GameBoard />
+      <PoolZone />
+    </div>
     <aside id="side">
       <PlayersPanel />
       <GameLog />
@@ -40,7 +43,6 @@ onMounted(() => ui.start());
   </main>
 
   <footer>
-    <PoolZone />
     <HandZone />
     <ActionZone />
   </footer>

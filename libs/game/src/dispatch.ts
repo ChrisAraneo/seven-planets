@@ -1,6 +1,6 @@
 import type { Action } from './actions/action';
-import { actionSubject } from './state';
+import { ACTION_SUBJECT } from './state';
 
 export const dispatch = (action: Action): void => {
-  actionSubject.next(action);
+  ACTION_SUBJECT.next(action);
 };

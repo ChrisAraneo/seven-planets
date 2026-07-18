@@ -1,4 +1,4 @@
 import type { GameState } from './interfaces/game-state';
-import { stateSubject } from './state';
+import { STATE_SUBJECT } from './state';
 
-export const getGameStateLastValue = (): GameState => stateSubject.getValue();
+export const getGameStateLastValue = (): GameState => STATE_SUBJECT.getValue();

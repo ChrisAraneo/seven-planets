@@ -4,17 +4,20 @@ import { resolveOffer as resolveGameOffer } from '@seven-planets/game';
 import { useGameStore } from '@/stores';
 import ModalShell from './ModalShell.vue';
 import { formatCards } from '@seven-planets/game';
+import { match } from 'ts-pattern';
+import { nullish } from '@/utils/p';
 
 const game = useGameStore();
 
 const offer = computed(() => game.state.pendingOffer);
 const from = computed(() =>
-  offer.value ? game.state.players[offer.value.fromId] : null,
+  match(offer.value)
+    .with(nullish, () => null)
+    .otherwise((pendingOffer) => game.state.players[pendingOffer.fromId]),
 );
 
-const resolveOffer = (isAccepted: boolean): void => {
+const resolveOffer = (isAccepted: boolean): void =>
   resolveGameOffer({ playerId: 0, isAccepted });
-};
 </script>
 
 <template>
@@ -30,18 +33,8 @@ const resolveOffer = (isAccepted: boolean): void => {
       They want: <b>{{ formatCards(offer.gets) }}</b>
     </p>
     <div class="mbtns">
-      <button
-        class="btn"
-        @click="resolveOffer(true)"
-      >
-        Accept
-      </button>
-      <button
-        class="btn danger"
-        @click="resolveOffer(false)"
-      >
-        Decline
-      </button>
+      <button class="btn" @click="resolveOffer(true)">Accept</button>
+      <button class="btn danger" @click="resolveOffer(false)">Decline</button>
     </div>
   </ModalShell>
 </template>

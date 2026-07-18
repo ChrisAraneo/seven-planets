@@ -22,8 +22,6 @@ export const applyRecruitTroops = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) =>
-          executeRecruit(clone, payload.playerId, payload.planetId),
-        )
+        .tap((cl1) => executeRecruit(cl1, payload.playerId, payload.planetId))
         .value(),
     );

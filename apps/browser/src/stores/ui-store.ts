@@ -8,8 +8,12 @@ import { assignKamikazes } from '@seven-planets/game';
 import { IS_AUTO_HUMAN } from '@seven-planets/game';
 import { runGame } from '@seven-planets/game';
 import { getGameStateLastValue, setGameState } from '@seven-planets/game';
+import { assign, noop } from 'lodash-es';
 import { defineStore } from 'pinia';
+import { match } from 'ts-pattern';
 import { ref } from 'vue';
+
+import { chain } from '@/utils/chain';
 
 import { useEffectsStore } from './effects-store';
 
@@ -22,35 +26,56 @@ export type ModalName =
   | 'influence'
   | null;
 
+const applyDifficulty = (level: Difficulty): void =>
+  chain(getDifficulty(level))
+    .tap((def) => setAiDifficulty(def.ai))
+    .thru((def) =>
+      setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount)),
+    )
+    .thru(noop)
+    .value();
+
+const restartGame = (): void =>
+  match(typeof window)
+    .with('undefined', noop)
+    .otherwise(() => window.location.reload());
+
 export const useUiStore = defineStore('ui', () => {
   const modal = ref<ModalName>(null);
   const started = ref(false);
   const difficulty = ref<Difficulty | null>(null);
 
-  const openModal = (name: ModalName): void => {
-    modal.value = name;
-  };
+  const openModal = (name: ModalName): void =>
+    chain(assign(modal, { value: name }))
+      .thru(noop)
+      .value();
 
-  const closeModal = (): void => {
-    modal.value = null;
-  };
+  const closeModal = (): void =>
+    chain(assign(modal, { value: null }))
+      .thru(noop)
+      .value();
 
-  const chooseDifficulty = (level: Difficulty): void => {
-    if (started.value) {
-      return;
-    }
-    difficulty.value = level;
-    applyDifficulty(level);
-    started.value = true;
-    runGame();
-  };
+  const chooseDifficulty = (level: Difficulty): void =>
+    match(started.value)
+      .with(true, noop)
+      .otherwise(() =>
+        chain(level)
+          .tap(() => assign(difficulty, { value: level }))
+          .tap(applyDifficulty)
+          .tap(() => assign(started, { value: true }))
+          .thru(() => runGame())
+          .thru(noop)
+          .value(),
+      );
 
-  const start = (): void => {
-    if (!started.value && IS_AUTO_HUMAN) {
-      useEffectsStore().fastMode = true;
-      chooseDifficulty(DEFAULT_DIFFICULTY);
-    }
-  };
+  const start = (): void =>
+    match(!started.value && IS_AUTO_HUMAN)
+      .with(true, () =>
+        chain(assign(useEffectsStore(), { fastMode: true }))
+          .thru(() => chooseDifficulty(DEFAULT_DIFFICULTY))
+          .value(),
+      )
+      .otherwise(noop);
 
   return {
     modal,
@@ -63,15 +88,3 @@ export const useUiStore = defineStore('ui', () => {
     restartGame,
   };
 });
-
-const applyDifficulty = (level: Difficulty): void => {
-  const def = getDifficulty(level);
-  setAiDifficulty(def.ai);
-  setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount));
-};
-
-const restartGame = (): void => {
-  if (typeof window !== 'undefined') {
-    window.location.reload();
-  }
-};

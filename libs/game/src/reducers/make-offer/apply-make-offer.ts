@@ -29,11 +29,11 @@ export const applyMakeOffer = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) =>
+        .tap((cl1) =>
           sendOffer(
-            clone,
-            clone.players[payload.playerId],
-            clone.players[payload.partnerId],
+            cl1,
+            cl1.players[payload.playerId],
+            cl1.players[payload.partnerId],
             payload,
           ),
         )

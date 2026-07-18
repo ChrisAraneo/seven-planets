@@ -13,24 +13,24 @@ export const applyStart = (state: GameState): GameState =>
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .thru((clone) =>
+        .thru((cl1) =>
           assign(
-            clone,
-            log(clone, 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
+            cl1,
+            log(cl1, 'SEVEN PLANETS — seven worlds, 1 victor.', 'sys'),
           ),
         )
-        .thru((clone) =>
+        .thru((cl1) =>
           assign(
-            clone,
+            cl1,
             log(
-              clone,
+              cl1,
               'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
               'sys',
             ),
           ),
         )
-        .thru((clone) =>
-          assign(clone, {
+        .thru((cl1) =>
+          assign(cl1, {
             cursor: { phase: 'action' as const, seatQueue: [], seatIdx: 0 },
           }),
         )

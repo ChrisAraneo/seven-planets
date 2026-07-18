@@ -7,6 +7,6 @@ export const getSeatStatus = (player: Player): string =>
   match(player)
     .when(
       () => player.isHuman && !IS_AUTO_HUMAN,
-      () => 'YOUR TURN — recruit, attack or trade. End turn when done.',
+      () => 'YOUR TURN — recruit, attack or trade. End turn when d1.',
     )
     .otherwise(() => `${player.name} is taking actions…`);

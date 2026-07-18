@@ -1,22 +1,18 @@
 import { expect, test } from '@playwright/test';
 
-test('floating-ui tooltips appear on hover and vanish on leave', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.locator('.difficulty-card:not(.locked)').first().click();
-
-  const card = page.locator('#hand .card').first();
-  await card.hover();
-  const tip = page.locator('.fui-tooltip');
-  await expect(tip).toBeVisible();
-  await expect(tip).toContainText('Ore');
-
-  await page.locator('h1').hover();
-  await expect(tip).toHaveCount(0);
-
-  const recruitBtn = page.locator('#action-zone button').first();
-  await expect(recruitBtn).toBeDisabled();
-  await recruitBtn.hover();
-  await expect(page.locator('.fui-tooltip')).toContainText('Barracks');
-});
+test('floating-ui tooltips appear on hover and vanish on leave', ({ page }) =>
+  page
+    .goto('/')
+    .then(() => page.locator('.difficulty-card:not(.locked)').first().click())
+    .then(() => page.locator('#hand .card').first().hover())
+    .then(() => expect(page.locator('.fui-tooltip')).toBeVisible())
+    .then(() => expect(page.locator('.fui-tooltip')).toContainText('Ore'))
+    .then(() => page.locator('h1').hover())
+    .then(() => expect(page.locator('.fui-tooltip')).toHaveCount(0))
+    .then(() =>
+      expect(page.locator('#action-zone button').first()).toBeDisabled(),
+    )
+    .then(() => page.locator('#action-zone button').first().hover())
+    .then(() =>
+      expect(page.locator('.fui-tooltip')).toContainText('Barracks'),
+    ));

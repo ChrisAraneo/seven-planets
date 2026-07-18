@@ -1,23 +1,36 @@
 import { expect, test } from '@playwright/test';
+import { chain } from 'lodash-es';
+import { match, P } from 'ts-pattern';
 
-test('an ?auto demo game plays turns by itself', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/?auto');
+const { nullish } = P;
 
-  await expect(page.locator('#turn-ind')).toContainText(/Turn \d+/, {
-    timeout: 30_000,
-  });
-  await expect
-    .poll(
-      async () => {
-        const text = (await page.locator('#turn-ind').textContent()) ?? '';
-        const m = /Turn (\d+)/.exec(text);
-        return m ? Number(m[1]) : 0;
-      },
-      { timeout: 60_000 },
+test('an ?auto demo game plays turns by itself', ({ page }) =>
+  chain([] as string[])
+    .tap((errors) => page.on('pageerror', (e) => errors.push(String(e))))
+    .thru((errors) =>
+      page
+        .goto('/?auto')
+        .then(() =>
+          expect(page.locator('#turn-ind')).toContainText(/Turn \d+/, {
+            timeout: 30_000,
+          }),
+        )
+        .then(() =>
+          expect
+            .poll(
+              () =>
+                page
+                  .locator('#turn-ind')
+                  .textContent()
+                  .then((text) =>
+                    match(/Turn (\d+)/.exec(text ?? ''))
+                      .with(nullish, () => 0)
+                      .otherwise((m) => Number(m[1])),
+                  ),
+              { timeout: 60_000 },
+            )
+            .toBeGreaterThan(2),
+        )
+        .then(() => expect(errors).toEqual([])),
     )
-    .toBeGreaterThan(2);
-
-  expect(errors).toEqual([]);
-});
+    .value());

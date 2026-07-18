@@ -4,24 +4,32 @@ import {
   BUILDINGS,
   CARDS,
   computeIncomeAmount,
+  getBuildingLevel,
 } from '@seven-planets/game';
+import { sumBy } from 'lodash-es';
+import { match } from 'ts-pattern';
 
-export const computePlanetValue = (planet: Planet): number => {
-  let value = 6;
-  for (const buildingType of BUILD_ORDER) {
-    const level = planet.buildings[buildingType] || 0;
-    if (level) {
-      value += level * 1.5;
-      const incomeResource = BUILDINGS[buildingType].income;
-      if (incomeResource) {
-        value +=
-          computeIncomeAmount(buildingType, level) *
-          CARDS[incomeResource].value *
-          3;
-      }
-    }
-  }
-  value +=
-    (planet.buildings.SINGULARITY || 0) * 4 + (planet.buildings.LAB ? 2 : 0);
-  return value;
-};
+import { nullish } from '../utils/p';
+
+export const computePlanetValue = (planet: Planet): number =>
+  6 +
+  sumBy(BUILD_ORDER, (buildingType) =>
+    match(getBuildingLevel(planet, buildingType))
+      .with(0, () => 0)
+      .otherwise(
+        (level) =>
+          level * 1.5 +
+          match(BUILDINGS[buildingType].income)
+            .with(nullish, () => 0)
+            .otherwise(
+              (incomeResource) =>
+                computeIncomeAmount(buildingType, level) *
+                CARDS[incomeResource].value *
+                3,
+            ),
+      ),
+  ) +
+  getBuildingLevel(planet, 'SINGULARITY') * 4 +
+  match(planet.buildings.LAB)
+    .when(Boolean, () => 2)
+    .otherwise(() => 0);

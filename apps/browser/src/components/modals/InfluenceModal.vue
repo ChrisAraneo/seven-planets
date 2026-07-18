@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { computed, ref } from 'vue';
 import { createUseInfluenceAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
+import { chain } from '@/utils/chain';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_TYPES,
@@ -32,10 +35,13 @@ const human = game.state.players[0];
 const playInfluence = (
   type: InfluenceType,
   options: InfluenceOptions = {},
-): void => {
-  ui.closeModal();
-  dispatch(createUseInfluenceAction({ playerId: 0, type, options }));
-};
+): void =>
+  chain(ui.closeModal())
+    .thru(() =>
+      dispatch(createUseInfluenceAction({ playerId: 0, type, options })),
+    )
+    .thru(noop)
+    .value();
 
 type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
@@ -47,47 +53,52 @@ const held = computed(() =>
 );
 const coupList = computed(() => getCoupTargets(game.state, human));
 const canCoupLast = computed(() => isPacifist(human));
+const coupLastNote = computed(() =>
+  match(canCoupLast.value)
+    .with(true, () => '')
+    .otherwise(
+      () => ", and a rival's last planet can only be taken by a Pacifist",
+    ),
+);
 const rivals = computed(() =>
   filterAlivePlayers(game.state).filter((player) => !player.isHuman),
 );
 
-const skipTarget = (influenceType: InfluenceType): Player | null => {
-  return influenceType.startsWith('SKIP_')
-    ? getInfluenceTarget(game.state, human, influenceType)
-    : null;
-};
+const skipTarget = (influenceType: InfluenceType): Player | null =>
+  match(influenceType.startsWith('SKIP_'))
+    .with(true, () => getInfluenceTarget(game.state, human, influenceType))
+    .otherwise(() => null);
 
-const chooseCard = (influenceType: InfluenceType): void => {
-  if (influenceType === 'STEAL_ACTION') {
-    view.value = 'steal';
-    return;
-  }
-  if (influenceType === 'COUP') {
-    view.value = 'coup';
-    return;
-  }
-  playInfluence(influenceType);
-};
+const chooseCard = (influenceType: InfluenceType): void =>
+  match(influenceType)
+    .with('STEAL_ACTION', () =>
+      chain(assign(view, { value: 'steal' }))
+        .thru(noop)
+        .value(),
+    )
+    .with('COUP', () =>
+      chain(assign(view, { value: 'coup' }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(() => playInfluence(influenceType));
 
-const coupIcons = (planet: Planet): string => {
-  return BUILD_ORDER.filter((b) => planet.buildings[b])
+const coupIcons = (planet: Planet): string =>
+  BUILD_ORDER.filter((b) => planet.buildings[b])
     .map(
       (b: BuildingType) =>
         BUILDINGS[b].icon +
-        (planet.buildings[b] > 1 ? planet.buildings[b] : ''),
+        match(planet.buildings[b] > 1)
+          .with(true, () => String(planet.buildings[b]))
+          .otherwise(() => ''),
     )
     .join(' ');
-};
 
-const doCoup = (planet: Planet): void => {
-  playInfluence('COUP', { planet });
-};
+const doCoup = (planet: Planet): void => playInfluence('COUP', { planet });
 const doSteal = (
   target: Player,
   cardType: 'RECRUIT' | 'ATTACK' | 'MOVE' | 'TRADE',
-): void => {
-  playInfluence('STEAL_ACTION', { target, cardType });
-};
+): void => playInfluence('STEAL_ACTION', { target, cardType });
 </script>
 
 <template>
@@ -102,37 +113,28 @@ const doSteal = (
         v-for="influenceType in held"
         :key="influenceType"
         class="trow"
-        @click="chooseCard(influenceType)"
-      >
+        @click="chooseCard(influenceType)">
         <div class="tinfo">
-          <b>{{ INFLUENCE_CARDS[influenceType].icon }}
-            {{ INFLUENCE_CARDS[influenceType].name }}</b>
+          <b
+            >{{ INFLUENCE_CARDS[influenceType].icon }}
+            {{ INFLUENCE_CARDS[influenceType].name }}</b
+          >
           ×{{ human.hand[influenceType] }}
           —
           <span class="dimtx">{{ INFLUENCE_CARDS[influenceType].desc }}</span>
           <template v-if="influenceType.startsWith('SKIP_')">
-            <span
-              v-if="skipTarget(influenceType)"
-              class="dimtx"
-            >
+            <span v-if="skipTarget(influenceType)" class="dimtx">
               → would hit
               <b :style="{ color: skipTarget(influenceType)!.color }">{{
                 skipTarget(influenceType)!.name
-              }}</b></span>
-            <span
-              v-else
-              class="warn"
-            > (no rival to target)</span>
+              }}</b></span
+            >
+            <span v-else class="warn"> (no rival to target)</span>
           </template>
         </div>
       </div>
       <div class="mbtns">
-        <button
-          class="btn"
-          @click="ui.closeModal()"
-        >
-          Cancel
-        </button>
+        <button class="btn" @click="ui.closeModal()">Cancel</button>
       </div>
     </template>
 
@@ -156,8 +158,7 @@ const doSteal = (
           v-for="planet in coupList"
           :key="planet.id"
           class="trow"
-          @click="doCoup(planet)"
-        >
+          @click="doCoup(planet)">
           <div class="tinfo">
             <b :style="{ color: game.state.players[planet.ownerId].color }">{{
               planet.name
@@ -167,29 +168,14 @@ const doSteal = (
           <div>🪖{{ planet.troops }} {{ coupIcons(planet) }}</div>
         </div>
       </template>
-      <p
-        v-else
-        class="warn"
-      >
+      <p v-else class="warn">
         No valid target — planets under truce cannot be couped{{
-          canCoupLast
-            ? ''
-            : ", and a rival's last planet can only be taken by a Pacifist"
+          coupLastNote
         }}.
       </p>
       <div class="mbtns">
-        <button
-          class="btn"
-          @click="view = 'main'"
-        >
-          Back
-        </button>
-        <button
-          class="btn"
-          @click="ui.closeModal()"
-        >
-          Cancel
-        </button>
+        <button class="btn" @click="view = 'main'">Back</button>
+        <button class="btn" @click="ui.closeModal()">Cancel</button>
       </div>
     </template>
 
@@ -199,52 +185,30 @@ const doSteal = (
         Take one action card of your choice from a chosen rival (influence cards
         cannot be taken).
       </p>
-      <div
-        v-for="rival in rivals"
-        :key="rival.id"
-        class="trow"
-      >
+      <div v-for="rival in rivals" :key="rival.id" class="trow">
         <div class="tinfo">
           <b :style="{ color: rival.color }">{{ rival.name }}</b> —
           <template
             v-if="
               ACTION_TYPES.some((actionType) => rival.hand[actionType] > 0)
-            "
-          >
-            <template
-              v-for="actionType in ACTION_TYPES"
-              :key="actionType"
-            >
+            ">
+            <template v-for="actionType in ACTION_TYPES" :key="actionType">
               <button
                 v-if="rival.hand[actionType] > 0"
                 class="tab"
-                @click="doSteal(rival, actionType)"
-              >
+                @click="doSteal(rival, actionType)">
                 {{ CARDS[actionType].icon }} {{ CARDS[actionType].name }} ×{{
                   rival.hand[actionType]
                 }}
               </button>
             </template>
           </template>
-          <span
-            v-else
-            class="dimtx"
-          >no action cards</span>
+          <span v-else class="dimtx">no action cards</span>
         </div>
       </div>
       <div class="mbtns">
-        <button
-          class="btn"
-          @click="view = 'main'"
-        >
-          Back
-        </button>
-        <button
-          class="btn"
-          @click="ui.closeModal()"
-        >
-          Cancel
-        </button>
+        <button class="btn" @click="view = 'main'">Back</button>
+        <button class="btn" @click="ui.closeModal()">Cancel</button>
       </div>
     </template>
   </ModalShell>

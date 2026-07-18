@@ -1,6 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test';
 
-test('visits the app root url', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('h1')).toContainText('SEVEN')
-})
+test('visits the app root url', ({ page }) =>
+  page.goto('/').then(() => expect(page.locator('h1')).toContainText('SEVEN')));

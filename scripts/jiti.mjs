@@ -2,14 +2,21 @@ import { resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
 import { createJiti } from 'jiti';
+import { chain, noop } from 'lodash-es';
+import { match, P } from 'ts-pattern';
+
+const { nullish } = P;
 
 process.env.NODE_ENV ||= 'production';
 
+const exitWithUsage = () =>
+  chain(console.error('Usage: node scripts/jiti.mjs <entry.ts> [args…]'))
+    .thru(() => process.exit(1))
+    .value();
+
+match(process.argv[2]).with(nullish, exitWithUsage).otherwise(noop);
+
 const entry = process.argv[2];
-if (!entry) {
-  console.error('Usage: node scripts/jiti.mjs <entry.ts> [args…]');
-  process.exit(1);
-}
 process.argv.splice(2, 1);
 
 const p = (rel) =>

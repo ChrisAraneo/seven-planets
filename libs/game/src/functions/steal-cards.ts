@@ -3,7 +3,7 @@ import { range } from 'lodash-es';
 import type { GameState } from '../interfaces/game-state';
 import type { Hand } from '../interfaces/hand';
 import { chain } from '../utils/chain';
-import { stealOne } from './steal-one';
+import { steal1 } from './steal-one';
 import { updatePlayer } from './update-player';
 
 export interface LootProgress {
@@ -19,7 +19,7 @@ export const stealCards = (
   number: number,
 ): { state: GameState; taken: Hand } =>
   chain(range(number))
-    .reduce((loot: LootProgress) => stealOne(loot), {
+    .reduce((loot: LootProgress) => steal1(loot), {
       fromHand: { ...state.players[fromId].hand },
       toHand: { ...state.players[toId].hand },
       taken: {},

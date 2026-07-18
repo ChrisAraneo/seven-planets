@@ -24,7 +24,7 @@ export const breakPacifistVow = (state: GameState, attackerId: number): void =>
               state,
               log(
                 state,
-                `⚔️ ${state.players[attackerId].name} breaks their pacifist vow to strike — the +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per planet are gone for good.`,
+                `⚔️ ${state.players[attackerId].name} breaks their pacifist vow to strike — the +${PACIFIST_DEF_BONUS} defense and +${PACIFIST_INFLUENCE}⭐ per planet are g1 for good.`,
                 'war',
               ),
             ),

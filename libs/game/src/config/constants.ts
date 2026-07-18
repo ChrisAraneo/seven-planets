@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { assign, fromPairs } from 'lodash-es';
 
 import type { ActionType } from '../interfaces/action-type';
@@ -162,7 +163,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDefinition> = {
     name: 'Spaceport',
     icon: '🛰️',
     cost: { ORE: 1, CRYSTAL: 1, ENERGY: 1 },
-    desc: 'ENABLES the 🛸 Move card — troops can only be redeployed FROM a planet that has one. L2: +1 free 🛸 Move card every 3 turns',
+    desc: 'ENABLES the 🛸 Move card — troops can only be redeployed FROM a planet that has 1. L2: +1 free 🛸 Move card every 3 turns',
     cardWeight: 5,
     cardColor: '#6da2ff',
     short: 'move hub',
@@ -189,7 +190,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDefinition> = {
     name: 'Singularity',
     icon: '🌀',
     cost: { ORE: 4, CRYSTAL: 4, ENERGY: 4, SPICE: 4 },
-    desc: 'Raises your TECHNOLOGY: one Singularity = tech 2, two Singularities (on two planets) = tech 3. Each level on any owned planet also grants +1 draft pick AND adds 1 extra random card to the pool each turn. Requires a Research Lab of at least the same level on the same planet (L4 needs a maxed Lab). A LEVEL-4 Singularity — buildable only on a FULLY BUILT planet (TECHNOLOGY 4) — additionally warps space for +8 planet defense. Does NOT win the game',
+    desc: 'Raises your TECHNOLOGY: 1 Singularity = tech 2, 2 Singularities (on 2 planets) = tech 3. Each level on any owned planet also grants +1 draft pick AND adds 1 extra random card to the pool each turn. Requires a Research Lab of at least the same level on the same planet (L4 needs a maxed Lab). A LEVEL-4 Singularity — buildable only on a FULLY BUILT planet (TECHNOLOGY 4) — additionally warps space for +8 planet defense. Does NOT win the game',
     cardWeight: 4,
     cardColor: '#3df0ff',
     short: 'tech↑ +pick/lvl',
@@ -256,7 +257,7 @@ export const INFLUENCE_CARDS: Record<InfluenceType, InfluenceCardDefinition> = {
     name: 'Extortion',
     icon: '🎭',
     cost: 2,
-    desc: 'Take one action card of your choice from a chosen rival (influence cards cannot be taken)',
+    desc: 'Take 1 action card of your choice from a chosen rival (influence cards cannot be taken)',
   },
   COUP: {
     name: "Coup d'État",
@@ -304,7 +305,16 @@ export const POOL_TYPES: PoolType[] = [
 
 export const BASE_ROCKET_CAP = 3;
 export const SILO_HIT_BONUS = 2;
-export const SHIELD_DEFENSE = [0, 4, 8, 16] as const;
+const SHIELD_L0_DEFENSE = 0;
+const SHIELD_L1_DEFENSE = 4;
+const SHIELD_L2_DEFENSE = 8;
+const SHIELD_L3_DEFENSE = 16;
+export const SHIELD_DEFENSE = [
+  SHIELD_L0_DEFENSE,
+  SHIELD_L1_DEFENSE,
+  SHIELD_L2_DEFENSE,
+  SHIELD_L3_DEFENSE,
+] as const;
 export const SHIELD_UPKEEP_LEVEL = 3;
 export const SHIELD_UPKEEP_CRYSTAL = 2;
 export const SHIELD_UNPOWERED_DEFENSE = 8;
@@ -324,6 +334,9 @@ export const COMBAT = {
 export const CONQUEST_TRUCE = 3;
 export const PEACE_TRUCE = 1;
 export const SKIP_TURNS = 1;
+
+export const MAIN_SLOT = 0;
+export const PICKS_TOTAL_UNSET = -1;
 
 export const PACIFIST_TURNS = 50;
 export const PACIFIST_DEF_BONUS = 4;

@@ -1,8 +1,9 @@
 import { SINGULARITY_DEF_BONUS } from '../config/constants';
 import type { Planet } from '../interfaces/planet';
+import { getBuildingLevel } from './get-building-level';
 
 const SINGULARITY_DEFENSE_LEVEL = 4;
 
 export const computeSingularityDefenseBonus = (planet: Planet): number =>
-  Number((planet.buildings.SINGULARITY || 0) >= SINGULARITY_DEFENSE_LEVEL) *
+  Number(getBuildingLevel(planet, 'SINGULARITY') >= SINGULARITY_DEFENSE_LEVEL) *
   SINGULARITY_DEF_BONUS;

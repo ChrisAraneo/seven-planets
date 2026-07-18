@@ -15,7 +15,10 @@ export const applyInfluencePick = (
   void chain(
     assign(player, {
       influence: player.influence - INFLUENCE_CARDS[influenceType].cost,
-      hand: { ...player.hand, [influenceType]: player.hand[influenceType] + 1 },
+      hand: {
+        ...player.hand,
+        [influenceType]: player.hand[influenceType] + 1,
+      },
     }),
   )
     .tap(() =>

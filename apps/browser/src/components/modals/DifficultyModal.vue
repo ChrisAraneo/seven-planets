@@ -2,15 +2,27 @@
 import ModalShell from './ModalShell.vue';
 import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
 import { useUiStore, useUnlocksStore } from '@/stores';
+import { noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 
 const ui = useUiStore();
 
 const unlocked = useUnlocksStore().unlocked;
 
-const choose = (level: Difficulty): void => {
-  if (!unlocked.has(level)) return;
-  ui.chooseDifficulty(level);
-};
+const choose = (level: Difficulty): void =>
+  match(unlocked.has(level))
+    .with(true, () => ui.chooseDifficulty(level))
+    .otherwise(noop);
+
+const toIcon = (difficulty: (typeof DIFFICULTIES)[number]): string =>
+  match(unlocked.has(difficulty.id))
+    .with(true, () => difficulty.icon)
+    .otherwise(() => '🔒');
+
+const toBlurb = (difficulty: (typeof DIFFICULTIES)[number]): string =>
+  match(unlocked.has(difficulty.id))
+    .with(true, () => difficulty.blurb)
+    .otherwise(() => 'Win the level below to unlock.');
 </script>
 
 <template>
@@ -26,18 +38,11 @@ const choose = (level: Difficulty): void => {
         class="difficulty-card"
         :class="{ locked: !unlocked.has(difficulty.id) }"
         :disabled="!unlocked.has(difficulty.id)"
-        @click="choose(difficulty.id)"
-      >
-        <span class="difficulty-icon">{{
-          unlocked.has(difficulty.id) ? difficulty.icon : '🔒'
-        }}</span>
+        @click="choose(difficulty.id)">
+        <span class="difficulty-icon">{{ toIcon(difficulty) }}</span>
         <span class="difficulty-name">{{ difficulty.name }}</span>
         <span class="difficulty-blurb">
-          {{
-            unlocked.has(difficulty.id)
-              ? difficulty.blurb
-              : 'Win the level below to unlock.'
-          }}
+          {{ toBlurb(difficulty) }}
         </span>
       </button>
     </div>

@@ -5,6 +5,7 @@ import { chain } from '../utils/chain';
 import { computeBuildingCost } from './compute-building-cost';
 import { emitEffect } from './emit-effect';
 import { getBuildVerb } from './get-build-verb';
+import { getBuildingLevel } from './get-building-level';
 import { getLevelSuffix } from './get-level-suffix';
 import { getTechLevel } from './get-tech-level';
 import { log } from './log';
@@ -20,7 +21,7 @@ export const buildBuilding = (
 ): GameState =>
   chain({
     currentTech: getTechLevel(state, state.players[playerId]),
-    level: (state.planets[planetId].buildings[buildingType] || 0) + 1,
+    level: getBuildingLevel(state.planets[planetId], buildingType) + 1,
   })
     .thru(({ currentTech, level }) => ({
       currentTech,

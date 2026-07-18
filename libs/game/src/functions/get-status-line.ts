@@ -1,9 +1,9 @@
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import type { Player } from '../interfaces/player';
+import { nonNullable } from '../utils/p';
 import type { GameOverReason } from './trigger-game-over';
 
-const { nonNullable } = P;
 export const getStatusLine = (
   winner: Player | null,
   reason: GameOverReason,

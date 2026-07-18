@@ -2,17 +2,37 @@
 import '@/stores';
 
 import { simulateGame } from '@seven-planets/game';
+import { noop, times } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { describe, expect, it } from 'vitest';
 
+import { chain } from '@/utils/chain';
+
 describe('headless game simulation', () => {
-  it('plays full AI-vs-AI games to a resolution without throwing', async () => {
-    for (let game = 0; game < 20; game++) {
-      const result = await simulateGame();
-      expect(result.turns).toBeGreaterThan(0);
-      expect(['conquest', 'timeout']).toContain(result.reason);
-      if (result.reason === 'conquest') {
-        expect(result.winner).not.toBeNull();
-      }
-    }
-  }, 60_000);
+  it(
+    'plays full AI-vs-AI games to a resolution without throwing',
+    () =>
+      times(20, noop).reduce(
+        (prev: Promise<void>) =>
+          prev
+            .then(() => simulateGame())
+            .then((result) =>
+              chain(expect(result.turns).toBeGreaterThan(0))
+                .tap(() =>
+                  expect(['conquest', 'timeout']).toContain(result.reason),
+                )
+                .tap(() =>
+                  match(result.reason)
+                    .with('conquest', () =>
+                      expect(result.winner).not.toBeNull(),
+                    )
+                    .otherwise(noop),
+                )
+                .thru(noop)
+                .value(),
+            ),
+        Promise.resolve(),
+      ),
+    60_000,
+  );
 });

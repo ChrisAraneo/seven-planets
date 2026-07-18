@@ -1,39 +1,16 @@
 import type { Cost, Player } from '@seven-planets/game';
 import { canAfford, CARDS } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
 import { getAiState } from '../state';
+import { chain } from '../utils/chain';
+import { nullish } from '../utils/p';
 import { activateWeightsFor } from './activate-weights-for';
 import { computeAverageStrength } from './compute-average-strength';
 import { computeHandAfterCost } from './compute-hand-after-cost';
 import { computePlayerStrength } from './compute-player-strength';
 import type { BuildCandidate } from './get-build-candidates';
 import { getPlan } from './get-plan';
-
-export const shouldMastermindAcceptTrade = (
-  aiPlayer: Player,
-  gives: Cost,
-  gets: Cost,
-  proposer: Player | null,
-): boolean => {
-  activateWeightsFor(aiPlayer);
-  const head = getPlan(aiPlayer).buildQueue.at(0);
-  const valueIn = computeValueIn(aiPlayer, gets, head);
-  let valueOut = Object.entries(gives).reduce(
-    (sum, [resourceType, amount]) => sum + amount * CARDS[resourceType].value,
-    0,
-  );
-  if (wouldBlockGoal(aiPlayer, head, gives, gets)) {
-    valueOut *= 1.6;
-  }
-  if (
-    proposer &&
-    proposer.id !== aiPlayer.id &&
-    computePlayerStrength(proposer) > computeAverageStrength() * 1.25
-  ) {
-    return valueIn >= valueOut * 1.5;
-  }
-  return valueIn >= valueOut * getAiState().W.tradeAcceptRatio;
-};
 
 const computeValueIn = (
   aiPlayer: Player,
@@ -45,10 +22,11 @@ const computeValueIn = (
       sum +
       amount *
         CARDS[resourceType].value *
-        (head &&
-        (head.cost[resourceType] || 0) > (aiPlayer.hand[resourceType] || 0)
-          ? 1.35
-          : 1),
+        match(
+          (head?.cost[resourceType] || 0) > (aiPlayer.hand[resourceType] || 0),
+        )
+          .with(true, () => 1.35)
+          .otherwise(() => 1),
     0,
   );
 
@@ -57,16 +35,57 @@ const wouldBlockGoal = (
   head: BuildCandidate | undefined,
   gives: Cost,
   gets: Cost,
-): boolean => {
-  if (!head || !canAfford(aiPlayer.hand, head.cost)) {
-    return false;
-  }
-  const remainingWithGets: Cost = {
-    ...computeHandAfterCost(aiPlayer.hand, gives),
-  };
-  for (const [resourceType, amount] of Object.entries(gets)) {
-    remainingWithGets[resourceType] =
-      (remainingWithGets[resourceType] || 0) + amount;
-  }
-  return !canAfford(remainingWithGets, head.cost);
-};
+): boolean =>
+  match(head)
+    .with(nullish, () => false)
+    .when(
+      (candidate) => !canAfford(aiPlayer.hand, candidate.cost),
+      () => false,
+    )
+    .otherwise(
+      (candidate) =>
+        !canAfford(
+          Object.entries(gets).reduce<Cost>(
+            (acc, [resourceType, amount]) => ({
+              ...acc,
+              [resourceType]: (acc[resourceType] || 0) + amount,
+            }),
+            { ...computeHandAfterCost(aiPlayer.hand, gives) },
+          ),
+          candidate.cost,
+        ),
+    );
+
+export const shouldMastermindAcceptTrade = (
+  aiPlayer: Player,
+  gives: Cost,
+  gets: Cost,
+  proposer: Player | null,
+): boolean =>
+  chain(aiPlayer)
+    .tap(() => activateWeightsFor(aiPlayer))
+    .thru(() => getPlan(aiPlayer).buildQueue.at(0))
+    .thru((head) => ({
+      valueIn: computeValueIn(aiPlayer, gets, head),
+      valueOut:
+        Object.entries(gives).reduce(
+          (sum, [resourceType, amount]) =>
+            sum + amount * CARDS[resourceType].value,
+          0,
+        ) *
+        match(wouldBlockGoal(aiPlayer, head, gives, gets))
+          .with(true, () => 1.6)
+          .otherwise(() => 1),
+    }))
+    .thru(({ valueIn, valueOut }) =>
+      match(proposer)
+        .when(
+          (candidate) =>
+            candidate !== null &&
+            candidate.id !== aiPlayer.id &&
+            computePlayerStrength(candidate) > computeAverageStrength() * 1.25,
+          () => valueIn >= valueOut * 1.5,
+        )
+        .otherwise(() => valueIn >= valueOut * getAiState().W.tradeAcceptRatio),
+    )
+    .value();

@@ -1,22 +1,29 @@
 import type { Player } from '@seven-planets/game';
 import { BUILD_ORDER, BUILDINGS, computeHandValue } from '@seven-planets/game';
+import { sumBy } from 'lodash-es';
 
 import { computeTotalTroops } from './compute-total-troops';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export const computePlayerStrength = (player: Player): number => {
-  const resources = computeHandValue(player.hand);
-  const military = computeTotalTroops(player) * 1.5;
-  const territory = getOwnedPlanets(player).length * 8;
-  const income = getOwnedPlanets(player).reduce(
-    (sum, planet) =>
-      sum +
+const toResources = (player: Player): number => computeHandValue(player.hand);
+
+const toMilitary = (player: Player): number => computeTotalTroops(player) * 1.5;
+
+const toTerritory = (player: Player): number =>
+  getOwnedPlanets(player).length * 8;
+
+const toIncome = (player: Player): number =>
+  sumBy(
+    getOwnedPlanets(player),
+    (planet) =>
       BUILD_ORDER.filter(
         (buildingType) =>
           planet.buildings[buildingType] && BUILDINGS[buildingType].income,
-      ).length *
-        3,
-    0,
+      ).length * 3,
   );
-  return resources + military + territory + income;
-};
+
+export const computePlayerStrength = (player: Player): number =>
+  toResources(player) +
+  toMilitary(player) +
+  toTerritory(player) +
+  toIncome(player);

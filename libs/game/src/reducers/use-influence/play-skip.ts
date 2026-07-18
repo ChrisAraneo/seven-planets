@@ -1,5 +1,5 @@
 import { assign } from 'lodash-es';
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import { SKIP_TURNS } from '../../config/constants';
 import { emitEffect } from '../../functions/emit-effect';
@@ -9,10 +9,9 @@ import { log } from '../../functions/log';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceType } from '../../interfaces/influence-type';
 import { chain } from '../../utils/chain';
+import { nullish } from '../../utils/p';
 import { logPlay } from './log-play';
 import { spendInfluenceCard } from './spend-influence-card';
-
-const { nullish } = P;
 
 export const playSkip = (
   state: GameState,

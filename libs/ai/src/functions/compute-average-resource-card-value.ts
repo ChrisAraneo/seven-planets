@@ -1,14 +1,25 @@
 import { CARDS, RESOURCE_TYPES } from '@seven-planets/game';
+import { sumBy } from 'lodash-es';
+import { match } from 'ts-pattern';
 
-export const computeAverageResourceCardValue = (): number => {
-  const resourceTypes = RESOURCE_TYPES.filter(
-    (resourceType) => resourceType !== 'SPICE',
-  );
-  let totalWeight = 0;
-  let weightedValue = 0;
-  for (const resourceType of resourceTypes) {
-    totalWeight += CARDS[resourceType].weight;
-    weightedValue += CARDS[resourceType].weight * CARDS[resourceType].value;
-  }
-  return totalWeight ? weightedValue / totalWeight : 1;
-};
+import { chain } from '../utils/chain';
+
+export const computeAverageResourceCardValue = (): number =>
+  chain(RESOURCE_TYPES.filter((resourceType) => resourceType !== 'SPICE'))
+    .thru((resourceTypes) => ({
+      totalWeight: sumBy(
+        resourceTypes,
+        (resourceType) => CARDS[resourceType].weight,
+      ),
+      weightedValue: sumBy(
+        resourceTypes,
+        (resourceType) =>
+          CARDS[resourceType].weight * CARDS[resourceType].value,
+      ),
+    }))
+    .thru(({ totalWeight, weightedValue }) =>
+      match(totalWeight)
+        .with(0, () => 1)
+        .otherwise(() => weightedValue / totalWeight),
+    )
+    .value();

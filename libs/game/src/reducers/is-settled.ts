@@ -4,4 +4,4 @@ export const isSettled = (state: GameState): boolean =>
   state.isAwaitingPick ||
   state.isAwaitingAction ||
   state.cursor.phase === 'setup' ||
-  state.cursor.phase === 'done';
+  state.cursor.phase === 'd1';

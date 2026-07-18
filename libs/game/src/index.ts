@@ -38,6 +38,7 @@ export * from './functions/emit-effect';
 export * from './functions/filter-alive-players';
 export * from './functions/format-cards';
 export * from './functions/get-building-count';
+export * from './functions/get-building-level';
 export * from './functions/get-cost-label';
 export * from './functions/get-coup-targets';
 export * from './functions/get-current-goal';

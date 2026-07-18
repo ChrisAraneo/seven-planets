@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { computed, ref, watch } from 'vue';
 import { createAttackPlanetAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
+import { chain } from '@/utils/chain';
+import { nullish } from '@/utils/p';
 import ModalShell from './ModalShell.vue';
 import {
   COMBAT,
@@ -10,6 +14,7 @@ import {
   PACIFIST_DEF_BONUS,
 } from '@seven-planets/game';
 import { computeShieldDefense } from '@seven-planets/game';
+import { getBuildingLevel } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
 import { computeBattleWinProbability } from '@seven-planets/ai';
 import { getHandSize } from '@seven-planets/game';
@@ -33,7 +38,9 @@ const siloPlanets = getOwnedPlanets(game.state, human).filter(
 );
 const sourceId = ref(
   siloPlanets.reduce((strongest, planet) =>
-    strongest.troops >= planet.troops ? strongest : planet,
+    match(strongest.troops >= planet.troops)
+      .with(true, () => strongest)
+      .otherwise(() => planet),
   ).id,
 );
 const selectedId = ref(-1);
@@ -55,80 +62,128 @@ const capacity = computed(() =>
 
 watch(
   [openTargets, sourceId],
-  () => {
-    if (
-      !openTargets.value.some(
-        (planet: Planet) => planet.id === selectedId.value,
+  () =>
+    chain(openTargets.value)
+      .tap((open) =>
+        match(open.some((planet: Planet) => planet.id === selectedId.value))
+          .with(false, () =>
+            assign(selectedId, {
+              value: match(open.length)
+                .with(0, () => -1)
+                .otherwise(() => open[0].id),
+            }),
+          )
+          .otherwise(noop),
       )
-    )
-      selectedId.value = openTargets.value.length
-        ? openTargets.value[0].id
-        : -1;
-    troopCount.value = Math.max(1, Math.min(troopCount.value, capacity.value));
-  },
+      .tap(() =>
+        assign(troopCount, {
+          value: Math.max(1, Math.min(troopCount.value, capacity.value)),
+        }),
+      )
+      .thru(noop)
+      .value(),
   { immediate: true },
 );
 
 const target = computed(() =>
-  selectedId.value >= 0 ? game.state.planets[selectedId.value] : null,
+  match(selectedId.value >= 0)
+    .with(true, () => game.state.planets[selectedId.value])
+    .otherwise(() => null),
 );
 const canLaunch = computed(
   () => selectedId.value >= 0 && source.value.troops >= 1,
 );
 
-const preview = computed(() => {
-  if (!target.value) return null;
-  const attackPower = 2 * troopCount.value + computeSiloBonus(source.value);
-  const defensePower =
-    2 * target.value.troops +
-    computeShieldDefense(target.value) +
-    computePacifistDefenseBonus(game.state, target.value) +
-    computeSingularityDefenseBonus(target.value) +
-    HOME_FIELD;
-  const winProbability = computeBattleWinProbability(attackPower, defensePower);
-  const winPercent = Math.round(winProbability * 100);
-  const note =
-    winProbability >= 0.6
-      ? 'good'
-      : winProbability >= 0.35
-        ? 'close'
-        : 'suicide';
-  const sendingAll = troopCount.value >= source.value.troops;
-  return {
-    attackPower,
-    defensePower,
-    winProbability,
-    winPercent,
-    note,
-    sendingAll,
-  };
-});
+const preview = computed(() =>
+  match(target.value)
+    .with(nullish, () => null)
+    .otherwise((targetPlanet) =>
+      chain({
+        attackPower: 2 * troopCount.value + computeSiloBonus(source.value),
+        defensePower:
+          2 * targetPlanet.troops +
+          computeShieldDefense(targetPlanet) +
+          computePacifistDefenseBonus(game.state, targetPlanet) +
+          computeSingularityDefenseBonus(targetPlanet) +
+          HOME_FIELD,
+      })
+        .thru(({ attackPower, defensePower }) =>
+          chain(computeBattleWinProbability(attackPower, defensePower))
+            .thru((winProbability) => ({
+              attackPower,
+              defensePower,
+              winProbability,
+              winPercent: Math.round(winProbability * 100),
+              note: match(winProbability >= 0.6)
+                .with(true, () => 'good')
+                .otherwise(() =>
+                  match(winProbability >= 0.35)
+                    .with(true, () => 'close')
+                    .otherwise(() => 'suicide'),
+                ),
+              sendingAll: troopCount.value >= source.value.troops,
+            }))
+            .value(),
+        )
+        .value(),
+    ),
+);
 
-const capacityLabel = (planet = source.value): string => {
-  const cap = getRocketCapacity(planet);
-  return cap === Infinity ? '∞ (all troops)' : String(cap);
-};
-const selectTarget = (planet: { id: number; truce: boolean }): void => {
-  if (!planet.truce) selectedId.value = planet.id;
-};
-const decrease = (): void => {
-  if (troopCount.value > 1) troopCount.value--;
-};
-const increase = (): void => {
-  if (troopCount.value < capacity.value) troopCount.value++;
-};
-const launch = (): void => {
-  if (!canLaunch.value) return;
-  ui.closeModal();
-  dispatch(
-    createAttackPlanetAction({
-      playerId: 0,
-      sourceId: sourceId.value,
-      targetId: selectedId.value,
-      troops: troopCount.value,
-    }),
-  );
-};
+const capacityLabel = (planet = source.value): string =>
+  match(getRocketCapacity(planet))
+    .with(Infinity, () => '∞ (all troops)')
+    .otherwise((cap) => String(cap));
+const toTruceTurnsSuffix = (planet: Planet): string =>
+  match(planet.protectedUntil - game.state.turn)
+    .with(0, () => '')
+    .otherwise(() => 's');
+const toNoteColor = (note: string): string =>
+  match(note)
+    .with('good', () => '#7dff8a')
+    .with('close', () => '#ffd23d')
+    .otherwise(() => '#ff6b6b');
+const selectTarget = (planet: { id: number; truce: boolean }): void =>
+  match(planet.truce)
+    .with(false, () =>
+      chain(assign(selectedId, { value: planet.id }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const decrease = (): void =>
+  match(troopCount.value > 1)
+    .with(true, () =>
+      chain(assign(troopCount, { value: troopCount.value - 1 }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const increase = (): void =>
+  match(troopCount.value < capacity.value)
+    .with(true, () =>
+      chain(assign(troopCount, { value: troopCount.value + 1 }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const launch = (): void =>
+  match(canLaunch.value)
+    .with(false, noop)
+    .otherwise(() =>
+      chain(ui.closeModal())
+        .thru(() =>
+          dispatch(
+            createAttackPlanetAction({
+              playerId: 0,
+              sourceId: sourceId.value,
+              targetId: selectedId.value,
+              troops: troopCount.value,
+            }),
+          ),
+        )
+        .thru(noop)
+        .value(),
+    );
 </script>
 
 <template>
@@ -141,10 +196,7 @@ const launch = (): void => {
       {{ CONQUEST_TRUCE }} turns). Spends one ⚔️ Attack card (you have
       {{ human.hand.ATTACK }}).
     </p>
-    <p
-      v-if="breaksVow"
-      class="vow-warning"
-    >
+    <p v-if="breaksVow" class="vow-warning">
       ☮️➡️⚔️ You are a PACIFIST. Launching this attack breaks your vow
       <strong>permanently</strong>: you lose the +defense and +⭐ bonuses on
       every planet and can never become a PACIFIST again.
@@ -156,8 +208,7 @@ const launch = (): void => {
         :key="planet.id"
         class="tab"
         :class="{ active: planet.id === sourceId }"
-        @click="sourceId = planet.id"
-      >
+        @click="sourceId = planet.id">
         {{ planet.name }} 🪖{{ planet.troops }}
       </button>
     </p>
@@ -166,38 +217,40 @@ const launch = (): void => {
       :key="planet.id"
       class="trow"
       :class="{ sel: planet.id === selectedId, truce: isUnderTruce(planet) }"
-      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })"
-    >
+      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })">
       <div class="tinfo">
         <b :style="{ color: game.state.players[planet.ownerId].color }">{{
           planet.name
         }}</b>
         — {{ game.state.players[planet.ownerId].name }}
-        <span
-          v-if="isUnderTruce(planet)"
-          class="dimtx"
-        >
+        <span v-if="isUnderTruce(planet)" class="dimtx">
           🕊️ truce ({{ planet.protectedUntil - game.state.turn + 1 }} turn{{
-            planet.protectedUntil - game.state.turn ? 's' : ''
+            toTruceTurnsSuffix(planet)
           }})
         </span>
       </div>
       <div>
-        🪖{{ planet.troops }} {{ '🛡️'.repeat(planet.buildings.SHIELD || 0) }}
+        🪖{{ planet.troops }}
+        {{ '🛡️'.repeat(getBuildingLevel(planet, 'SHIELD')) }}
         <span
           v-if="game.state.players[planet.ownerId].hasPacifistStatus"
           v-tooltip="`Pacifist — +${PACIFIST_DEF_BONUS} defense`"
-        >☮️</span>
+          >☮️</span
+        >
         🃏{{ getHandSize(game.state.players[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">
       Troops aboard:
       <span class="stepper">
-        <button @click="decrease">−</button><span class="sval">{{ troopCount }}</span><button @click="increase">+</button>
+        <button @click="decrease">−</button
+        ><span class="sval">{{ troopCount }}</span
+        ><button @click="increase">+</button>
       </span>
-      <span class="dimtx">({{ source.name }} garrisons {{ source.troops }}, rocket capacity
-        {{ capacityLabel() }})</span>
+      <span class="dimtx"
+        >({{ source.name }} garrisons {{ source.troops }}, rocket capacity
+        {{ capacityLabel() }})</span
+      >
     </p>
     <p>
       <template v-if="preview">
@@ -206,55 +259,31 @@ const launch = (): void => {
         }}
         &nbsp;vs&nbsp; defense {{ preview.defensePower }} + 🎲0-{{
           COMBAT.defenseRoll
-        }}<br>
-        <b
-          :style="{
-            color:
-              preview.note === 'good'
-                ? '#7dff8a'
-                : preview.note === 'close'
-                  ? '#ffd23d'
-                  : '#ff6b6b',
-          }"
-        >Win chance: {{ preview.winPercent }}%</b>
-        —
-        <span
-          v-if="preview.note === 'good'"
-          style="color: #7dff8a"
-        >odds look good.</span>
-        <span
-          v-else-if="preview.note === 'close'"
-          style="color: #ffd23d"
-        >close fight, luck decides.</span>
-        <span
-          v-else
-          class="warn"
-        >likely suicide.</span>
-        <span
-          v-if="preview.sendingAll"
-          class="warn"
+        }}<br />
+        <b :style="{ color: toNoteColor(preview.note) }"
+          >Win chance: {{ preview.winPercent }}%</b
         >
-          Sending everyone leaves {{ source.name }} defenseless!</span>
+        —
+        <span v-if="preview.note === 'good'" style="color: #7dff8a"
+          >odds look good.</span
+        >
+        <span v-else-if="preview.note === 'close'" style="color: #ffd23d"
+          >close fight, luck decides.</span
+        >
+        <span v-else class="warn">likely suicide.</span>
+        <span v-if="preview.sendingAll" class="warn">
+          Sending everyone leaves {{ source.name }} defenseless!</span
+        >
       </template>
-      <span
-        v-else
-        class="warn"
-      >All enemy planets are under truce — no valid target.</span>
+      <span v-else class="warn"
+        >All enemy planets are under truce — no valid target.</span
+      >
     </p>
     <div class="mbtns">
-      <button
-        class="btn danger"
-        :disabled="!canLaunch"
-        @click="launch"
-      >
+      <button class="btn danger" :disabled="!canLaunch" @click="launch">
         🚀 LAUNCH
       </button>
-      <button
-        class="btn"
-        @click="ui.closeModal()"
-      >
-        Cancel
-      </button>
+      <button class="btn" @click="ui.closeModal()">Cancel</button>
     </div>
   </ModalShell>
 </template>

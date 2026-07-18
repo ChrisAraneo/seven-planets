@@ -3,9 +3,13 @@ import { getPlanets } from '@seven-planets/game';
 import { getTurn } from '@seven-planets/game';
 import { COMBAT, CONQUEST_TRUCE } from '@seven-planets/game';
 import { getRocketCapacity } from '@seven-planets/game';
+import { range } from 'lodash-es';
+import { match } from 'ts-pattern';
 
 import { getPlayerByIndex } from '../../../game/src/getters/get-player-by-index';
 import { getAiState } from '../state';
+import { chain } from '../utils/chain';
+import { nullish } from '../utils/p';
 import { canTarget } from './can-target';
 import { computeAttackBase } from './compute-attack-base';
 import { computeAverageStrength } from './compute-average-strength';
@@ -33,63 +37,62 @@ export interface AttackPlan {
   score: number;
 }
 
-export const getAttackPlans = (player: Player): AttackPlan[] => {
-  if (player.hasPacifistStatus) {
-    return [];
-  }
-  const plans: AttackPlan[] = [];
-  for (const target of getPlanets()) {
-    const defenderOwner = getPlayerByIndex(target.ownerId);
-    const isViableTarget =
-      target.ownerId !== player.id &&
-      Boolean(defenderOwner?.isAlive) &&
-      !isUnderTruce(target) &&
-      Boolean(defenderOwner && canTarget(player, defenderOwner));
-    if (isViableTarget && defenderOwner) {
-      for (const source of getOwnedPlanets(player)) {
-        const plan = planStrikeFrom(player, source, target, defenderOwner);
-        if (plan) {
-          plans.push(plan);
-        }
-      }
-    }
-  }
-  return plans.toSorted(
-    (attackPlan, eachAttackPlan) => eachAttackPlan.score - attackPlan.score,
-  );
-};
-
 const getLossWeight = (player: Player): number =>
-  getAiState().W.troopValue * (player.isKamikaze ? 0.25 : 1);
+  getAiState().W.troopValue *
+  match(player.isKamikaze)
+    .with(true, () => 0.25)
+    .otherwise(() => 1);
 
-const planStrikeFrom = (
+const buildConquestPlan = (
   player: Player,
   source: Planet,
   target: Planet,
-  defenderOwner: Player,
-): AttackPlan | null => {
-  if (!source.buildings.SILO) {
-    return null;
-  }
-  const maxTroops = Math.min(
-    getRocketCapacity(source),
-    source.troops - getAiState().W.reserveTroops,
-  );
-  if (maxTroops < 2) {
-    return null;
-  }
-  const troopsToConquer = computeMinimumTroopsToConquer(target.troops);
-  return maxTroops >= troopsToConquer
-    ? planConquest(
-        player,
-        source,
-        target,
-        defenderOwner,
-        maxTroops,
-        troopsToConquer,
+  count: number,
+  value: number,
+): AttackPlan =>
+  chain({
+    winProbability: computeBattleWinProbability(
+      computeAttackBase(count, source),
+      computeDefenseBase(target),
+    ),
+    survivors: computeSurvivorsAfterWin(count),
+  })
+    .thru(({ winProbability, survivors }) =>
+      chain(
+        computeHoldProbability(
+          player,
+          target,
+          survivors,
+          getTurn() + CONQUEST_TRUCE,
+        ),
       )
-    : planRaid(player, source, target, defenderOwner, maxTroops);
-};
+        .thru((holdProbability) => ({
+          source,
+          target,
+          n: count,
+          pWin: winProbability,
+          willConquer: true,
+          survivors,
+          holdProb: holdProbability,
+          value,
+          score:
+            winProbability * holdProbability * value -
+            (winProbability * (count - survivors) +
+              (1 - winProbability) * computeLossesOnDefeat(count)) *
+              getLossWeight(player),
+        }))
+        .value(),
+    )
+    .value();
+
+const computeTargetValue = (target: Planet, defenderOwner: Player): number =>
+  computePlanetValue(target) +
+  match(getOwnedPlanets(defenderOwner).length)
+    .with(1, () => 10)
+    .otherwise(() => 0) +
+  match(computePlayerStrength(defenderOwner) > 1.25 * computeAverageStrength())
+    .with(true, () => 4)
+    .otherwise(() => 0);
 
 const planConquest = (
   player: Player,
@@ -98,72 +101,42 @@ const planConquest = (
   defenderOwner: Player,
   maxTroops: number,
   troopsToConquer: number,
-): AttackPlan => {
-  const defenseBase = computeDefenseBase(target);
-  const minimumWinProbability =
-    computeEffectiveMinimumConquerProbability(player);
-  const value =
-    computePlanetValue(target) +
-    (getOwnedPlanets(defenderOwner).length === 1 ? 10 : 0) +
-    (computePlayerStrength(defenderOwner) > 1.25 * computeAverageStrength()
-      ? 4
-      : 0);
-  let leanTroops = troopsToConquer;
-  while (
-    leanTroops < maxTroops &&
-    computeBattleWinProbability(
-      computeAttackBase(leanTroops, source),
-      defenseBase,
-    ) < minimumWinProbability
-  ) {
-    leanTroops++;
-  }
-  return [
-    ...new Set([
-      leanTroops,
-      Math.ceil((leanTroops + maxTroops) / 2),
-      maxTroops,
-    ]),
-  ]
-    .map((count) => buildConquestPlan(player, source, target, count, value))
-    .reduce((best, plan) => (plan.score > best.score ? plan : best));
-};
-
-const buildConquestPlan = (
-  player: Player,
-  source: Planet,
-  target: Planet,
-  count: number,
-  value: number,
-): AttackPlan => {
-  const winProbability = computeBattleWinProbability(
-    computeAttackBase(count, source),
-    computeDefenseBase(target),
-  );
-  const survivors = computeSurvivorsAfterWin(count);
-  const holdProbability = computeHoldProbability(
-    player,
-    target,
-    survivors,
-    getTurn() + CONQUEST_TRUCE,
-  );
-  const expectedLoss =
-    winProbability * (count - survivors) +
-    (1 - winProbability) * computeLossesOnDefeat(count);
-  return {
-    source,
-    target,
-    n: count,
-    pWin: winProbability,
-    willConquer: true,
-    survivors,
-    holdProb: holdProbability,
-    value,
-    score:
-      winProbability * holdProbability * value -
-      expectedLoss * getLossWeight(player),
-  };
-};
+): AttackPlan =>
+  chain({
+    defenseBase: computeDefenseBase(target),
+    minimumWinProbability: computeEffectiveMinimumConquerProbability(player),
+    value: computeTargetValue(target, defenderOwner),
+  })
+    .thru(({ defenseBase, minimumWinProbability, value }) =>
+      chain(
+        range(troopsToConquer, maxTroops + 1).find(
+          (candidate) =>
+            computeBattleWinProbability(
+              computeAttackBase(candidate, source),
+              defenseBase,
+            ) >= minimumWinProbability,
+        ) ?? maxTroops,
+      )
+        .thru((leanTroops) =>
+          [
+            ...new Set([
+              leanTroops,
+              Math.ceil((leanTroops + maxTroops) / 2),
+              maxTroops,
+            ]),
+          ]
+            .map((count) =>
+              buildConquestPlan(player, source, target, count, value),
+            )
+            .reduce((best, plan) =>
+              match(plan.score > best.score)
+                .with(true, () => plan)
+                .otherwise(() => best),
+            ),
+        )
+        .value(),
+    )
+    .value();
 
 const planRaid = (
   player: Player,
@@ -171,34 +144,106 @@ const planRaid = (
   target: Planet,
   defenderOwner: Player,
   raidTroops: number,
-): AttackPlan => {
-  const winProbability = computeBattleWinProbability(
-    computeAttackBase(raidTroops, source),
-    computeDefenseBase(target),
-  );
-  const defenderLoss = Math.min(
-    target.troops,
-    Math.ceil((raidTroops * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
-  );
-  const expectedLoss =
-    winProbability * (raidTroops - computeSurvivorsAfterWin(raidTroops)) +
-    (1 - winProbability) * computeLossesOnDefeat(raidTroops);
-  const zeal = player.isKamikaze
-    ? 3
-    : (computePlayerStrength(defenderOwner) > 1.3 * computeAverageStrength()
-      ? 1.4
-      : 1.05);
-  return {
-    source,
-    target,
-    n: raidTroops,
-    pWin: winProbability,
-    willConquer: false,
+): AttackPlan =>
+  chain({
+    winProbability: computeBattleWinProbability(
+      computeAttackBase(raidTroops, source),
+      computeDefenseBase(target),
+    ),
+    defenderLoss: Math.min(
+      target.troops,
+      Math.ceil((raidTroops * COMBAT.winDefLoss.num) / COMBAT.winDefLoss.den),
+    ),
     survivors: computeSurvivorsAfterWin(raidTroops),
-    holdProb: 0,
-    value: defenderLoss,
-    score:
-      winProbability * defenderLoss * getAiState().W.troopValue * zeal -
-      expectedLoss * getLossWeight(player),
-  };
-};
+    zeal: match(player.isKamikaze)
+      .with(true, () => 3)
+      .otherwise(() =>
+        match(
+          computePlayerStrength(defenderOwner) > 1.3 * computeAverageStrength(),
+        )
+          .with(true, () => 1.4)
+          .otherwise(() => 1.05),
+      ),
+  })
+    .thru(({ winProbability, defenderLoss, survivors, zeal }) => ({
+      source,
+      target,
+      n: raidTroops,
+      pWin: winProbability,
+      willConquer: false,
+      survivors,
+      holdProb: 0,
+      value: defenderLoss,
+      score:
+        winProbability * defenderLoss * getAiState().W.troopValue * zeal -
+        (winProbability * (raidTroops - survivors) +
+          (1 - winProbability) * computeLossesOnDefeat(raidTroops)) *
+          getLossWeight(player),
+    }))
+    .value();
+
+const planStrikeFrom = (
+  player: Player,
+  source: Planet,
+  target: Planet,
+  defenderOwner: Player,
+): AttackPlan | null =>
+  match({
+    hasSilo: Boolean(source.buildings.SILO),
+    maxTroops: Math.min(
+      getRocketCapacity(source),
+      source.troops - getAiState().W.reserveTroops,
+    ),
+  })
+    .when(
+      ({ hasSilo, maxTroops }) => !hasSilo || maxTroops < 2,
+      () => null,
+    )
+    .otherwise(({ maxTroops }) =>
+      match(computeMinimumTroopsToConquer(target.troops))
+        .when(
+          (troopsToConquer) => maxTroops >= troopsToConquer,
+          (troopsToConquer) =>
+            planConquest(
+              player,
+              source,
+              target,
+              defenderOwner,
+              maxTroops,
+              troopsToConquer,
+            ),
+        )
+        .otherwise(() =>
+          planRaid(player, source, target, defenderOwner, maxTroops),
+        ),
+    );
+
+export const getAttackPlans = (player: Player): AttackPlan[] =>
+  match(player.hasPacifistStatus)
+    .with(true, (): AttackPlan[] => [])
+    .otherwise(() =>
+      getPlanets()
+        .flatMap((target) =>
+          match(getPlayerByIndex(target.ownerId))
+            .with(nullish, (): AttackPlan[] => [])
+            .when(
+              (defenderOwner) =>
+                target.ownerId === player.id ||
+                !defenderOwner.isAlive ||
+                isUnderTruce(target) ||
+                !canTarget(player, defenderOwner),
+              (): AttackPlan[] => [],
+            )
+            .otherwise((defenderOwner) =>
+              getOwnedPlanets(player).flatMap((source) =>
+                match(planStrikeFrom(player, source, target, defenderOwner))
+                  .with(nullish, (): AttackPlan[] => [])
+                  .otherwise((plan) => [plan]),
+              ),
+            ),
+        )
+        .toSorted(
+          (attackPlan, eachAttackPlan) =>
+            eachAttackPlan.score - attackPlan.score,
+        ),
+    );

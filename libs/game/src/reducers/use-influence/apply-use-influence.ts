@@ -17,9 +17,9 @@ export const applyUseInfluence = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) =>
+        .tap((cl1) =>
           playInfluence(
-            clone,
+            cl1,
             payload.playerId,
             payload.type,
             payload.options ?? {},

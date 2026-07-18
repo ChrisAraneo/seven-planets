@@ -1,14 +1,10 @@
 import type { Player } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
 import { getAiState } from '../state';
 
-export const computeAggression = (player: Player): number => {
-  const aiState = getAiState();
-  if (player.hasPacifistStatus) {
-    return 0;
-  }
-  if (player.isKamikaze) {
-    return 1;
-  }
-  return aiState.W.willNeutral;
-};
+export const computeAggression = (player: Player): number =>
+  match(player)
+    .with({ hasPacifistStatus: true }, () => 0)
+    .with({ isKamikaze: true }, () => 1)
+    .otherwise(() => getAiState().W.willNeutral);

@@ -1,6 +1,12 @@
 import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
+import { noop } from 'lodash-es';
 import { defineStore } from 'pinia';
+import { tryCatch } from 'ramda';
+import { match } from 'ts-pattern';
 import { ref } from 'vue';
+
+import { chain } from '@/utils/chain';
+import { nullish } from '@/utils/p';
 
 const STORAGE_KEY = 'seven-planets:unlocked-difficulties';
 
@@ -14,45 +20,54 @@ const ALWAYS_UNLOCKED: Difficulty[] = DIFFICULTIES.map(
   (difficultyDef) => difficultyDef.id,
 ).filter((id) => !rewarded.has(id));
 
-const read = (): Set<Difficulty> => {
-  const unlocked = new Set<Difficulty>(ALWAYS_UNLOCKED);
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    if (Array.isArray(parsed)) {
-      for (const difficultyDef of DIFFICULTIES) {
-        if (parsed.includes(difficultyDef.id)) {
-          unlocked.add(difficultyDef.id);
-        }
-      }
-    }
-  } catch {}
-  return unlocked;
-};
+const parseStored = (): unknown =>
+  match(localStorage.getItem(STORAGE_KEY))
+    .with(nullish, (): unknown => [])
+    .otherwise((raw): unknown => JSON.parse(raw));
 
-const write = (unlocked: Set<Difficulty>): void => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocked]));
-  } catch {}
-};
+const read = (): Set<Difficulty> =>
+  tryCatch(
+    (): Set<Difficulty> =>
+      match(parseStored())
+        .when(
+          Array.isArray,
+          (parsed) =>
+            new Set<Difficulty>([
+              ...ALWAYS_UNLOCKED,
+              ...DIFFICULTIES.map((difficultyDef) => difficultyDef.id).filter(
+                (id) => parsed.includes(id),
+              ),
+            ]),
+        )
+        .otherwise(() => new Set<Difficulty>(ALWAYS_UNLOCKED)),
+    (): Set<Difficulty> => new Set<Difficulty>(ALWAYS_UNLOCKED),
+  )();
+
+const write = (unlocked: Set<Difficulty>): void =>
+  tryCatch(
+    (): void =>
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocked])),
+    noop,
+  )();
 
 export const useUnlocksStore = defineStore('unlocks', () => {
   const unlocked = ref<Set<Difficulty>>(read());
 
   const isUnlocked = (id: Difficulty): boolean => unlocked.value.has(id);
 
-  const recordWin = (level: Difficulty): Difficulty | null => {
-    const next = UNLOCKED_BY_WIN[level];
-    if (!next) {
-      return null;
-    }
-    if (unlocked.value.has(next)) {
-      return null;
-    }
-    unlocked.value.add(next);
-    write(unlocked.value);
-    return next;
-  };
+  const recordWin = (level: Difficulty): Difficulty | null =>
+    match(UNLOCKED_BY_WIN[level])
+      .with(nullish, () => null)
+      .when(
+        (next) => unlocked.value.has(next),
+        () => null,
+      )
+      .otherwise((next) =>
+        chain(unlocked.value.add(next))
+          .tap((set) => write(set))
+          .thru(() => next)
+          .value(),
+      );
 
   return { unlocked, isUnlocked, recordWin };
 });

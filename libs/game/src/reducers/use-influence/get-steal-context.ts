@@ -1,12 +1,12 @@
-import { match, P } from 'ts-pattern';
+import { match } from 'ts-pattern';
 
 import { ACTION_TYPES } from '../../config/constants';
 import type { ActionType } from '../../interfaces/action-type';
 import type { GameState } from '../../interfaces/game-state';
 import type { InfluenceOptions } from '../../interfaces/influence-options';
 import type { Player } from '../../interfaces/player';
+import { nonNullable } from '../../utils/p';
 
-const { nonNullable } = P;
 export const getStealContext = (
   state: GameState,
   options: InfluenceOptions,

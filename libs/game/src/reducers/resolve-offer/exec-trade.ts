@@ -8,6 +8,7 @@ import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
 import { transferCards } from './transfer-cards';
 
+const TRADE_INFLUENCE_BONUS = 1;
 export const execTrade = (
   state: GameState,
   aId: number,
@@ -28,7 +29,7 @@ export const execTrade = (
     )
     .tap(() =>
       assign(state.players[aId], {
-        influence: state.players[aId].influence + 1,
+        influence: state.players[aId].influence + TRADE_INFLUENCE_BONUS,
       }),
     )
     .thru(() =>

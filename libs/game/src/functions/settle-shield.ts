@@ -6,6 +6,7 @@ import {
   SHIELD_UPKEEP_LEVEL,
 } from '../config/constants';
 import type { GameState } from '../interfaces/game-state';
+import { getBuildingLevel } from './get-building-level';
 import { log } from './log';
 import { payUpkeep } from './pay-upkeep';
 import { setUnpowered } from './set-unpowered';
@@ -17,7 +18,8 @@ export const settleShield = (state: GameState, planetId: number): GameState =>
   })
     .when(
       ({ planet, owner }) =>
-        (planet.buildings.SHIELD || 0) < SHIELD_UPKEEP_LEVEL || !owner.isAlive,
+        getBuildingLevel(planet, 'SHIELD') < SHIELD_UPKEEP_LEVEL ||
+        !owner.isAlive,
       ({ planet }) => setUnpowered(state, planet, false),
     )
     .when(

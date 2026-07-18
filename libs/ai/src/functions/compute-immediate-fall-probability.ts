@@ -1,7 +1,9 @@
 import type { Planet, Player } from '@seven-planets/game';
 import { COMBAT } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
+import { chain } from '../utils/chain';
 import { canTarget } from './can-target';
 import { computeAggression } from './compute-aggression';
 import { computeBattleWinProbability } from './compute-battle-win-probability';
@@ -13,27 +15,44 @@ import { isUnderTruce } from './is-under-truce';
 export const computeImmediateFallProbability = (
   owner: Player,
   planet: Planet,
-): number => {
-  if (isUnderTruce(planet)) {
-    return 0;
-  }
-  let safeProbability = 1;
-  for (const attacker of getAlivePlayers()) {
-    const isThreat =
-      attacker.id !== owner.id &&
-      !attacker.hasPacifistStatus &&
-      (attacker.hand.ATTACK || 0) >= 1 &&
-      canTarget(attacker, owner);
-    if (isThreat) {
-      const strike = computeProjectedStrike(attacker, 0, planet.id);
-      if (strike.n >= computeMinimumTroopsToConquer(planet.troops)) {
-        const winProbability = computeBattleWinProbability(
-          COMBAT.attackPerTroop * strike.n + strike.bonus,
-          computeDefenseBase(planet),
-        );
-        safeProbability *= 1 - winProbability * computeAggression(attacker);
-      }
-    }
-  }
-  return 1 - safeProbability;
-};
+): number =>
+  match(planet)
+    .when(isUnderTruce, () => 0)
+    .otherwise(
+      () =>
+        1 -
+        getAlivePlayers().reduce(
+          (safeProbability, attacker) =>
+            safeProbability *
+            match(attacker)
+              .when(
+                (candidate) =>
+                  candidate.id !== owner.id &&
+                  !candidate.hasPacifistStatus &&
+                  (candidate.hand.ATTACK || 0) >= 1 &&
+                  canTarget(candidate, owner),
+                (candidate) =>
+                  chain(computeProjectedStrike(candidate, 0, planet.id))
+                    .thru((strike) =>
+                      match(
+                        strike.n >=
+                          computeMinimumTroopsToConquer(planet.troops),
+                      )
+                        .with(
+                          true,
+                          () =>
+                            1 -
+                            computeBattleWinProbability(
+                              COMBAT.attackPerTroop * strike.n + strike.bonus,
+                              computeDefenseBase(planet),
+                            ) *
+                              computeAggression(candidate),
+                        )
+                        .otherwise(() => 1),
+                    )
+                    .value(),
+              )
+              .otherwise(() => 1),
+          1,
+        ),
+    );

@@ -1,18 +1,18 @@
 import { COMBAT } from '@seven-planets/game';
+import { range, sumBy } from 'lodash-es';
+
+import { chain } from '../utils/chain';
 
 export const computeBattleWinProbability = (
   attackBase: number,
   defenseBase: number,
-): number => {
-  const { attackRoll } = COMBAT;
-  const { defenseRoll } = COMBAT;
-  let wins = 0;
-  for (let attackerRoll = 0; attackerRoll <= attackRoll; attackerRoll++) {
-    for (let defenderRoll = 0; defenderRoll <= defenseRoll; defenderRoll++) {
-      if (attackBase + attackerRoll > defenseBase + defenderRoll) {
-        wins++;
-      }
-    }
-  }
-  return wins / ((attackRoll + 1) * (defenseRoll + 1));
-};
+): number =>
+  chain(
+    sumBy(range(COMBAT.attackRoll + 1), (attackerRoll) =>
+      sumBy(range(COMBAT.defenseRoll + 1), (defenderRoll) =>
+        Number(attackBase + attackerRoll > defenseBase + defenderRoll),
+      ),
+    ),
+  )
+    .thru((wins) => wins / ((COMBAT.attackRoll + 1) * (COMBAT.defenseRoll + 1)))
+    .value();

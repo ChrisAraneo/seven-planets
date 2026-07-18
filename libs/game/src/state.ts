@@ -16,29 +16,25 @@ import type { GameState } from './interfaces/game-state';
 import { reduce } from './reducers/reduce';
 import { chain } from './utils/chain';
 
-export const actionSubject = new Subject<Action>();
-export const stateSubject = new BehaviorSubject<GameState>(
+export const ACTION_SUBJECT = new Subject<Action>();
+export const STATE_SUBJECT = new BehaviorSubject<GameState>(
   createInitialGameState(),
 );
 
-actionSubject
-  .pipe(
-    observeOn(queueScheduler),
-    mergeMap((action) =>
-      defer(() => of(reduce(stateSubject.getValue(), action))).pipe(
-        catchError((error: unknown) =>
-          chain(error)
-            .tap(() =>
-              console.error(
-                '[seven-planets] action reduced to a no-op:',
-                error,
-              ),
-            )
-            .thru(() => of(null))
-            .value(),
-        ),
+ACTION_SUBJECT.pipe(
+  observeOn(queueScheduler),
+  mergeMap((action) =>
+    defer(() => of(reduce(STATE_SUBJECT.getValue(), action))).pipe(
+      catchError((error: unknown) =>
+        chain(error)
+          .tap(() =>
+            // eslint-disable-next-line no-console
+            console.error('[seven-planets] action reduced to a no-op:', error),
+          )
+          .thru(() => of(null))
+          .value(),
       ),
     ),
-    filter((state): state is GameState => state !== null),
-  )
-  .subscribe((state) => stateSubject.next(state));
+  ),
+  filter((state): state is GameState => state !== null),
+).subscribe((state) => STATE_SUBJECT.next(state));

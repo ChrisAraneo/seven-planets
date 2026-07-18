@@ -5,21 +5,39 @@ import {
   CARDS,
   MOVE_CARDS_FROM_TURN,
 } from '@seven-planets/game';
+import { sumBy } from 'lodash-es';
+import { match } from 'ts-pattern';
 
-export const computeExpectedActionCopies = (actionType: ActionType): number => {
-  if (getTurn() < ACTION_CARDS_FROM_TURN) {
-    return 0;
-  }
-  const actionTypes: ActionType[] = ['ATTACK', 'RECRUIT', 'TRADE'];
-  if (getTurn() >= MOVE_CARDS_FROM_TURN) {
-    actionTypes.push('MOVE');
-  }
-  if (!actionTypes.includes(actionType)) {
-    return 0;
-  }
-  const totalWeight = actionTypes.reduce(
-    (sum, eachActionType) => sum + CARDS[eachActionType].weight,
-    0,
-  );
-  return (6 * CARDS[actionType].weight) / totalWeight;
-};
+import { chain } from '../utils/chain';
+
+export const computeExpectedActionCopies = (actionType: ActionType): number =>
+  match(getTurn())
+    .when(
+      (turn) => turn < ACTION_CARDS_FROM_TURN,
+      () => 0,
+    )
+    .otherwise((turn) =>
+      chain(
+        match(turn >= MOVE_CARDS_FROM_TURN)
+          .with(true, (): ActionType[] => [
+            'ATTACK',
+            'RECRUIT',
+            'TRADE',
+            'MOVE',
+          ])
+          .otherwise((): ActionType[] => ['ATTACK', 'RECRUIT', 'TRADE']),
+      )
+        .thru((actionTypes) =>
+          match(actionTypes.includes(actionType))
+            .with(false, () => 0)
+            .otherwise(
+              () =>
+                (6 * CARDS[actionType].weight) /
+                sumBy(
+                  actionTypes,
+                  (eachActionType) => CARDS[eachActionType].weight,
+                ),
+            ),
+        )
+        .value(),
+    );

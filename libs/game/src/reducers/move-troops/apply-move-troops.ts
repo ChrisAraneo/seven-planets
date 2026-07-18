@@ -22,6 +22,6 @@ export const applyMoveTroops = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) => executeMove(clone, payload))
+        .tap((cl1) => executeMove(cl1, payload))
         .value(),
     );

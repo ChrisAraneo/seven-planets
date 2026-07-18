@@ -3,9 +3,12 @@ import { getTurn } from '@seven-planets/game';
 import { COMBAT, HOME_FIELD, PACIFIST_DEF_BONUS } from '@seven-planets/game';
 import { computeShieldDefense } from '@seven-planets/game';
 import { computeSingularityDefenseBonus } from '@seven-planets/game';
+import { range } from 'lodash-es';
+import { match } from 'ts-pattern';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
 import { getAiState } from '../state';
+import { chain } from '../utils/chain';
 import { canTarget } from './can-target';
 import { computeActionDrawProbability } from './compute-action-draw-probability';
 import { computeAggression } from './compute-aggression';
@@ -23,88 +26,115 @@ interface HoldContext {
   staticDefense: number;
 }
 
+const computePeakWinProbability = (
+  context: HoldContext,
+  attacker: Player,
+): number =>
+  range(1, context.horizon + 1).reduce(
+    (peak, turnsAhead) =>
+      match(getTurn() + turnsAhead > context.protectedUntil)
+        .with(false, () => peak)
+        .otherwise(() =>
+          chain({
+            defenders: Math.round(
+              context.garrison + context.reinforcementRate * turnsAhead,
+            ),
+            strike: computeProjectedStrike(
+              attacker,
+              turnsAhead,
+              context.planet.id,
+            ),
+          })
+            .thru(({ defenders, strike }) =>
+              match(
+                strike.n >= 2 &&
+                  strike.n >= computeMinimumTroopsToConquer(defenders),
+              )
+                .with(true, () =>
+                  Math.max(
+                    peak,
+                    computeBattleWinProbability(
+                      COMBAT.attackPerTroop * strike.n + strike.bonus,
+                      COMBAT.defensePerTroop * defenders +
+                        context.staticDefense,
+                    ),
+                  ),
+                )
+                .otherwise(() => peak),
+            )
+            .value(),
+        ),
+    0,
+  );
+
+const computeAttackerThreat = (
+  context: HoldContext,
+  attacker: Player,
+): number =>
+  match(computePeakWinProbability(context, attacker))
+    .when(
+      (peak) => peak <= 0,
+      () => 0,
+    )
+    .otherwise((peakWinProbability) =>
+      chain(
+        Math.max(
+          1,
+          context.horizon - Math.max(0, context.protectedUntil - getTurn()),
+        ),
+      )
+        .thru(
+          (drawWindow) =>
+            peakWinProbability *
+            match((attacker.hand.ATTACK || 0) > 0)
+              .with(true, () => 0.95)
+              .otherwise(
+                () =>
+                  1 -
+                  (1 - computeActionDrawProbability('ATTACK')) ** drawWindow,
+              ) *
+            computeAggression(attacker),
+        )
+        .value(),
+    );
+
 export const computeHoldProbability = (
   owner: Player,
   planet: Planet,
   garrison: number,
   protectedUntil: number = planet.protectedUntil,
   horizon: number = getAiState().W.holdHorizon,
-): number => {
-  let holdProbability = 1;
-  const context: HoldContext = {
+): number =>
+  chain({
     planet,
     garrison,
     protectedUntil,
     horizon,
     reinforcementRate:
-      computeRecruitRate(owner) * (planet.buildings.BARRACKS ? 0.7 : 0.25),
+      computeRecruitRate(owner) *
+      match(planet.buildings.BARRACKS)
+        .when(Boolean, () => 0.7)
+        .otherwise(() => 0.25),
     staticDefense:
       computeShieldDefense(planet) +
       computeSingularityDefenseBonus(planet) +
-      (owner.hasPacifistStatus ? PACIFIST_DEF_BONUS : 0) +
+      match(owner.hasPacifistStatus)
+        .with(true, () => PACIFIST_DEF_BONUS)
+        .otherwise(() => 0) +
       HOME_FIELD,
-  };
-  for (const attacker of getAlivePlayers()) {
-    const isThreat =
-      attacker.id !== owner.id &&
-      !attacker.hasPacifistStatus &&
-      canTarget(attacker, owner);
-    if (isThreat) {
-      holdProbability *= 1 - computeAttackerThreat(context, attacker);
-    }
-  }
-  return holdProbability;
-};
-
-const computeAttackerThreat = (
-  context: HoldContext,
-  attacker: Player,
-): number => {
-  const peakWinProbability = computePeakWinProbability(context, attacker);
-  if (peakWinProbability <= 0) {
-    return 0;
-  }
-  const drawWindow = Math.max(
-    1,
-    context.horizon - Math.max(0, context.protectedUntil - getTurn()),
-  );
-  const attackCardProbability =
-    (attacker.hand.ATTACK || 0) > 0
-      ? 0.95
-      : 1 - (1 - computeActionDrawProbability('ATTACK')) ** drawWindow;
-  return (
-    peakWinProbability * attackCardProbability * computeAggression(attacker)
-  );
-};
-
-const computePeakWinProbability = (
-  context: HoldContext,
-  attacker: Player,
-): number => {
-  let peakWinProbability = 0;
-  for (let turnsAhead = 1; turnsAhead <= context.horizon; turnsAhead++) {
-    if (getTurn() + turnsAhead > context.protectedUntil) {
-      const defenders = Math.round(
-        context.garrison + context.reinforcementRate * turnsAhead,
-      );
-      const strike = computeProjectedStrike(
-        attacker,
-        turnsAhead,
-        context.planet.id,
-      );
-      if (
-        strike.n >= 2 &&
-        strike.n >= computeMinimumTroopsToConquer(defenders)
-      ) {
-        const defenseBase =
-          COMBAT.defensePerTroop * defenders + context.staticDefense;
-        const attackBase = COMBAT.attackPerTroop * strike.n + strike.bonus;
-        peakWinProbability = Math.max(
-          peakWinProbability,
-          computeBattleWinProbability(attackBase, defenseBase),
-        );
-      }
-    }
-  }
-  return peakWinProbability;
-};
+  })
+    .thru((context) =>
+      getAlivePlayers().reduce(
+        (holdProbability, attacker) =>
+          holdProbability *
+          match(
+            attacker.id !== owner.id &&
+              !attacker.hasPacifistStatus &&
+              canTarget(attacker, owner),
+          )
+            .with(true, () => 1 - computeAttackerThreat(context, attacker))
+            .otherwise(() => 1),
+        1,
+      ),
+    )
+    .value();

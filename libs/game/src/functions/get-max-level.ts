@@ -1,5 +1,6 @@
 import type { BuildingType } from '../interfaces/building-type';
 
+const DEFAULT_MAX_LEVEL = 3;
 const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   MINE: 2,
   EXTRACTOR: 2,
@@ -10,4 +11,4 @@ const BUILDING_MAX_LEVEL: Partial<Record<BuildingType, number>> = {
   SINGULARITY: 4,
 };
 export const getMaxLevel = (id: BuildingType): number =>
-  BUILDING_MAX_LEVEL[id] || 3;
+  BUILDING_MAX_LEVEL[id] || DEFAULT_MAX_LEVEL;

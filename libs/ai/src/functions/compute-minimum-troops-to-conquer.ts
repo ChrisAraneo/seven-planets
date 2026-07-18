@@ -1,11 +1,15 @@
 import { COMBAT } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
-export const computeMinimumTroopsToConquer = (
-  defenderTroops: number,
-): number => {
-  if (defenderTroops <= 0) {
-    return 1;
-  }
-  const { num, den } = COMBAT.winDefLoss;
-  return Math.floor(((defenderTroops - 1) * den) / num) + 1;
-};
+export const computeMinimumTroopsToConquer = (defenderTroops: number): number =>
+  match(defenderTroops)
+    .when(
+      (candidate) => candidate <= 0,
+      () => 1,
+    )
+    .otherwise(
+      (candidate) =>
+        Math.floor(
+          ((candidate - 1) * COMBAT.winDefLoss.den) / COMBAT.winDefLoss.num,
+        ) + 1,
+    );

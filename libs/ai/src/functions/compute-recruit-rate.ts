@@ -1,23 +1,38 @@
 import type { Player } from '@seven-planets/game';
 import { computeRecruitYield } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
+import { chain } from '../utils/chain';
 import { computeActionDrawProbability } from './compute-action-draw-probability';
 import { computeIncomePerTurn } from './compute-income-per-turn';
 import { getOwnedPlanets } from './get-owned-planets';
 
-export const computeRecruitRate = (player: Player): number => {
-  let bestYield = 0;
-  for (const planet of getOwnedPlanets(player)) {
-    bestYield = Math.max(bestYield, computeRecruitYield(planet));
-  }
-  if (!bestYield) {
-    return 0;
-  }
-  const oreFlow =
-    (computeIncomePerTurn(player).ORE || 0) + (player.hand.ORE || 0) / 4;
-  const cardFlow =
-    (player.hand.RECRUIT || 0) > 0
-      ? 0.9
-      : computeActionDrawProbability('RECRUIT');
-  return Math.min(bestYield, Math.max(0, oreFlow)) * cardFlow;
-};
+export const computeRecruitRate = (player: Player): number =>
+  chain(
+    getOwnedPlanets(player).reduce(
+      (best, planet) => Math.max(best, computeRecruitYield(planet)),
+      0,
+    ),
+  )
+    .thru((bestYield) =>
+      match(bestYield)
+        .with(0, () => 0)
+        .otherwise(
+          () =>
+            Math.min(
+              bestYield,
+              Math.max(
+                0,
+                (computeIncomePerTurn(player).ORE || 0) +
+                  (player.hand.ORE || 0) / 4,
+              ),
+            ) *
+            match(player.hand.RECRUIT || 0)
+              .when(
+                (held) => held > 0,
+                () => 0.9,
+              )
+              .otherwise(() => computeActionDrawProbability('RECRUIT')),
+        ),
+    )
+    .value();

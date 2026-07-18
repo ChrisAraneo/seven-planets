@@ -6,7 +6,12 @@ import {
   offset,
   shift,
 } from '@floating-ui/dom';
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import type { Directive } from 'vue';
+
+import { chain } from '@/utils/chain';
+import { nonNullable, not, number } from '@/utils/p';
 
 interface TooltipHandle {
   text: string;
@@ -28,117 +33,150 @@ const STATIC_SIDE: Record<string, string> = {
 const TOOLTIP_OFFSET = 8;
 const VIEWPORT_PADDING = 6;
 
+const toArrowCoordinate = (value: number | undefined): string =>
+  match(value)
+    .with(number, (coordinate) => `${coordinate}px`)
+    .otherwise(() => '');
+
 const createTipElements = (
   text: string,
 ): {
   tip: HTMLDivElement;
   content: HTMLDivElement;
   arrowEl: HTMLDivElement;
-} => {
-  const tip = document.createElement('div');
-  tip.classList.add('fui-tooltip');
-  tip.setAttribute('role', 'tooltip');
-  const content = document.createElement('div');
-  content.classList.add('fui-tooltip-content');
-  content.textContent = text;
-  const arrowEl = document.createElement('div');
-  arrowEl.classList.add('fui-tooltip-arrow');
-  tip.append(content, arrowEl);
-  return { tip, content, arrowEl };
-};
+} =>
+  chain({
+    tip: document.createElement('div'),
+    content: document.createElement('div'),
+    arrowEl: document.createElement('div'),
+  })
+    .tap(({ tip }) => tip.classList.add('fui-tooltip'))
+    .tap(({ tip }) => tip.setAttribute('role', 'tooltip'))
+    .tap(({ content }) => content.classList.add('fui-tooltip-content'))
+    .tap(({ content }) => assign(content, { textContent: text }))
+    .tap(({ arrowEl }) => arrowEl.classList.add('fui-tooltip-arrow'))
+    .tap(({ tip, content, arrowEl }) => tip.append(content, arrowEl))
+    .value();
 
-const show = (el: HTMLElement): void => {
-  const handle = handles.get(el);
-  if (!handle || handle.tip || !handle.text) {
-    return;
-  }
+const reposition = (
+  el: HTMLElement,
+  tip: HTMLDivElement,
+  arrowEl: HTMLDivElement,
+): void =>
+  void computePosition(el, tip, {
+    placement: 'top',
+    middleware: [
+      offset(TOOLTIP_OFFSET),
+      flip(),
+      shift({ padding: VIEWPORT_PADDING }),
+      arrow({ element: arrowEl }),
+    ],
+  }).then(({ x, y, placement, middlewareData }) =>
+    chain(placement.split('-')[0])
+      .tap(() => assign(tip.style, { left: `${x}px`, top: `${y}px` }))
+      .tap((side) => assign(tip.dataset, { side }))
+      .tap((side) =>
+        assign(arrowEl.style, {
+          left: toArrowCoordinate(middlewareData.arrow?.x),
+          top: toArrowCoordinate(middlewareData.arrow?.y),
+          right: '',
+          bottom: '',
+          [STATIC_SIDE[side]]: '-4px',
+        }),
+      )
+      .thru(noop)
+      .value(),
+  );
 
-  const { tip, content, arrowEl } = createTipElements(handle.text);
-  document.body.append(tip);
-  handle.tip = tip;
-  handle.content = content;
+const attachTip = (el: HTMLElement, handle: TooltipHandle): void =>
+  chain(createTipElements(handle.text))
+    .tap(({ tip }) => document.body.append(tip))
+    .tap(({ tip, content }) => assign(handle, { tip, content }))
+    .tap(({ tip, arrowEl }) =>
+      assign(handle, {
+        stop: autoUpdate(el, tip, () => reposition(el, tip, arrowEl)),
+      }),
+    )
+    .thru(noop)
+    .value();
 
-  const reposition = (): void =>
-    void computePosition(el, tip, {
-      placement: 'top',
-      middleware: [
-        offset(TOOLTIP_OFFSET),
-        flip(),
-        shift({ padding: VIEWPORT_PADDING }),
-        arrow({ element: arrowEl }),
-      ],
-    }).then(({ x, y, placement, middlewareData }) => {
-      Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
-      const side = placement.split('-')[0];
-      tip.dataset.side = side;
-      const arrowX = middlewareData.arrow?.x;
-      const arrowY = middlewareData.arrow?.y;
-      Object.assign(arrowEl.style, {
-        left: typeof arrowX === 'number' ? `${arrowX}px` : '',
-        top: typeof arrowY === 'number' ? `${arrowY}px` : '',
-        right: '',
-        bottom: '',
-        [STATIC_SIDE[side]]: '-4px',
-      });
-    });
+const show = (el: HTMLElement): void =>
+  match(handles.get(el))
+    .with({ tip: null, text: not('') }, (handle) => attachTip(el, handle))
+    .otherwise(noop);
 
-  handle.stop = autoUpdate(el, tip, reposition);
-};
+const hide = (el: HTMLElement): void =>
+  match(handles.get(el))
+    .with({ tip: not(null) }, (handle) =>
+      chain(handle)
+        .tap(({ stop }) => stop?.())
+        .tap(({ tip }) => tip.remove())
+        .tap(() => assign(handle, { stop: null, tip: null, content: null }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
 
-const hide = (el: HTMLElement): void => {
-  const handle = handles.get(el);
-  if (!handle?.tip) {
-    return;
-  }
-  handle.stop?.();
-  handle.stop = null;
-  handle.tip.remove();
-  handle.tip = null;
-  handle.content = null;
-};
+const createHandle = (el: HTMLElement, text: string): TooltipHandle => ({
+  text,
+  tip: null,
+  content: null,
+  stop: null,
+  listeners: [
+    ['mouseenter', (): void => show(el)],
+    ['mouseleave', (): void => hide(el)],
+    ['focus', (): void => show(el)],
+    ['blur', (): void => hide(el)],
+    ['click', (): void => hide(el)],
+  ],
+});
+
+const syncContent = (handle: TooltipHandle): void =>
+  match(handle)
+    .with(
+      { content: not(null) },
+      ({ content }) => void assign(content, { textContent: handle.text }),
+    )
+    .otherwise(noop);
+
+const hideWhenEmptied = (el: HTMLElement, handle: TooltipHandle): void =>
+  match(handle)
+    .with({ tip: not(null), text: '' }, () => hide(el))
+    .otherwise(noop);
 
 export const vTooltip: Directive<HTMLElement, string | undefined> = {
-  mounted(el, binding) {
-    const handle: TooltipHandle = {
-      text: binding.value ?? '',
-      tip: null,
-      content: null,
-      stop: null,
-      listeners: [
-        ['mouseenter', () => show(el)],
-        ['mouseleave', () => hide(el)],
-        ['focus', () => show(el)],
-        ['blur', () => hide(el)],
-        ['click', () => hide(el)],
-      ],
-    };
-    handles.set(el, handle);
-    handle.listeners.forEach(([event, listener]) =>
-      el.addEventListener(event, listener),
-    );
-  },
+  mounted: (el, binding): void =>
+    chain(createHandle(el, binding.value ?? ''))
+      .tap((handle) => handles.set(el, handle))
+      .tap((handle) =>
+        handle.listeners.forEach(([event, listener]) =>
+          el.addEventListener(event, listener),
+        ),
+      )
+      .thru(noop)
+      .value(),
 
-  updated(el, binding) {
-    const handle = handles.get(el);
-    if (!handle) {
-      return;
-    }
-    handle.text = binding.value ?? '';
-    if (handle.content) {
-      handle.content.textContent = handle.text;
-    }
-    if (handle.tip && !handle.text) {
-      hide(el);
-    }
-  },
+  updated: (el, binding): void =>
+    match(handles.get(el))
+      .with(nonNullable, (handle) =>
+        chain(assign(handle, { text: binding.value ?? '' }))
+          .tap(syncContent)
+          .tap(() => hideWhenEmptied(el, handle))
+          .thru(noop)
+          .value(),
+      )
+      .otherwise(noop),
 
-  unmounted(el) {
-    hide(el);
-    handles
-      .get(el)
-      ?.listeners.forEach(([event, listener]) =>
-        el.removeEventListener(event, listener),
-      );
-    handles.delete(el);
-  },
+  unmounted: (el): void =>
+    chain(hide(el))
+      .tap(() =>
+        handles
+          .get(el)
+          ?.listeners.forEach(([event, listener]) =>
+            el.removeEventListener(event, listener),
+          ),
+      )
+      .tap(() => handles.delete(el))
+      .thru(noop)
+      .value(),
 };

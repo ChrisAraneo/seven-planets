@@ -16,15 +16,15 @@ export const applyEndTurn = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((clone) => assign(clone, { isAwaitingAction: false }))
-        .tap((clone) =>
-          match(clone.cursor)
+        .tap((cl1) => assign(cl1, { isAwaitingAction: false }))
+        .tap((cl1) =>
+          match(cl1.cursor)
             .with({ phase: 'action' }, (cursor) =>
-              assign(clone, {
+              assign(cl1, {
                 cursor: { ...cursor, seatIdx: cursor.seatIdx + 1 },
               }),
             )
-            .otherwise(() => clone),
+            .otherwise(() => cl1),
         )
         .value(),
     );

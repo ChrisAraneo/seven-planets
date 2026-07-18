@@ -1,13 +1,25 @@
 import type { Cost, Hand } from '@seven-planets/game';
 
-export const computeHandAfterCost = (hand: Hand, cost: Cost): Hand => {
-  const remaining: Hand = { ...hand };
-  let relicsSpent = 0;
-  for (const resourceType of Object.keys(cost)) {
-    const paid = Math.min(remaining[resourceType] || 0, cost[resourceType]);
-    remaining[resourceType] = (remaining[resourceType] || 0) - paid;
-    relicsSpent += cost[resourceType] - paid;
-  }
-  remaining.RELIC = (remaining.RELIC || 0) - relicsSpent;
-  return remaining;
-};
+import { chain } from '../utils/chain';
+
+export const computeHandAfterCost = (hand: Hand, cost: Cost): Hand =>
+  chain(
+    Object.keys(cost).reduce(
+      (acc, resourceType) =>
+        chain(Math.min(acc.remaining[resourceType] || 0, cost[resourceType]))
+          .thru((paid) => ({
+            remaining: {
+              ...acc.remaining,
+              [resourceType]: (acc.remaining[resourceType] || 0) - paid,
+            },
+            relicsSpent: acc.relicsSpent + cost[resourceType] - paid,
+          }))
+          .value(),
+      { remaining: { ...hand }, relicsSpent: 0 },
+    ),
+  )
+    .thru(({ remaining, relicsSpent }) => ({
+      ...remaining,
+      RELIC: (remaining.RELIC || 0) - relicsSpent,
+    }))
+    .value();
