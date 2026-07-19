@@ -38,8 +38,7 @@ const toBlurb = (difficulty: (typeof DIFFICULTIES)[number]): string =>
         class="difficulty-card"
         :class="{ locked: !unlocked.has(difficulty.id) }"
         :disabled="!unlocked.has(difficulty.id)"
-        @click="choose(difficulty.id)"
-      >
+        @click="choose(difficulty.id)">
         <span class="difficulty-icon">{{ toIcon(difficulty) }}</span>
         <span class="difficulty-name">{{ difficulty.name }}</span>
         <span class="difficulty-blurb">

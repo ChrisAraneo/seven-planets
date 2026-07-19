@@ -51,12 +51,10 @@ const toSkipSuffix = (player: Player): string =>
         active: player.id === game.state.activeId && !game.state.over,
         dead: !player.isAlive,
       }"
-      :style="{ borderLeftColor: player.color }"
-    >
-      <span
-        class="pname"
-        :style="{ color: player.color }"
-      >{{ player.name }}{{ toStarSuffix(player) }}</span>
+      :style="{ borderLeftColor: player.color }">
+      <span class="pname" :style="{ color: player.color }"
+        >{{ player.name }}{{ toStarSuffix(player) }}</span
+      >
       <div class="pstats">
         🪐{{
           game.state.planets.filter((planet) => planet.ownerId === player.id)

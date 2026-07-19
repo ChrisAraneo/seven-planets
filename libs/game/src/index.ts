@@ -54,6 +54,7 @@ export * from './functions/extractors/get-tech-level';
 export * from './functions/extractors/get-turn-order';
 export * from './functions/filter-alive-players';
 export * from './functions/format-cards';
+export * from './functions/get-cost-label';
 export * from './functions/has-action-card';
 export * from './functions/has-building';
 export * from './functions/is-building-type';

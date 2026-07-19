@@ -19,7 +19,7 @@ const humanWon = computed(
 const title = computed(() =>
   match(over.value)
     .with(nullish, () => '')
-    .with({ reason: 'conquest' }, () =>
+    .with({ reason: 'CONQUEST' }, () =>
       match(humanWon.value)
         .with(true, () => 'GALACTIC EMPEROR')
         .otherwise(() => 'DEFEAT'),
@@ -34,7 +34,7 @@ const resultClass = computed(() =>
 const sub = computed(() =>
   match(over.value)
     .with(nullish, () => '')
-    .with({ reason: 'conquest' }, (gameOver) =>
+    .with({ reason: 'CONQUEST' }, (gameOver) =>
       match(humanWon.value)
         .with(true, () => 'All seven planets kneel before Terra Prime.')
         .otherwise(() => `${gameOver.winner?.name} has conquered the galaxy.`),
@@ -45,29 +45,18 @@ const sub = computed(() =>
 
 <template>
   <ModalShell v-if="over">
-    <div
-      class="gameover-title"
-      :class="resultClass"
-    >
+    <div class="gameover-title" :class="resultClass">
       {{ title }}
     </div>
     <div class="gostats">
-      {{ sub }}<br><br>
+      {{ sub }}<br /><br />
       Turns played: {{ game.state.turn }} · Planets held:
       {{ game.state.planets.filter((pl) => pl.ownerId === human.id).length }} ·
       Buildings: {{ getBuildingCount(game.state, human) }} · Troops:
       {{ computeTotalTroops(game.state, human) }}
     </div>
-    <div
-      class="mbtns"
-      style="justify-content: center"
-    >
-      <button
-        class="btn"
-        @click="ui.restartGame()"
-      >
-        🔄 Play Again
-      </button>
+    <div class="mbtns" style="justify-content: center">
+      <button class="btn" @click="ui.restartGame()">🔄 Play Again</button>
     </div>
   </ModalShell>
 </template>

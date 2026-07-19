@@ -203,13 +203,8 @@ const propose = (): void =>
       <select
         class="btn"
         :value="partnerId"
-        @change="changePartner(+($event.target as HTMLSelectElement).value)"
-      >
-        <option
-          v-for="player in partners"
-          :key="player.id"
-          :value="player.id"
-        >
+        @change="changePartner(+($event.target as HTMLSelectElement).value)">
+        <option v-for="player in partners" :key="player.id" :value="player.id">
           {{ player.name }}
         </option>
       </select>
@@ -223,20 +218,21 @@ const propose = (): void =>
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="resourceType in RESOURCE_TYPES"
-          :key="resourceType"
-        >
+        <tr v-for="resourceType in RESOURCE_TYPES" :key="resourceType">
           <td>{{ CARDS[resourceType].icon }} {{ CARDS[resourceType].name }}</td>
           <td>
             <span class="stepper">
-              <button @click="step('give', resourceType, -1)">−</button><span class="sval">{{ give[resourceType] }}</span><button @click="step('give', resourceType, 1)">+</button>
+              <button @click="step('give', resourceType, -1)">−</button
+              ><span class="sval">{{ give[resourceType] }}</span
+              ><button @click="step('give', resourceType, 1)">+</button>
             </span>
             <span class="dimtx">/ {{ human.hand[resourceType] }}</span>
           </td>
           <td>
             <span class="stepper">
-              <button @click="step('get', resourceType, -1)">−</button><span class="sval">{{ get[resourceType] }}</span><button @click="step('get', resourceType, 1)">+</button>
+              <button @click="step('get', resourceType, -1)">−</button
+              ><span class="sval">{{ get[resourceType] }}</span
+              ><button @click="step('get', resourceType, 1)">+</button>
             </span>
             <span class="dimtx">/ {{ partner.hand[resourceType] }}</span>
           </td>
@@ -246,23 +242,12 @@ const propose = (): void =>
     <div
       class="mnote"
       :class="{ warn: note.cls === 'warn' }"
-      :style="noteStyle"
-    >
+      :style="noteStyle">
       {{ note.msg }}
     </div>
     <div class="mbtns">
-      <button
-        class="btn"
-        @click="propose"
-      >
-        📡 Transmit Offer
-      </button>
-      <button
-        class="btn"
-        @click="ui.closeModal()"
-      >
-        Close
-      </button>
+      <button class="btn" @click="propose">📡 Transmit Offer</button>
+      <button class="btn" @click="ui.closeModal()">Close</button>
     </div>
   </ModalShell>
 </template>

@@ -33,18 +33,8 @@ const resolveOffer = (isAccepted: boolean): void =>
       They want: <b>{{ formatCards(offer.gets) }}</b>
     </p>
     <div class="mbtns">
-      <button
-        class="btn"
-        @click="resolveOffer(true)"
-      >
-        Accept
-      </button>
-      <button
-        class="btn danger"
-        @click="resolveOffer(false)"
-      >
-        Decline
-      </button>
+      <button class="btn" @click="resolveOffer(true)">Accept</button>
+      <button class="btn danger" @click="resolveOffer(false)">Decline</button>
     </div>
   </ModalShell>
 </template>

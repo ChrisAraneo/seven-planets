@@ -1226,9 +1226,6 @@ onBeforeUnmount(() =>
 
 <template>
   <div id="board-wrap">
-    <canvas
-      id="board"
-      ref="canvas"
-    />
+    <canvas id="board" ref="canvas" />
   </div>
 </template>
