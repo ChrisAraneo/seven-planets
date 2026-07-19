@@ -33,7 +33,7 @@ const buildInvasionPlan = (
 ): InvasionPlan | null =>
   match(computeTurnsToStage(player, staging, neededTroops))
     .when(
-      (turnsToStage) => turnsToStage > getAiState().W.planHorizon + 4,
+      (turnsToStage) => turnsToStage > getAiState().weights.planHorizon + 4,
       () => null,
     )
     .otherwise((turnsToStage) => ({
@@ -50,10 +50,10 @@ const buildInvasionPlan = (
             getTurn() + CONQUEST_TRUCE,
           ) *
           0.9 ** turnsToStage -
-          neededTroops * getAiState().W.troopValue * 0.3) *
+          neededTroops * getAiState().weights.troopValue * 0.3) *
         tempo,
       targetId: target.id,
-      troopsNeeded: neededTroops + getAiState().W.reserveTroops,
+      troopsNeeded: neededTroops + getAiState().weights.reserveTroops,
     }));
 
 export const scoreInvasion = (

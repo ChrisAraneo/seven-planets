@@ -45,7 +45,7 @@ const createBuildCandidate = (
               pComplete:
                 computeCardAppearProbability(
                   buildingType,
-                  getAiState().W.planHorizon,
+                  getAiState().weights.planHorizon,
                 ) *
                 Math.max(
                   0.1,
@@ -53,7 +53,7 @@ const createBuildCandidate = (
                     1,
                     1.2 -
                       computeTurnsToAfford(player, cost) /
-                        getAiState().W.planHorizon,
+                        getAiState().weights.planHorizon,
                   ),
                 ),
             })),

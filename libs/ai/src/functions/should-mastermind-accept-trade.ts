@@ -86,6 +86,8 @@ export const shouldMastermindAcceptTrade = (
             computePlayerStrength(candidate) > computeAverageStrength() * 1.25,
           () => valueIn >= valueOut * 1.5,
         )
-        .otherwise(() => valueIn >= valueOut * getAiState().W.tradeAcceptRatio),
+        .otherwise(
+          () => valueIn >= valueOut * getAiState().weights.tradeAcceptRatio,
+        ),
     )
     .value();

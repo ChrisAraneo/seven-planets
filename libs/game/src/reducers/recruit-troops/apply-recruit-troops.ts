@@ -1,11 +1,11 @@
 import { cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import type { RecruitTroopsPayload } from '../../actions/recruit-troops/recruit-troops';
+import type { RecruitTroopsPayload } from '../../actions/recruit-troops';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
-import { executeRecruit } from './execute-recruit';
+import { executeRecruit } from './internal/execute-recruit';
 
 export const applyRecruitTroops = (
   state: GameState,
@@ -22,6 +22,8 @@ export const applyRecruitTroops = (
     )
     .otherwise(() =>
       chain(cloneDeep(state))
-        .tap((cl1) => executeRecruit(cl1, payload.playerId, payload.planetId))
+        .tap((clonedState) =>
+          executeRecruit(clonedState, payload.playerId, payload.planetId),
+        )
         .value(),
     );

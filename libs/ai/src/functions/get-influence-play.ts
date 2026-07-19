@@ -32,7 +32,8 @@ const getCoupPlay = (player: Player): InfluencePlay | null =>
       match(getBestCoupTarget(player))
         .with(nullish, () => null)
         .when(
-          (coupTarget) => coupTarget.value < getAiState().W.coupValueFloor,
+          (coupTarget) =>
+            coupTarget.value < getAiState().weights.coupValueFloor,
           () => null,
         )
         .otherwise(
@@ -57,7 +58,7 @@ const getPeacePlay = (player: Player): InfluencePlay | null =>
         ),
       )
         .when(
-          (worstFall) => worstFall < getAiState().W.peaceThreatFloor,
+          (worstFall) => worstFall < getAiState().weights.peaceThreatFloor,
           () => null,
         )
         .otherwise(

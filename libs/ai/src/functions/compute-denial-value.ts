@@ -42,7 +42,7 @@ const computeRivalGain = (rival: Player, poolType: PoolType): number =>
       match(
         !rival.hasPacifistStatus &&
           hasBuilding(rival, 'SILO') &&
-          computeAggression(rival) >= getAiState().W.willNeutral,
+          computeAggression(rival) >= getAiState().weights.willNeutral,
       )
         .with(true, () => 1.4)
         .otherwise(() => 0),

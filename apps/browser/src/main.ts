@@ -6,22 +6,22 @@ import { distinctUntilKeyChanged } from 'rxjs';
 import { createApp } from 'vue';
 
 import App from './App.vue';
-import { vTooltip } from './directives/tooltip';
-import { pinia, useEffectsStore } from './stores';
+import { V_TOOLTIP } from './directives/tooltip';
+import { PINIA, useEffectsStore } from './stores';
 
-const effectsStore = useEffectsStore();
+const EFFECTS_STORE = useEffectsStore();
 installEffects({
-  enqueue: (anim) => effectsStore.anims.push(anim),
-  isFastMode: () => effectsStore.fastMode,
+  enqueue: (anim) => EFFECTS_STORE.anims.push(anim),
+  isFastMode: () => EFFECTS_STORE.isFastMode,
 });
 
 getGameState()
   .pipe(distinctUntilKeyChanged('effectSeq'))
   .subscribe((snapshot) => playNewEffects(snapshot));
 
-const app = createApp(App);
+const APP = createApp(App);
 
-app.use(pinia);
-app.directive('tooltip', vTooltip);
+APP.use(PINIA);
+APP.directive('tooltip', V_TOOLTIP);
 
-app.mount('#app');
+APP.mount('#app');

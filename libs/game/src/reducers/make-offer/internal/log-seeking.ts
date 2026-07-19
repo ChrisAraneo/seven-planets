@@ -1,7 +1,7 @@
 import { assign } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import type { MakeOfferPayload } from '../../../actions/make-offer/make-offer';
+import type { MakeOfferPayload } from '../../../actions/make-offer';
 import { CARDS } from '../../../config/constants';
 import { isResourceType } from '../../../functions/is-resource-type';
 import { log } from '../../../functions/log';

@@ -42,7 +42,7 @@ const pickBestIndex = (
                   (computeDenialValue(player, poolType) /
                     pool.filter((eachPoolType) => eachPoolType === poolType)
                       .length) *
-                    aiState.W.denialWeight +
+                    aiState.weights.denialWeight +
                   Math.random() * 0.05,
               )
                 .thru((score) =>

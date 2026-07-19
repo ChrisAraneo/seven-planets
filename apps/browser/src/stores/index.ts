@@ -10,8 +10,8 @@ import { nullish } from '@/utils/p';
 import { useUiStore } from './ui-store';
 import { useUnlocksStore } from './unlocks-store';
 
-export const pinia = createPinia();
-setActivePinia(pinia);
+export const PINIA = createPinia();
+setActivePinia(PINIA);
 
 export { useEffectsStore } from './effects-store';
 export { useGameStore } from './game-store';

@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import type { MakeOfferPayload } from '../../actions/make-offer/make-offer';
+import type { MakeOfferPayload } from '../../actions/make-offer';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';

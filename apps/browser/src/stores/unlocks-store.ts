@@ -15,10 +15,10 @@ const UNLOCKED_BY_WIN: Partial<Record<Difficulty, Difficulty>> = {
   hard: 'impossible',
 };
 
-const rewarded = new Set<Difficulty>(Object.values(UNLOCKED_BY_WIN));
+const REWARDED = new Set<Difficulty>(Object.values(UNLOCKED_BY_WIN));
 const ALWAYS_UNLOCKED: Difficulty[] = DIFFICULTIES.map(
   (difficultyDef) => difficultyDef.id,
-).filter((id) => !rewarded.has(id));
+).filter((id) => !REWARDED.has(id));
 
 const parseStored = (): unknown =>
   match(localStorage.getItem(STORAGE_KEY))

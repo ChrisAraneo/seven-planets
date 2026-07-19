@@ -7,4 +7,4 @@ export const computeAggression = (player: Player): number =>
   match(player)
     .with({ hasPacifistStatus: true }, () => 0)
     .with({ isKamikaze: true }, () => 1)
-    .otherwise(() => getAiState().W.willNeutral);
+    .otherwise(() => getAiState().weights.willNeutral);

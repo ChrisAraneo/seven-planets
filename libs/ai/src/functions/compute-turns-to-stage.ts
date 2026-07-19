@@ -13,7 +13,9 @@ export const computeTurnsToStage = (
   Math.max(
     0,
     Math.ceil(
-      (neededTroops + getAiState().W.reserveTroops - (staging?.troops ?? 0)) /
+      (neededTroops +
+        getAiState().weights.reserveTroops -
+        (staging?.troops ?? 0)) /
         Math.max(0.4, computeRecruitRate(player)),
     ),
   ) +

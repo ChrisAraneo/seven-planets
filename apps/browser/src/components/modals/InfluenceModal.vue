@@ -113,28 +113,37 @@ const doSteal = (
         v-for="influenceType in held"
         :key="influenceType"
         class="trow"
-        @click="chooseCard(influenceType)">
+        @click="chooseCard(influenceType)"
+      >
         <div class="tinfo">
-          <b
-            >{{ INFLUENCE_CARDS[influenceType].icon }}
-            {{ INFLUENCE_CARDS[influenceType].name }}</b
-          >
+          <b>{{ INFLUENCE_CARDS[influenceType].icon }}
+            {{ INFLUENCE_CARDS[influenceType].name }}</b>
           ×{{ human.hand[influenceType] }}
           —
           <span class="dimtx">{{ INFLUENCE_CARDS[influenceType].desc }}</span>
           <template v-if="influenceType.startsWith('SKIP_')">
-            <span v-if="skipTarget(influenceType)" class="dimtx">
+            <span
+              v-if="skipTarget(influenceType)"
+              class="dimtx"
+            >
               → would hit
               <b :style="{ color: skipTarget(influenceType)!.color }">{{
                 skipTarget(influenceType)!.name
-              }}</b></span
-            >
-            <span v-else class="warn"> (no rival to target)</span>
+              }}</b></span>
+            <span
+              v-else
+              class="warn"
+            > (no rival to target)</span>
           </template>
         </div>
       </div>
       <div class="mbtns">
-        <button class="btn" @click="ui.closeModal()">Cancel</button>
+        <button
+          class="btn"
+          @click="ui.closeModal()"
+        >
+          Cancel
+        </button>
       </div>
     </template>
 
@@ -158,7 +167,8 @@ const doSteal = (
           v-for="planet in coupList"
           :key="planet.id"
           class="trow"
-          @click="doCoup(planet)">
+          @click="doCoup(planet)"
+        >
           <div class="tinfo">
             <b :style="{ color: game.state.players[planet.ownerId].color }">{{
               planet.name
@@ -168,14 +178,27 @@ const doSteal = (
           <div>🪖{{ planet.troops }} {{ coupIcons(planet) }}</div>
         </div>
       </template>
-      <p v-else class="warn">
+      <p
+        v-else
+        class="warn"
+      >
         No valid target — planets under truce cannot be couped{{
           coupLastNote
         }}.
       </p>
       <div class="mbtns">
-        <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="ui.closeModal()">Cancel</button>
+        <button
+          class="btn"
+          @click="view = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="btn"
+          @click="ui.closeModal()"
+        >
+          Cancel
+        </button>
       </div>
     </template>
 
@@ -185,30 +208,52 @@ const doSteal = (
         Take one action card of your choice from a chosen rival (influence cards
         cannot be taken).
       </p>
-      <div v-for="rival in rivals" :key="rival.id" class="trow">
+      <div
+        v-for="rival in rivals"
+        :key="rival.id"
+        class="trow"
+      >
         <div class="tinfo">
           <b :style="{ color: rival.color }">{{ rival.name }}</b> —
           <template
             v-if="
               ACTION_TYPES.some((actionType) => rival.hand[actionType] > 0)
-            ">
-            <template v-for="actionType in ACTION_TYPES" :key="actionType">
+            "
+          >
+            <template
+              v-for="actionType in ACTION_TYPES"
+              :key="actionType"
+            >
               <button
                 v-if="rival.hand[actionType] > 0"
                 class="tab"
-                @click="doSteal(rival, actionType)">
+                @click="doSteal(rival, actionType)"
+              >
                 {{ CARDS[actionType].icon }} {{ CARDS[actionType].name }} ×{{
                   rival.hand[actionType]
                 }}
               </button>
             </template>
           </template>
-          <span v-else class="dimtx">no action cards</span>
+          <span
+            v-else
+            class="dimtx"
+          >no action cards</span>
         </div>
       </div>
       <div class="mbtns">
-        <button class="btn" @click="view = 'main'">Back</button>
-        <button class="btn" @click="ui.closeModal()">Cancel</button>
+        <button
+          class="btn"
+          @click="view = 'main'"
+        >
+          Back
+        </button>
+        <button
+          class="btn"
+          @click="ui.closeModal()"
+        >
+          Cancel
+        </button>
       </div>
     </template>
   </ModalShell>

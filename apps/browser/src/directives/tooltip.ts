@@ -21,7 +21,7 @@ interface TooltipHandle {
   listeners: [keyof HTMLElementEventMap, EventListener][];
 }
 
-const handles = new WeakMap<HTMLElement, TooltipHandle>();
+const HANDLES = new WeakMap<HTMLElement, TooltipHandle>();
 
 const STATIC_SIDE: Record<string, string> = {
   top: 'bottom',
@@ -101,12 +101,12 @@ const attachTip = (el: HTMLElement, handle: TooltipHandle): void =>
     .value();
 
 const show = (el: HTMLElement): void =>
-  match(handles.get(el))
+  match(HANDLES.get(el))
     .with({ tip: null, text: not('') }, (handle) => attachTip(el, handle))
     .otherwise(noop);
 
 const hide = (el: HTMLElement): void =>
-  match(handles.get(el))
+  match(HANDLES.get(el))
     .with({ tip: not(null) }, (handle) =>
       chain(handle)
         .tap(({ stop }) => stop?.())
@@ -144,10 +144,10 @@ const hideWhenEmptied = (el: HTMLElement, handle: TooltipHandle): void =>
     .with({ tip: not(null), text: '' }, () => hide(el))
     .otherwise(noop);
 
-export const vTooltip: Directive<HTMLElement, string | undefined> = {
+export const V_TOOLTIP: Directive<HTMLElement, string | undefined> = {
   mounted: (el, binding): void =>
     chain(createHandle(el, binding.value ?? ''))
-      .tap((handle) => handles.set(el, handle))
+      .tap((handle) => HANDLES.set(el, handle))
       .tap((handle) =>
         handle.listeners.forEach(([event, listener]) =>
           el.addEventListener(event, listener),
@@ -157,7 +157,7 @@ export const vTooltip: Directive<HTMLElement, string | undefined> = {
       .value(),
 
   updated: (el, binding): void =>
-    match(handles.get(el))
+    match(HANDLES.get(el))
       .with(nonNullable, (handle) =>
         chain(assign(handle, { text: binding.value ?? '' }))
           .tap(syncContent)
@@ -170,13 +170,11 @@ export const vTooltip: Directive<HTMLElement, string | undefined> = {
   unmounted: (el): void =>
     chain(hide(el))
       .tap(() =>
-        handles
-          .get(el)
-          ?.listeners.forEach(([event, listener]) =>
-            el.removeEventListener(event, listener),
-          ),
+        HANDLES.get(el)?.listeners.forEach(([event, listener]) =>
+          el.removeEventListener(event, listener),
+        ),
       )
-      .tap(() => handles.delete(el))
+      .tap(() => HANDLES.delete(el))
       .thru(noop)
       .value(),
 };

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { canPickCard } from '../functions/can-pick-card';
 import { createInitialGameState } from '../functions/create-initial-game-state';
 import type { GameState } from '../interfaces/game-state';
-import { advance } from '../reducers/advance';
+import { advance } from '../reducers/internal/advance';
 import { reduce } from '../reducers/reduce';
 import { chain } from '../utils/chain';
 
@@ -159,7 +159,9 @@ describe('reduce/advance invariants', () => {
           }),
         ).toBe(state),
       )
-      .tap(({ state }) => expect(reduce(state, { kind: 'START_GAME' })).toBe(state))
+      .tap(({ state }) =>
+        expect(reduce(state, { kind: 'START_GAME' })).toBe(state),
+      )
       .thru(noop)
       .value());
 });

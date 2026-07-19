@@ -34,7 +34,7 @@ export const computeCoupBankScore = (player: Player, threat: number): number =>
         }))
         .thru(
           ({ coupCost, turnsToCoup }) =>
-            match(turnsToCoup <= getAiState().W.planHorizon * 2)
+            match(turnsToCoup <= getAiState().weights.planHorizon * 2)
               .with(false, () => 0)
               .otherwise(() => coupTarget.value * 0.92 ** turnsToCoup * 0.8) *
             match(player.influence < coupCost)

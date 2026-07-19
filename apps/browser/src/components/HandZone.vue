@@ -55,7 +55,9 @@ const influence = computed(() =>
 
 <template>
   <div id="hand-zone">
-    <div class="zone-label">YOUR HAND</div>
+    <div class="zone-label">
+      YOUR HAND
+    </div>
     <div id="hand">
       <div
         v-for="card in regular"
@@ -63,7 +65,8 @@ const influence = computed(() =>
         v-tooltip="card.title"
         class="card"
         :class="{ dim: card.count === 0, action: card.action }"
-        :style="{ borderColor: card.color }">
+        :style="{ borderColor: card.color }"
+      >
         <div class="ic">
           {{ card.icon }}
         </div>
@@ -79,7 +82,8 @@ const influence = computed(() =>
         :key="card.cardType"
         v-tooltip="card.title"
         class="card action"
-        :style="{ borderColor: card.color }">
+        :style="{ borderColor: card.color }"
+      >
         <div class="ic">
           {{ card.icon }}
         </div>

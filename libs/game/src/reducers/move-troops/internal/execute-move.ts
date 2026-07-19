@@ -1,7 +1,7 @@
 import { assign, noop } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import type { MoveTroopsPayload } from '../../../actions/move-troops/move-troops';
+import type { MoveTroopsPayload } from '../../../actions/move-troops';
 import { createPluralSuffixString } from '../../../functions/create-plural-suffix-string';
 import { emitEffect } from '../../../functions/emit-effect';
 import { log } from '../../../functions/log';

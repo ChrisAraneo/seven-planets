@@ -1,6 +1,6 @@
 import { assign, chain } from 'lodash-es';
 
-import type { MakeOfferPayload } from '../../../actions/make-offer/make-offer';
+import type { MakeOfferPayload } from '../../../actions/make-offer';
 import type { GameState } from '../../../interfaces/game-state';
 import type { Player } from '../../../interfaces/player';
 import { getStatusIfHuman } from './get-status-if-human';

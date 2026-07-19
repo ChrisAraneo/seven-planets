@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash-es';
 import { match } from 'ts-pattern';
 
-import type { MoveTroopsPayload } from '../../actions/move-troops/move-troops';
+import type { MoveTroopsPayload } from '../../actions/move-troops';
 import { hasActionCard } from '../../functions/has-action-card';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';

@@ -12,5 +12,5 @@ export const applyStickiness = (
     .with(nullish, () => scores)
     .otherwise((kind) => ({
       ...scores,
-      [kind]: scores[kind] * getAiState().W.planStickiness,
+      [kind]: scores[kind] * getAiState().weights.planStickiness,
     }));

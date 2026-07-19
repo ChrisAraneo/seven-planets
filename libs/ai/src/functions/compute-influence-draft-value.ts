@@ -70,7 +70,7 @@ export const computeInfluenceDraftValue = (
             .when(
               (coupTarget) =>
                 (coupTarget?.value ?? -Infinity) >=
-                getAiState().W.coupValueFloor,
+                getAiState().weights.coupValueFloor,
               () =>
                 12 -
                 match((player.hand.COUP || 0) > 0)

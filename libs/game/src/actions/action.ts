@@ -1,10 +1,10 @@
 import type { AttackPlanetAction } from './attack-planet';
 import type { EndTurnAction } from './end-turn';
-import type { MakeOfferPayload } from './make-offer/make-offer';
-import type { MoveTroopsPayload } from './move-troops/move-troops';
-import type { RecruitTroopsPayload } from './recruit-troops/recruit-troops';
-import type { ResolveOfferPayload } from './resolve-offer/resolve-offer';
-import type { PlanetLayout } from './set-planet-layout/set-planet-layout';
+import type { MakeOfferPayload } from './make-offer';
+import type { MoveTroopsPayload } from './move-troops';
+import type { RecruitTroopsPayload } from './recruit-troops';
+import type { ResolveOfferPayload } from './resolve-offer';
+import type { PlanetLayout } from './set-planet-layout';
 import type { UseInfluenceAction } from './use-influence';
 
 export type Action =

@@ -219,7 +219,10 @@ const pick = (poolCard: PoolCardVM): void =>
 </script>
 
 <template>
-  <div id="pool-zone" :class="{ empty: !poolCards.length }">
+  <div
+    id="pool-zone"
+    :class="{ empty: !poolCards.length }"
+  >
     <div id="status">
       {{ game.state.status }}
     </div>
@@ -230,7 +233,8 @@ const pick = (poolCard: PoolCardVM): void =>
         v-tooltip="poolCard.title"
         :class="poolCard.cls"
         :style="{ borderColor: poolCard.color }"
-        @click="pick(poolCard)">
+        @click="pick(poolCard)"
+      >
         <template v-if="poolCard.kind === 'regular'">
           <div class="ic">
             {{ poolCard.icon }}
@@ -241,8 +245,7 @@ const pick = (poolCard: PoolCardVM): void =>
         </template>
         <template v-else>
           <div class="bhead">
-            <span class="bic2">{{ poolCard.icon }}</span
-            ><span class="bnm">{{ poolCard.name }}{{ poolCard.badge }}</span>
+            <span class="bic2">{{ poolCard.icon }}</span><span class="bnm">{{ poolCard.name }}{{ poolCard.badge }}</span>
           </div>
           <div class="bcost2">
             {{ poolCard.cost }}

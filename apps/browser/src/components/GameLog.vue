@@ -25,11 +25,15 @@ watch(
 </script>
 
 <template>
-  <div id="log" ref="el">
+  <div
+    id="log"
+    ref="el"
+  >
     <div
       v-for="(entry, i) in game.state.log"
       :key="i"
-      :class="'l-' + entry.cssClass">
+      :class="'l-' + entry.cssClass"
+    >
       {{ entry.message }}
     </div>
   </div>

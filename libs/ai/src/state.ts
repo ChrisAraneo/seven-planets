@@ -6,18 +6,18 @@ import { WEIGHTS, type Weights } from './weights';
 
 interface AiState {
   tuned: Weights;
-  W: Weights;
+  weights: Weights;
   difficulty: AiDifficulty | null;
   randomPickChance: number;
   planCache: WeakMap<GameState, Map<number, Plan>>;
 }
 
-const aiState: AiState = {
+const AI_STATE: AiState = {
   tuned: { ...WEIGHTS },
-  W: { ...WEIGHTS },
+  weights: { ...WEIGHTS },
   difficulty: null,
   randomPickChance: 0,
   planCache: new WeakMap(),
 };
 
-export const getAiState = (): AiState => aiState;
+export const getAiState = (): AiState => AI_STATE;

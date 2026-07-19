@@ -4,7 +4,7 @@ import { match } from 'ts-pattern';
 import type { UseInfluencePayload } from '../../actions/use-influence';
 import type { GameState } from '../../interfaces/game-state';
 import { chain } from '../../utils/chain';
-import { playInfluence } from './play-influence';
+import { playInfluence } from './internal/play-influence';
 
 export const applyUseInfluence = (
   state: GameState,

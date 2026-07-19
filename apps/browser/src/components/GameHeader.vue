@@ -38,10 +38,23 @@ const newGame = (): void =>
     </div>
     <div class="spacer" />
     <label id="fast-label">
-      <input v-model="effects.fastMode" type="checkbox" />
+      <input
+        v-model="effects.fastMode"
+        type="checkbox"
+      >
       ⏩ fast animations
     </label>
-    <button class="btn small" @click="ui.openModal('help')">❓ Rules</button>
-    <button class="btn small" @click="newGame">🆕 New Game</button>
+    <button
+      class="btn small"
+      @click="ui.openModal('help')"
+    >
+      ❓ Rules
+    </button>
+    <button
+      class="btn small"
+      @click="newGame"
+    >
+      🆕 New Game
+    </button>
   </header>
 </template>

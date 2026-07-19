@@ -103,7 +103,7 @@ export const computeHoldProbability = (
   planet: Planet,
   garrison: number,
   protectedUntil: number = planet.protectedUntil,
-  horizon: number = getAiState().W.holdHorizon,
+  horizon: number = getAiState().weights.holdHorizon,
 ): number =>
   chain({
     planet,

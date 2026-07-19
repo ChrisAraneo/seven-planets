@@ -3,15 +3,40 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { configBuilder } from '@chris.araneo/eslint-config';
 
+const UPPER_CASE_OBJECT_KEY = {
+  selector: 'objectLiteralProperty',
+  filter: { regex: '^[A-Z][A-Z0-9_]*$', match: true },
+  format: ['UPPER_CASE'],
+};
+
+const allowUpperCaseObjectKeys = (configs) =>
+  configs.map((config) => {
+    const rule = config.rules?.['@typescript-eslint/naming-convention'];
+
+    if (!Array.isArray(rule)) {
+      return config;
+    }
+
+    return {
+      ...config,
+      rules: {
+        ...config.rules,
+        '@typescript-eslint/naming-convention': [...rule, UPPER_CASE_OBJECT_KEY],
+      },
+    };
+  });
+
 export default [
-  ...configBuilder()
-    .addTypeScriptConfig({
-      sources: ['apps/**/*.ts', 'libs/**/*.ts'],
-    })
-    .addIgnored({
-      ignored: ['dist/', 'reports/', 'node_modules/'],
-    })
-    .build(),
+  ...allowUpperCaseObjectKeys(
+    configBuilder()
+      .addTypeScriptConfig({
+        sources: ['apps/**/*.ts', 'libs/**/*.ts'],
+      })
+      .addIgnored({
+        ignored: ['dist/', 'reports/', 'node_modules/'],
+      })
+      .build(),
+  ),
   ...pluginVue.configs['flat/recommended'],
   {
     files: ['**/*.vue'],

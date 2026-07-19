@@ -123,28 +123,33 @@ const onRecruit = (): void =>
 
 <template>
   <div id="action-zone">
-    <div class="zone-label">ACTIONS</div>
+    <div class="zone-label">
+      ACTIONS
+    </div>
     <button
       v-tooltip="recruitTitle"
       class="btn action"
       :disabled="
         !my || !hasActionCard(human, 'RECRUIT') || !canRecruitSomewhere
       "
-      @click="onRecruit">
+      @click="onRecruit"
+    >
       🪖 Recruit ×{{ human.hand.RECRUIT }}
     </button>
     <button
       v-tooltip="attackTitle"
       class="btn action"
       :disabled="!my || !hasActionCard(human, 'ATTACK') || !canLaunchSomewhere"
-      @click="ui.openModal('attack')">
+      @click="ui.openModal('attack')"
+    >
       ⚔️ Attack ×{{ human.hand.ATTACK }}
     </button>
     <button
       v-tooltip="moveTitle"
       class="btn action"
       :disabled="!my || !hasActionCard(human, 'MOVE') || !canMoveSomewhere"
-      @click="ui.openModal('move')">
+      @click="ui.openModal('move')"
+    >
       🛸 Move ×{{ human.hand.MOVE }}
     </button>
     <button
@@ -152,25 +157,28 @@ const onRecruit = (): void =>
       class="btn action"
       :disabled="
         !my ||
-        !hasActionCard(human, 'TRADE') ||
-        !hasEmbassy ||
-        filterAlivePlayers(game.state).length < 2
+          !hasActionCard(human, 'TRADE') ||
+          !hasEmbassy ||
+          filterAlivePlayers(game.state).length < 2
       "
-      @click="ui.openModal('trade')">
+      @click="ui.openModal('trade')"
+    >
       🔁 Trade ×{{ human.hand.TRADE }}
     </button>
     <button
       v-tooltip="influenceTitle"
       class="btn action"
       :disabled="!my || heldInf < 1"
-      @click="ui.openModal('influence')">
+      @click="ui.openModal('influence')"
+    >
       ⭐ Influence ×{{ heldInf }}
     </button>
     <button
       id="btn-end"
       class="btn action end"
       :disabled="!my"
-      @click="dispatch(createEndTurnAction({ playerId: 0 }))">
+      @click="dispatch(createEndTurnAction({ playerId: 0 }))"
+    >
       ⏭️ End Turn
     </button>
   </div>

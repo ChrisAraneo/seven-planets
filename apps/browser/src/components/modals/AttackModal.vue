@@ -196,7 +196,10 @@ const launch = (): void =>
       {{ CONQUEST_TRUCE }} turns). Spends one ⚔️ Attack card (you have
       {{ human.hand.ATTACK }}).
     </p>
-    <p v-if="breaksVow" class="vow-warning">
+    <p
+      v-if="breaksVow"
+      class="vow-warning"
+    >
       ☮️➡️⚔️ You are a PACIFIST. Launching this attack breaks your vow
       <strong>permanently</strong>: you lose the +defense and +⭐ bonuses on
       every planet and can never become a PACIFIST again.
@@ -208,7 +211,8 @@ const launch = (): void =>
         :key="planet.id"
         class="tab"
         :class="{ active: planet.id === sourceId }"
-        @click="sourceId = planet.id">
+        @click="sourceId = planet.id"
+      >
         {{ planet.name }} 🪖{{ planet.troops }}
       </button>
     </p>
@@ -217,13 +221,17 @@ const launch = (): void =>
       :key="planet.id"
       class="trow"
       :class="{ sel: planet.id === selectedId, truce: isUnderTruce(planet) }"
-      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })">
+      @click="selectTarget({ id: planet.id, truce: isUnderTruce(planet) })"
+    >
       <div class="tinfo">
         <b :style="{ color: game.state.players[planet.ownerId].color }">{{
           planet.name
         }}</b>
         — {{ game.state.players[planet.ownerId].name }}
-        <span v-if="isUnderTruce(planet)" class="dimtx">
+        <span
+          v-if="isUnderTruce(planet)"
+          class="dimtx"
+        >
           🕊️ truce ({{ planet.protectedUntil - game.state.turn + 1 }} turn{{
             toTruceTurnsSuffix(planet)
           }})
@@ -235,22 +243,17 @@ const launch = (): void =>
         <span
           v-if="game.state.players[planet.ownerId].hasPacifistStatus"
           v-tooltip="`Pacifist — +${PACIFIST_DEF_BONUS} defense`"
-          >☮️</span
-        >
+        >☮️</span>
         🃏{{ getHandSize(game.state.players[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">
       Troops aboard:
       <span class="stepper">
-        <button @click="decrease">−</button
-        ><span class="sval">{{ troopCount }}</span
-        ><button @click="increase">+</button>
+        <button @click="decrease">−</button><span class="sval">{{ troopCount }}</span><button @click="increase">+</button>
       </span>
-      <span class="dimtx"
-        >({{ source.name }} garrisons {{ source.troops }}, rocket capacity
-        {{ capacityLabel() }})</span
-      >
+      <span class="dimtx">({{ source.name }} garrisons {{ source.troops }}, rocket capacity
+        {{ capacityLabel() }})</span>
     </p>
     <p>
       <template v-if="preview">
@@ -259,31 +262,46 @@ const launch = (): void =>
         }}
         &nbsp;vs&nbsp; defense {{ preview.defensePower }} + 🎲0-{{
           COMBAT.defenseRoll
-        }}<br />
-        <b :style="{ color: toNoteColor(preview.note) }"
-          >Win chance: {{ preview.winPercent }}%</b
-        >
+        }}<br>
+        <b :style="{ color: toNoteColor(preview.note) }">Win chance: {{ preview.winPercent }}%</b>
         —
-        <span v-if="preview.note === 'good'" style="color: #7dff8a"
-          >odds look good.</span
+        <span
+          v-if="preview.note === 'good'"
+          style="color: #7dff8a"
+        >odds look good.</span>
+        <span
+          v-else-if="preview.note === 'close'"
+          style="color: #ffd23d"
+        >close fight, luck decides.</span>
+        <span
+          v-else
+          class="warn"
+        >likely suicide.</span>
+        <span
+          v-if="preview.sendingAll"
+          class="warn"
         >
-        <span v-else-if="preview.note === 'close'" style="color: #ffd23d"
-          >close fight, luck decides.</span
-        >
-        <span v-else class="warn">likely suicide.</span>
-        <span v-if="preview.sendingAll" class="warn">
-          Sending everyone leaves {{ source.name }} defenseless!</span
-        >
+          Sending everyone leaves {{ source.name }} defenseless!</span>
       </template>
-      <span v-else class="warn"
-        >All enemy planets are under truce — no valid target.</span
-      >
+      <span
+        v-else
+        class="warn"
+      >All enemy planets are under truce — no valid target.</span>
     </p>
     <div class="mbtns">
-      <button class="btn danger" :disabled="!canLaunch" @click="launch">
+      <button
+        class="btn danger"
+        :disabled="!canLaunch"
+        @click="launch"
+      >
         🚀 LAUNCH
       </button>
-      <button class="btn" @click="ui.closeModal()">Cancel</button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Cancel
+      </button>
     </div>
   </ModalShell>
 </template>

@@ -38,7 +38,7 @@ export interface AttackPlan {
 }
 
 const getLossWeight = (player: Player): number =>
-  getAiState().W.troopValue *
+  getAiState().weights.troopValue *
   match(player.isKamikaze)
     .with(true, () => 0.25)
     .otherwise(() => 1);
@@ -175,7 +175,7 @@ const planRaid = (
       holdProb: 0,
       value: defenderLoss,
       score:
-        winProbability * defenderLoss * getAiState().W.troopValue * zeal -
+        winProbability * defenderLoss * getAiState().weights.troopValue * zeal -
         (winProbability * (raidTroops - survivors) +
           (1 - winProbability) * computeLossesOnDefeat(raidTroops)) *
           getLossWeight(player),
@@ -192,7 +192,7 @@ const planStrikeFrom = (
     hasSilo: Boolean(source.buildings.SILO),
     maxTroops: Math.min(
       getRocketCapacity(source),
-      source.troops - getAiState().W.reserveTroops,
+      source.troops - getAiState().weights.reserveTroops,
     ),
   })
     .when(

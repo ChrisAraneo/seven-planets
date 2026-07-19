@@ -28,8 +28,8 @@ export const computeEffectiveMinimumConquerProbability = (
   chain(getAiState())
     .thru(
       (aiState) =>
-        aiState.W.minConquerProb -
-        getTurn() * aiState.W.aggressionRamp -
+        aiState.weights.minConquerProb -
+        getTurn() * aiState.weights.aggressionRamp -
         toDuelBonus() -
         toRecklessBonus(player),
     )

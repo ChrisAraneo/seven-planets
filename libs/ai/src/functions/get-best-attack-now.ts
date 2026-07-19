@@ -17,11 +17,11 @@ export const getBestAttackNow = (player: Player): AttackPlan | null =>
           match(player.isKamikaze)
             .with(true, () => 0.01)
             .otherwise(() => 0.2),
-          getAiState().W.minHoldProb *
+          getAiState().weights.minHoldProb *
             match(player.isKamikaze)
               .with(true, () => 0.15)
               .otherwise(() => 1) -
-            getTurn() * getAiState().W.aggressionRamp * 0.5,
+            getTurn() * getAiState().weights.aggressionRamp * 0.5,
         ),
         raidScoreFloor: match(player.isKamikaze)
           .with(true, () => 0)

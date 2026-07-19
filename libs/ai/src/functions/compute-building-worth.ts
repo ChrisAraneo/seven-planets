@@ -43,7 +43,7 @@ const computeIncomeWorth = (
         (computeIncomeAmount(buildingType, level) -
           computeIncomeAmount(buildingType, level - 1)) *
         CARDS[incomeResource].value *
-        getAiState().W.buildRoiHorizon *
+        getAiState().weights.buildRoiHorizon *
         match(incomeResource)
           .with('SPICE', () =>
             match(hasBuilding(player, 'LAB'))
@@ -58,7 +58,7 @@ const computeBarracksWorth = (
   planet: Planet,
   level: number,
 ): number =>
-  chain(getAiState().W.buildRoiHorizon)
+  chain(getAiState().weights.buildRoiHorizon)
     .thru(
       (roiHorizon) =>
         match(hasBuilding(player, 'BARRACKS'))
@@ -132,7 +132,7 @@ const computeSiloWorth = (
         match(hasBuilding(player, 'SILO'))
           .with(true, () => 2 + SILO_HIT_BONUS * 0.8 + level)
           .otherwise(
-            () => getAiState().W.buildRoiHorizon * 0.7 + getTurn() / 10,
+            () => getAiState().weights.buildRoiHorizon * 0.7 + getTurn() / 10,
           ) +
         match(planet.buildings.BARRACKS)
           .when(Boolean, () => 3)
@@ -201,7 +201,9 @@ const computeSpecialWorth = (
     .with('EMBASSY', () =>
       match(level)
         .with(1, () => 3.5)
-        .otherwise(() => STAR_VALUE * getAiState().W.buildRoiHorizon * 0.7),
+        .otherwise(
+          () => STAR_VALUE * getAiState().weights.buildRoiHorizon * 0.7,
+        ),
     )
     .with('LAB', () =>
       match(level <= getMaxLevel('SINGULARITY'))
@@ -211,7 +213,8 @@ const computeSpecialWorth = (
     .with(
       'SINGULARITY',
       () =>
-        computeAverageResourceCardValue() * getAiState().W.buildRoiHorizon +
+        computeAverageResourceCardValue() *
+          getAiState().weights.buildRoiHorizon +
         5 +
         match(level >= 4)
           .with(true, () => SINGULARITY_DEF_BONUS * 0.6)

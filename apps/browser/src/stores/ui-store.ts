@@ -62,6 +62,7 @@ export const useUiStore = defineStore('ui', () => {
         chain(level)
           .tap(() => assign(difficulty, { value: level }))
           .tap(applyDifficulty)
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           .tap(() => assign(started, { value: true }))
           .thru(() => startGame())
           .thru(noop)
@@ -71,7 +72,7 @@ export const useUiStore = defineStore('ui', () => {
   const start = (): void =>
     match(!started.value && IS_AUTO_HUMAN)
       .with(true, () =>
-        chain(assign(useEffectsStore(), { fastMode: true }))
+        chain(assign(useEffectsStore(), { isFastMode: true }))
           .thru(() => chooseDifficulty(DEFAULT_DIFFICULTY))
           .value(),
       )

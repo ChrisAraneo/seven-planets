@@ -61,22 +61,26 @@ const recruit = (planetId: number): void =>
       v-for="planet in barracksPls"
       :key="planet.id"
       class="trow"
-      @click="recruit(planet.id)">
+      @click="recruit(planet.id)"
+    >
       <div class="tinfo">
         <b>{{ planet.name }}</b>
-        <span class="dimtx"
-          >🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
-            troopsFor(planet.id)
-          }}
+        <span class="dimtx">🎖️ Barracks L{{ planet.buildings.BARRACKS }} → +{{
+          troopsFor(planet.id)
+        }}
           troops for {{ troopsFor(planet.id) }}⛏️{{
             shortWarning(planet.id)
-          }}</span
-        >
+          }}</span>
       </div>
       <div>🪖{{ planet.troops }}</div>
     </div>
     <div class="mbtns">
-      <button class="btn" @click="ui.closeModal()">Cancel</button>
+      <button
+        class="btn"
+        @click="ui.closeModal()"
+      >
+        Cancel
+      </button>
     </div>
   </ModalShell>
 </template>
