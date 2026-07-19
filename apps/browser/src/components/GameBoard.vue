@@ -189,7 +189,11 @@ const layoutInto = (element: HTMLCanvasElement, parent: HTMLElement): void =>
             .thru(noop)
             .value(),
         )
-        .otherwise(noop),
+        .otherwise(() =>
+          console.error(
+            '[seven-planets] canvas 2D context unavailable — the board cannot be rendered. A privacy extension or browser setting may be blocking canvas access.',
+          ),
+        ),
     )
     .value();
 
