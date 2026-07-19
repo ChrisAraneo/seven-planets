@@ -1,42 +1,38 @@
 import { assign, cloneDeep } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
+import { chain } from '../utils/chain';
 import { log } from './log';
 
-/* Reducer branch for the 'start' intent: log the welcome lines and step the
-   cursor to the between-turns position (an exhausted action queue), from
-   which advance runs the first turn's prelude. A second 'start' is a no-op. */
-export function applyStart(state: GameState): GameState {
-  return match(state)
+export const applyStart = (state: GameState): GameState =>
+  match(state)
     .when(
-      (state) => state.cursor.phase !== 'setup',
-      (state) => state,
+      () => state.cursor.phase !== 'SETUP',
+      () => state,
     )
-    .otherwise((state) =>
+    .otherwise(() =>
       chain(cloneDeep(state))
-        .thru((clone) =>
+        .thru((cl1) =>
           assign(
-            clone,
-            log(clone, 'SEVEN PLANETS — seven worlds, one victor.', 'sys'),
+            cl1,
+            log(cl1, 'SEVEN PLANETS — seven worlds, 1 victor.', 'sys'),
           ),
         )
-        .thru((clone) =>
+        .thru((cl1) =>
           assign(
-            clone,
+            cl1,
             log(
-              clone,
+              cl1,
               'WIN by conquering every other planet. Research technology, upgrade buildings, raise armies.',
               'sys',
             ),
           ),
         )
-        .thru((clone) =>
-          assign(clone, {
-            cursor: { phase: 'action' as const, seatQueue: [], seatIdx: 0 },
+        .thru((cl1) =>
+          assign(cl1, {
+            cursor: { phase: 'ACTION' as const, seatQueue: [], seatIdx: 0 },
           }),
         )
         .value(),
     );
-}

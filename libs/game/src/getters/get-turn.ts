@@ -1,5 +1,3 @@
-import { getGameStateLastValue } from '../state';
+import { getGameStateLastValue } from '../get-game-state-last-value';
 
-export function getTurn(): number {
-  return getGameStateLastValue().turn;
-}
+export const getTurn = (): number => getGameStateLastValue().turn;

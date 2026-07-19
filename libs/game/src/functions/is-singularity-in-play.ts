@@ -1,22 +1,31 @@
-import { maxLevel } from '../config/constants';
-import { isSingularityLabOk } from './is-singularity-lab-ok';
 import type { GameState } from '../interfaces/game-state';
-
+import type { Planet } from '../interfaces/planet';
+import type { Player } from '../interfaces/player';
+import { chain } from '../utils/chain';
+import { canBuildSingularity } from './can-build-singularity';
+import { getBuildingLevel } from './extractors/get-building-level';
+import { getMaxLevel } from './extractors/get-max-level';
+import { getOwnedPlanets } from './extractors/get-owned-planets';
+import { getTechLevel } from './extractors/get-tech-level';
 import { filterAlivePlayers } from './filter-alive-players';
-import { ownedPlanets } from './owned-planets';
-import { getTechLevel } from './get-tech-level';
 
-// The Singularity card is only dealt while someone can still build or upgrade one:
-// The next level must be within their technology and satisfy the Lab requirement.
-export function isSingularityInPlay(state: GameState): boolean {
-  return filterAlivePlayers(state).some((player) =>
-    ownedPlanets(state, player).some((planet) => {
-      const next = (planet.buildings.SINGULARITY || 0) + 1;
-      return (
-        next <= maxLevel('SINGULARITY') &&
+const isSingularityReadyOn = (
+  state: GameState,
+  player: Player,
+  planet: Planet,
+): boolean =>
+  chain(getBuildingLevel(planet, 'SINGULARITY') + 1)
+    .thru(
+      (next) =>
+        next <= getMaxLevel('SINGULARITY') &&
         next <= getTechLevel(state, player) &&
-        isSingularityLabOk(planet, next)
-      );
-    }),
+        canBuildSingularity(planet, next),
+    )
+    .value();
+
+export const isSingularityInPlay = (state: GameState): boolean =>
+  filterAlivePlayers(state).some((player) =>
+    getOwnedPlanets(state, player).some((planet) =>
+      isSingularityReadyOn(state, player, planet),
+    ),
   );
-}

@@ -1,30 +1,57 @@
-import pluginVue from 'eslint-plugin-vue'
-import globals from 'globals'
-import { configBuilder } from '@chris.araneo/eslint-config'
+import pluginVue from 'eslint-plugin-vue';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import { configBuilder } from '@chris.araneo/eslint-config';
+
+const UPPER_CASE_OBJECT_KEY = {
+  selector: 'objectLiteralProperty',
+  filter: { regex: '^[A-Z][A-Z0-9_]*$', match: true },
+  format: ['UPPER_CASE'],
+};
+
+const allowUpperCaseObjectKeys = (configs) =>
+  configs.map((config) => {
+    const rule = config.rules?.['@typescript-eslint/naming-convention'];
+
+    if (!Array.isArray(rule)) {
+      return config;
+    }
+
+    return {
+      ...config,
+      rules: {
+        ...config.rules,
+        '@typescript-eslint/naming-convention': [...rule, UPPER_CASE_OBJECT_KEY],
+      },
+    };
+  });
 
 export default [
-  ...configBuilder()
-    .addTypeScriptConfig({
-      sources: ['apps/**/*.ts', 'libs/**/*.ts'],
-    })
-    .addIgnored({
-      ignored: ['dist/', 'reports/', 'node_modules/'],
-    })
-    .build(),
+  ...allowUpperCaseObjectKeys(
+    configBuilder()
+      .addTypeScriptConfig({
+        sources: ['apps/**/*.ts', 'libs/**/*.ts'],
+      })
+      .addIgnored({
+        ignored: ['dist/', 'reports/', 'node_modules/'],
+      })
+      .build(),
+  ),
   ...pluginVue.configs['flat/recommended'],
-
-  /* =====================================================================
-     Nx module boundaries — enforced with the built-in no-restricted-imports
-     rule (mirrors the `scope:*` tags in each project.json). Direction:
-
-       game    → (leaf) must not know ai, effects or the app exist
-       ai      → may depend on game only
-       effects → may depend on game only
-       browser → (app) may depend on any lib
-
-     Swap these for @nx/eslint-plugin's `@nx/enforce-module-boundaries`
-     once that plugin supports ESLint 10.
-     ===================================================================== */
+  {
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: tseslint.parser,
+      },
+    },
+  },
+  {
+    files: ['e2e/**/*.ts', 'scripts/**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+    },
+  },
   {
     files: ['libs/game/**/*.{ts,vue}'],
     rules: {
@@ -35,9 +62,20 @@ export default [
             {
               group: ['@seven-planets/ai', '@seven-planets/effects', '@/*'],
               message:
-                'The game lib is a leaf — it must not depend on ai, effects or the app.',
+                'The game lib must not depend on ai, effects or the app.',
             },
           ],
+        },
+      ],
+      '@typescript-eslint/no-magic-numbers': [
+        'error',
+        {
+          ignore: [0, 1, 2],
+          ignoreArrayIndexes: true,
+          ignoreEnums: true,
+          ignoreNumericLiteralTypes: true,
+          ignoreReadonlyClassProperties: true,
+          ignoreTypeIndexes: true,
         },
       ],
     },
@@ -56,6 +94,7 @@ export default [
           ],
         },
       ],
+      '@typescript-eslint/no-magic-numbers': 'off',
     },
   },
   {
@@ -72,18 +111,43 @@ export default [
           ],
         },
       ],
+      '@typescript-eslint/no-magic-numbers': [
+        'error',
+        {
+          ignore: [0, 1, 2],
+          ignoreArrayIndexes: true,
+          ignoreEnums: true,
+          ignoreNumericLiteralTypes: true,
+          ignoreReadonlyClassProperties: true,
+          ignoreTypeIndexes: true,
+        },
+      ],
     },
   },
-
-  // Integration tests bootstrap the assembled app store, so they may cross
-  // the lib boundaries the source code may not.
   {
     files: ['**/__tests__/**/*.{ts,vue}'],
     rules: {
       'no-restricted-imports': 'off',
     },
   },
-
+  {
+    files: ['**/__tests__/**/*.ts', '**/*.spec.ts', 'e2e/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-magic-numbers': 'off',
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'max-statements': 'off',
+      '@typescript-eslint/naming-convention': 'off',
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      complexity: 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
   {
     rules: {},
     languageOptions: {
@@ -93,4 +157,4 @@ export default [
       },
     },
   },
-]
+];

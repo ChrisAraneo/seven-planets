@@ -1,64 +1,42 @@
 import { filter, firstValueFrom } from 'rxjs';
-import { match, P } from 'ts-pattern';
 
+import { getGameOverObject, startGame } from '..';
+import { getGameState } from '../get-game-state';
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import { getTurn } from '../getters/get-turn';
-import type { GameOver } from '../interfaces/game-over';
-import {
-  dispatch,
-  getGameState,
-  getGameStateLastValue,
-  resetGameState,
-  setGameState,
-} from '../state';
+import { resetGameState } from '../reset-game-state';
+import { setGameState } from '../set-game-state';
+import { chain } from '../utils/chain';
 import { assignKamikazes } from './assign-kamikazes';
-import { getGameOverObject } from '..';
+import { createSimulationResult } from './create-simulation-result';
 
-const { nonNullable } = P;
+const DEFAULT_KAMIKAZE_COUNT = 0;
 
-interface SimulationResult {
+export interface SimulationResult {
   turns: number;
   winner: { id: number; name: string; isHuman: boolean } | null;
   reason: string;
 }
 
-export async function simulateGame(
-  maxTurns = 400,
+export const simulateGame = (
   options: { kamikazeCount?: number } = {},
-): Promise<SimulationResult> {
-  /* Each simulated game runs on a fresh state; games run strictly
-     sequentially, so resetting between games is safe. Headless, every
-     seat is AI-driven: the AI's getGameState() subscriptions answer each park
-     synchronously (RxJS subjects deliver synchronously; the intent
-     pipeline's queueScheduler flattens the loop), so the cursor rests at
-     'done' by the time dispatch('start') returns. */
-  resetGameState();
-  setGameState({
-    ...assignKamikazes(getGameStateLastValue(), options.kamikazeCount ?? 0),
-    maxTurns,
-  });
-  const done = firstValueFrom(
-    getGameState().pipe(filter((state) => state.cursor.phase === 'done')),
-  );
-  dispatch({ kind: 'start' });
-  await done;
-  return gameResult(getGameOverObject(), getTurn());
-}
-
-function gameResult(
-  over: GameOver | undefined,
-  turns: number,
-): SimulationResult {
-  return {
-    turns,
-    winner: match(over?.winner)
-      .with(nonNullable, (player) => ({
-        id: player.id,
-        name: player.name,
-        isHuman: player.isHuman,
-      }))
-      .otherwise(() => null),
-    reason: match(over)
-      .with(nonNullable, (gameOver) => gameOver.reason || 'timeout')
-      .otherwise(() => 'timeout'),
-  };
-}
+): Promise<SimulationResult> =>
+  chain(resetGameState())
+    .tap(() =>
+      setGameState({
+        ...assignKamikazes(
+          getGameStateLastValue(),
+          options.kamikazeCount ?? DEFAULT_KAMIKAZE_COUNT,
+        ),
+      }),
+    )
+    .thru(() =>
+      firstValueFrom(
+        getGameState().pipe(filter((state) => state.cursor.phase === 'DONE')),
+      ),
+    )
+    .tap(() => startGame())
+    .thru((done) =>
+      done.then(() => createSimulationResult(getGameOverObject(), getTurn())),
+    )
+    .value();

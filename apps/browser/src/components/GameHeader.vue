@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { computed } from 'vue';
 import { useEffectsStore, useGameStore, useUiStore } from '@/stores';
 
@@ -6,31 +8,37 @@ const ui = useUiStore();
 const game = useGameStore();
 const effects = useEffectsStore();
 
-const turnLabel = computed(() => {
-  const { turn, over, phase } = game.state;
-  if (turn === 0) return '—';
-  if (over) return `Turn ${turn} · GAME OVER`;
-  const phaseLabel =
-    phase === 'draft'
-      ? 'DRAFT PHASE'
-      : phase === 'action'
-        ? 'ACTION PHASE'
-        : '…';
-  return `Turn ${turn} · ${phaseLabel}`;
-});
+const turnLabel = computed(() =>
+  match(game.state)
+    .with({ turn: 0 }, () => '—')
+    .when(
+      ({ over }) => Boolean(over),
+      ({ turn }) => `Turn ${turn} · GAME OVER`,
+    )
+    .otherwise(
+      ({ turn, phase }) =>
+        `Turn ${turn} · ${match(phase)
+          .with('DRAFT', () => 'DRAFT PHASE')
+          .with('ACTION', () => 'ACTION PHASE')
+          .otherwise(() => '…')}`,
+    ),
+);
 
-function newGame(): void {
-  if (window.confirm('Abandon this game and start over?')) ui.newGame();
-}
+const newGame = (): void =>
+  match(window.confirm('Abandon this game and start over?'))
+    .with(true, () => ui.restartGame())
+    .otherwise(noop);
 </script>
 
 <template>
   <header>
     <h1>SEVEN <span>PLANETS</span></h1>
-    <div id="turn-ind">{{ turnLabel }}</div>
-    <div class="spacer"></div>
+    <div id="turn-ind">
+      {{ turnLabel }}
+    </div>
+    <div class="spacer" />
     <label id="fast-label">
-      <input type="checkbox" v-model="effects.fastMode" />
+      <input v-model="effects.isFastMode" type="checkbox" />
       ⏩ fast animations
     </label>
     <button class="btn small" @click="ui.openModal('help')">❓ Rules</button>

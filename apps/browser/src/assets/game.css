@@ -1,4 +1,3 @@
-/* ============ SEVEN PLANETS — retro sci-fi ============ */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -21,7 +20,6 @@ body {
   height: 100vh;
   position: relative;
 }
-/* subtle CRT scanlines */
 #app::after {
   content: '';
   position: fixed;
@@ -35,7 +33,6 @@ body {
   z-index: 99;
 }
 
-/* ---------- top bar ---------- */
 header {
   display: flex;
   align-items: center;
@@ -69,11 +66,17 @@ header h1 span {
   user-select: none;
 }
 
-/* ---------- main area ---------- */
 main {
   flex: 1;
   display: flex;
   min-height: 0;
+}
+#board-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  display: flex;
 }
 #board-wrap {
   flex: 1;
@@ -162,7 +165,6 @@ aside#side {
   font-weight: bold;
 }
 
-/* ---------- footer ---------- */
 footer {
   display: flex;
   gap: 12px;
@@ -179,27 +181,57 @@ footer {
   margin-bottom: 4px;
 }
 #pool-zone {
-  flex: 1;
-  min-width: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(90%, 560px);
+  max-height: 74%;
+  padding: 12px 14px;
+  background: rgba(8, 12, 24, 0.74);
+  border: 1px solid #24365a;
+  border-radius: 12px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+#pool-zone.empty {
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  pointer-events: none;
 }
 #status {
   font-size: 12.5px;
   color: #ffd23d;
-  margin-bottom: 6px;
   min-height: 17px;
+  text-align: center;
   text-shadow: 0 0 8px rgba(255, 210, 61, 0.3);
+  flex-shrink: 0;
 }
 #pool {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 0;
   overflow-y: auto;
   align-content: flex-start;
 }
+#pool:empty {
+  display: none;
+}
 
 #hand-zone {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -233,10 +265,15 @@ footer {
   grid-column: 1 / -1;
 }
 
-/* ---------- cards ---------- */
-.card {
-  width: 46px;
+#pool .card {
+  width: 88px;
+  height: 121px;
+}
+#hand .card {
+  width: 74px;
   height: 64px;
+}
+.card {
   border-radius: 6px;
   border: 1px solid;
   background: #0c1224;
@@ -276,11 +313,7 @@ footer {
   opacity: 0.35;
   cursor: not-allowed;
 }
-
-/* building cards in the pool: name, cost and bonus printed on the face */
 .card.bcard {
-  width: 92px;
-  height: 72px;
   padding: 3px 4px;
   gap: 2px;
   background: #0f1626;
@@ -328,7 +361,6 @@ footer {
   }
 }
 
-/* ---------- buttons ---------- */
 .btn {
   background: #0c1428;
   border: 1px solid rgba(61, 240, 255, 0.35);
@@ -360,7 +392,48 @@ footer {
   color: #ffb3c0;
 }
 
-/* ---------- modals ---------- */
+.fui-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  max-width: 320px;
+  width: max-content;
+  pointer-events: none;
+  background: #0c1428;
+  border: 1px solid rgba(61, 240, 255, 0.45);
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  color: #cfe3ff;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 9px;
+}
+.fui-tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: #0c1428;
+  border: 1px solid rgba(61, 240, 255, 0.45);
+}
+.fui-tooltip[data-side='top'] .fui-tooltip-arrow {
+  border-top: none;
+  border-left: none;
+}
+.fui-tooltip[data-side='bottom'] .fui-tooltip-arrow {
+  border-bottom: none;
+  border-right: none;
+}
+.fui-tooltip[data-side='left'] .fui-tooltip-arrow {
+  border-bottom: none;
+  border-left: none;
+}
+.fui-tooltip[data-side='right'] .fui-tooltip-arrow {
+  border-top: none;
+  border-right: none;
+}
+
 #modal-root {
   position: fixed;
   inset: 0;
@@ -414,7 +487,6 @@ footer {
   color: #5a7bad;
 }
 
-/* build rows */
 .brow {
   display: flex;
   align-items: center;
@@ -465,7 +537,6 @@ footer {
   color: #3df0ff;
 }
 
-/* attack target rows */
 .trow {
   display: flex;
   align-items: center;
@@ -491,7 +562,6 @@ footer {
   flex: 1;
 }
 
-/* steppers */
 .stepper {
   display: inline-flex;
   align-items: center;
@@ -519,7 +589,6 @@ footer {
   font-size: 14px;
 }
 
-/* trade table */
 .ttable {
   width: 100%;
   border-collapse: collapse;
@@ -538,7 +607,6 @@ footer {
   font-size: 12px;
 }
 
-/* game over */
 .gameover-title {
   font-size: 26px;
   letter-spacing: 6px;
@@ -560,7 +628,6 @@ footer {
   line-height: 1.7;
 }
 
-/* rules list */
 .rules li {
   margin: 6px 0 6px 18px;
   line-height: 1.5;

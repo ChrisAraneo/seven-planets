@@ -1,39 +1,33 @@
-import { COMBAT } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { COMBAT } from '@seven-planets/game';
+import { match } from 'ts-pattern';
 
-import { battleWinProb } from './battle-win-prob';
-import { defenseBaseOf } from './defense-base-of';
-import { mayTarget } from './may-target';
-import { minTroopsToConquer } from './min-troops-to-conquer';
-import { owned } from './owned';
-import { projectedStrike } from './projected-strike';
+import { chain } from '../utils/chain';
+import { canTarget } from './can-target';
+import { computeBattleWinProbability } from './compute-battle-win-probability';
+import { computeDefenseBase } from './compute-defense-base';
+import { computeMinimumTroopsToConquer } from './compute-minimum-troops-to-conquer';
+import { computeProjectedStrike } from './compute-projected-strike';
+import { getOwnedPlanets } from './get-owned-planets';
 import { isUnderTruce } from './is-under-truce';
 
-export function isImminentAttacker(
-  player: Player,
-  eachPlayer: Player,
-): boolean {
-  if (eachPlayer.hasPacifistStatus || (eachPlayer.hand.ATTACK || 0) < 1) {
-    return false;
-  }
-  if (!mayTarget(eachPlayer, player)) {
-    return false;
-  }
-  for (const planet of owned(player)) {
-    if (isUnderTruce(planet)) {
-      continue;
-    }
-    const strike = projectedStrike(eachPlayer, 0, planet.id);
-    if (strike.n < minTroopsToConquer(planet.troops)) {
-      continue;
-    }
-    const pWin = battleWinProb(
-      COMBAT.attackPerTroop * strike.n + strike.bonus,
-      defenseBaseOf(planet),
-    );
-    if (pWin >= 0.35) {
-      return true;
-    }
-  }
-  return false;
-}
+export const isImminentAttacker = (owner: Player, attacker: Player): boolean =>
+  !attacker.hasPacifistStatus &&
+  (attacker.hand.ATTACK || 0) >= 1 &&
+  canTarget(attacker, owner) &&
+  getOwnedPlanets(owner).some((planet) =>
+    match(planet)
+      .when(isUnderTruce, () => false)
+      .otherwise(() =>
+        chain(computeProjectedStrike(attacker, 0, planet.id))
+          .thru(
+            (strike) =>
+              strike.n >= computeMinimumTroopsToConquer(planet.troops) &&
+              computeBattleWinProbability(
+                COMBAT.attackPerTroop * strike.n + strike.bonus,
+                computeDefenseBase(planet),
+              ) >= 0.35,
+          )
+          .value(),
+      ),
+  );

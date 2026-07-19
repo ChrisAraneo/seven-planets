@@ -6,10 +6,8 @@
     "apps/browser/src/**/*.vue",
     "libs/**/*.ts"
   ],
-  // Tests are type-checked by tsconfig.vitest.json; scripts run headless via jiti.
   "exclude": ["**/__tests__/*", "scripts/**"],
   "compilerOptions": {
-    // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   }
 }

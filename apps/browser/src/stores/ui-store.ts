@@ -1,6 +1,3 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-
 import { setAiDifficulty } from '@seven-planets/ai';
 import {
   DEFAULT_DIFFICULTY,
@@ -8,17 +5,17 @@ import {
   getDifficulty,
 } from '@seven-planets/game';
 import { assignKamikazes } from '@seven-planets/game';
-import { AUTO_HUMAN } from '@seven-planets/game';
-import { runGame } from '@seven-planets/game';
+import { IS_AUTO_HUMAN } from '@seven-planets/game';
+import { startGame } from '@seven-planets/game';
 import { getGameStateLastValue, setGameState } from '@seven-planets/game';
+import { assign, noop } from 'lodash-es';
+import { defineStore } from 'pinia';
+import { match } from 'ts-pattern';
+import { ref } from 'vue';
+
+import { chain } from '@/utils/chain';
 
 import { useEffectsStore } from './effects-store';
-
-/* =====================================================================
-   UI orchestration state: which modal is open, the chosen difficulty
-   and the game lifecycle (start / new game). Pure presentation-side
-   state — the game core never reads it.
-   ===================================================================== */
 
 export type ModalName =
   | 'help'
@@ -29,56 +26,57 @@ export type ModalName =
   | 'influence'
   | null;
 
+const applyDifficulty = (level: Difficulty): void =>
+  chain(getDifficulty(level))
+    .tap((def) => setAiDifficulty(def.ai))
+    .thru((def) =>
+      setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount)),
+    )
+    .thru(noop)
+    .value();
+
+const restartGame = (): void =>
+  match(typeof window)
+    .with('undefined', noop)
+    .otherwise(() => window.location.reload());
+
 export const useUiStore = defineStore('ui', () => {
   const modal = ref<ModalName>(null);
   const started = ref(false);
-  /** The human's chosen difficulty. Null until picked — the game loop waits
-      for the choice (see start / chooseDifficulty). */
   const difficulty = ref<Difficulty | null>(null);
 
-  function openModal(name: ModalName): void {
-    modal.value = name;
-  }
+  const openModal = (name: ModalName): void =>
+    chain(assign(modal, { value: name }))
+      .thru(noop)
+      .value();
 
-  function closeModal(): void {
-    modal.value = null;
-  }
+  const closeModal = (): void =>
+    chain(assign(modal, { value: null }))
+      .thru(noop)
+      .value();
 
-  /** The human picked a difficulty on the opening screen — boot the game loop.
-      (Every level is currently identical; the choice is stored for later use.) */
-  function chooseDifficulty(level: Difficulty): void {
-    if (started.value) {
-      return;
-    }
-    difficulty.value = level;
-    const def = getDifficulty(level);
-    // Apply this level's handicap to every mastermind AI before the loop runs,
-    // Then assign its kamikazes (Hard mode: 2 AI that hunt only the human).
-    setAiDifficulty(def.ai);
-    setGameState(assignKamikazes(getGameStateLastValue(), def.kamikazeCount));
-    started.value = true;
-    runGame();
-  }
+  const chooseDifficulty = (level: Difficulty): void =>
+    match(started.value)
+      .with(true, noop)
+      .otherwise(() =>
+        chain(level)
+          .tap(() => assign(difficulty, { value: level }))
+          .tap(applyDifficulty)
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          .tap(() => assign(started, { value: true }))
+          .thru(() => startGame())
+          .thru(noop)
+          .value(),
+      );
 
-  /** Called from the root component on mount. In demo mode ("?auto"/headless)
-      the game starts immediately; otherwise it waits for the human to pick a
-      difficulty via the opening DifficultyModal (see chooseDifficulty). */
-  function start(): void {
-    if (started.value) {
-      return;
-    }
-    // Demo mode ("?auto") runs at full tilt with no difficulty prompt.
-    if (AUTO_HUMAN) {
-      useEffectsStore().fastMode = true;
-      chooseDifficulty(DEFAULT_DIFFICULTY);
-    }
-  }
-
-  function newGame(): void {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
-  }
+  const start = (): void =>
+    match(!started.value && IS_AUTO_HUMAN)
+      .with(true, () =>
+        chain(assign(useEffectsStore(), { isFastMode: true }))
+          .thru(() => chooseDifficulty(DEFAULT_DIFFICULTY))
+          .value(),
+      )
+      .otherwise(noop);
 
   return {
     modal,
@@ -88,6 +86,6 @@ export const useUiStore = defineStore('ui', () => {
     closeModal,
     start,
     chooseDifficulty,
-    newGame,
+    restartGame,
   };
 });

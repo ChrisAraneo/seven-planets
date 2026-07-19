@@ -1,19 +1,22 @@
-import { ADVANCED_FROM_TURN, BUILD_ORDER, maxLevel } from '@seven-planets/game';
-import { isSingularityLabOk } from '@seven-planets/game';
+import { getBuildingLevel } from '@seven-planets/game';
+import { getMaxLevel } from '@seven-planets/game';
+import { canBuildSingularity } from '@seven-planets/game';
 
 import { getAlivePlayers } from '../../../game/src/getters/get-alive-players';
-import { owned } from './owned';
-import { techLevel } from './tech-level';
+import { chain } from '../utils/chain';
+import { computeTechLevel } from './compute-tech-level';
+import { getOwnedPlanets } from './get-owned-planets';
 
-export function isSingularityLive(): boolean {
-  return getAlivePlayers().some((player) =>
-    owned(player).some((planet) => {
-      const next = (planet.buildings.SINGULARITY || 0) + 1;
-      return (
-        next <= maxLevel('SINGULARITY') &&
-        next <= techLevel(player) &&
-        isSingularityLabOk(planet, next)
-      );
-    }),
+export const isSingularityLive = (): boolean =>
+  getAlivePlayers().some((player) =>
+    getOwnedPlanets(player).some((planet) =>
+      chain(getBuildingLevel(planet, 'SINGULARITY') + 1)
+        .thru(
+          (nextLevel) =>
+            nextLevel <= getMaxLevel('SINGULARITY') &&
+            nextLevel <= computeTechLevel(player) &&
+            canBuildSingularity(planet, nextLevel),
+        )
+        .value(),
+    ),
   );
-}

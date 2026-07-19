@@ -1,6 +1,4 @@
+import { getGameStateLastValue } from '../get-game-state-last-value';
 import type { Phase } from '../interfaces/phase';
-import { getGameStateLastValue } from '../state';
 
-export function getPhase(): Phase {
-  return getGameStateLastValue().phase;
-}
+export const getPhase = (): Phase => getGameStateLastValue().phase;

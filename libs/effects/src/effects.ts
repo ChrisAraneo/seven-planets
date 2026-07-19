@@ -1,21 +1,9 @@
 import type { EffectEvent, GameState } from '@seven-planets/game';
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 
-/* =====================================================================
-   SEVEN PLANETS — graphical effects (canvas animations).
-
-   The game core is fully synchronous and never waits for animations.
-   Instead it appends EffectEvents to the game state as it mutates it;
-   this layer CONSUMES those events in response to the state change
-   (the browser watches `state.effectSeq` and calls playNewEffects) and
-   hands canvas animations to the sink the app injected (the browser's
-   effects store, drained by the GameBoard render loop).
-
-   Sequencing is presentation-side: events that follow a rocket in the
-   same batch are delayed by the rocket's flight time, so the boom still
-   lands when the rocket arrives even though the game state resolved the
-   battle instantly. Headless runs never install this layer — events
-   just accumulate in the state's capped tail and cost nothing.
-   ===================================================================== */
+import { chain } from './utils/chain';
+import { nullish } from './utils/p';
 
 export interface Anim {
   type: 'rocket' | 'boom' | 'text';
@@ -31,69 +19,66 @@ export interface Anim {
   txt?: string;
 }
 
-/** What the app must provide: somewhere to queue animations and the
-    fast-animations toggle. This lib knows nothing about any store. */
 export interface EffectsSink {
   enqueue(anim: Anim): void;
   isFastMode(): boolean;
 }
 
-let sink: EffectsSink | null = null;
-// The last event seq already played, so each call only plays new events.
-let playedSeq = 0;
+const EFFECTS_STATE: { sink: EffectsSink | null; playedSeq: number } = {
+  sink: null,
+  playedSeq: 0,
+};
 
-// Animation speed multiplier (the fast-animations toggle).
-function speedMult(): number {
-  return sink?.isFastMode() ? 0.3 : 1;
-}
+const FAST_MODE_SPEED = 0.3;
 
-function now(): number {
-  return typeof performance === 'undefined' ? Date.now() : performance.now();
-}
+const ROCKET_DURATION = 1000;
+const ROCKET_MIN_DURATION = 50;
+const ROCKET_SETTLE_GAP = 60;
+const BOOM_DURATION = 600;
+const BOOM_MIN_DURATION = 200;
+const TEXT_DURATION = 1500;
+const TEXT_MIN_DURATION = 400;
 
-function enqueue(anim: Anim, delay: number): void {
-  if (delay > 0) {
-    // Re-stamp t0 at fire time so the animation starts when it appears.
-    setTimeout(() => sink?.enqueue({ ...anim, t0: now() }), delay);
-    return;
-  }
-  sink?.enqueue(anim);
-}
+const speedMult = (): number =>
+  match(EFFECTS_STATE.sink?.isFastMode())
+    .with(true, () => FAST_MODE_SPEED)
+    .otherwise(() => 1);
 
-/** Install the graphical effects layer. Called once at app startup
-    (main.ts) with the app's animation sink. */
-export function installEffects(effectsSink: EffectsSink): void {
-  sink = effectsSink;
-  playedSeq = 0;
-}
+const now = (): number =>
+  match(typeof performance)
+    .with('undefined', () => Date.now())
+    .otherwise(() => performance.now());
 
-/** Play every effect event newer than the last call. The browser calls
-    this in response to the game state changing (watching `effectSeq`). */
-export function playNewEffects(state: GameState): void {
-  if (!sink) {
-    return;
-  }
-  // A fresh game restarts the seq from zero.
-  if (state.effectSeq < playedSeq) {
-    playedSeq = 0;
-  }
-  const fresh = state.effects.filter((event) => event.seq > playedSeq);
-  playedSeq = state.effectSeq;
-  // Delay accumulates across the batch: effects emitted after a rocket
-  // play once the rocket lands.
-  fresh.reduce((delay, event) => playEffect(state, event, delay), 0);
-}
+const enqueue = (anim: Anim, delay: number): void =>
+  match(delay > 0)
+    .with(true, () =>
+      chain(
+        setTimeout(
+          () => EFFECTS_STATE.sink?.enqueue({ ...anim, t0: now() }),
+          delay,
+        ),
+      )
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(() => EFFECTS_STATE.sink?.enqueue(anim));
 
-function playEffect(
+export const installEffects = (effectsSink: EffectsSink): void =>
+  chain(assign(EFFECTS_STATE, { sink: effectsSink, playedSeq: 0 }))
+    .thru(noop)
+    .value();
+
+const playRocket = (
   state: GameState,
-  event: EffectEvent,
+  event: Extract<EffectEvent, { kind: 'rocket' }>,
   delay: number,
-): number {
-  switch (event.kind) {
-    case 'rocket': {
-      const from = state.planets[event.fromId];
-      const to = state.planets[event.toId];
-      const dur = Math.max(50, 1000 * speedMult());
+): number =>
+  chain({
+    from: state.planets[event.fromId],
+    to: state.planets[event.toId],
+    dur: Math.max(ROCKET_MIN_DURATION, ROCKET_DURATION * speedMult()),
+  })
+    .tap(({ from, to, dur }) =>
       enqueue(
         {
           type: 'rocket',
@@ -106,25 +91,39 @@ function playEffect(
           dur,
         },
         delay,
-      );
-      return delay + dur + 60;
-    }
-    case 'boom': {
-      const planet = state.planets[event.planetId];
+      ),
+    )
+    .thru(({ dur }) => delay + dur + ROCKET_SETTLE_GAP)
+    .value();
+
+const playBoom = (
+  state: GameState,
+  event: Extract<EffectEvent, { kind: 'boom' }>,
+  delay: number,
+): number =>
+  chain(state.planets[event.planetId])
+    .tap((planet) =>
       enqueue(
         {
           type: 'boom',
           x: planet.x,
           y: planet.y,
           t0: now(),
-          dur: Math.max(200, 600 * speedMult()),
+          dur: Math.max(BOOM_MIN_DURATION, BOOM_DURATION * speedMult()),
         },
         delay,
-      );
-      return delay;
-    }
-    case 'floatText': {
-      const planet = state.planets[event.planetId];
+      ),
+    )
+    .thru(() => delay)
+    .value();
+
+const playFloatText = (
+  state: GameState,
+  event: Extract<EffectEvent, { kind: 'floatText' }>,
+  delay: number,
+): number =>
+  chain(state.planets[event.planetId])
+    .tap((planet) =>
       enqueue(
         {
           type: 'text',
@@ -133,11 +132,43 @@ function playEffect(
           txt: event.text,
           color: event.color,
           t0: now(),
-          dur: Math.max(400, 1500 * speedMult()),
+          dur: Math.max(TEXT_MIN_DURATION, TEXT_DURATION * speedMult()),
         },
         delay,
-      );
-      return delay;
-    }
-  }
-}
+      ),
+    )
+    .thru(() => delay)
+    .value();
+
+const playEffect = (
+  state: GameState,
+  event: EffectEvent,
+  delay: number,
+): number =>
+  match(event)
+    .with({ kind: 'rocket' }, (rocketEvent) =>
+      playRocket(state, rocketEvent, delay),
+    )
+    .with({ kind: 'boom' }, (boomEvent) => playBoom(state, boomEvent, delay))
+    .with({ kind: 'floatText' }, (textEvent) =>
+      playFloatText(state, textEvent, delay),
+    )
+    .otherwise(() => delay);
+
+export const playNewEffects = (state: GameState): void =>
+  match(EFFECTS_STATE.sink)
+    .with(nullish, noop)
+    .otherwise(() =>
+      chain(
+        match(state.effectSeq < EFFECTS_STATE.playedSeq)
+          .with(true, () => 0)
+          .otherwise(() => EFFECTS_STATE.playedSeq),
+      )
+        .thru((baseSeq) => state.effects.filter((event) => event.seq > baseSeq))
+        .tap(() => assign(EFFECTS_STATE, { playedSeq: state.effectSeq }))
+        .thru((fresh) =>
+          fresh.reduce((delay, event) => playEffect(state, event, delay), 0),
+        )
+        .thru(noop)
+        .value(),
+    );

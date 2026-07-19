@@ -1,23 +1,29 @@
 <script setup lang="ts">
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { computed, ref, watch } from 'vue';
-import { attackPlanet } from '@seven-planets/game';
+import { createAttackPlanetAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
+import { chain } from '@/utils/chain';
+import { nullish } from '@/utils/p';
 import ModalShell from './ModalShell.vue';
 import {
   COMBAT,
   CONQUEST_TRUCE,
   HOME_FIELD,
-  SHIELD_DEFENSE,
+  PACIFIST_DEF_BONUS,
 } from '@seven-planets/game';
+import { computeShieldDefense } from '@seven-planets/game';
+import { getBuildingLevel } from '@seven-planets/game';
 import type { Planet } from '@seven-planets/game';
-import { battleWinProb } from '@seven-planets/ai';
-import { handSize } from '@seven-planets/game';
+import { computeBattleWinProbability } from '@seven-planets/ai';
+import { getHandSize } from '@seven-planets/game';
 import { isPacifist } from '@seven-planets/game';
-import { ownedPlanets } from '@seven-planets/game';
-import { pacifistDefBonus } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
-import { siloBonus } from '@seven-planets/game';
-import { singularityDefBonus } from '@seven-planets/game';
+import { getOwnedPlanets } from '@seven-planets/game';
+import { computePacifistDefenseBonus } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
+import { computeSiloBonus } from '@seven-planets/game';
+import { computeSingularityDefenseBonus } from '@seven-planets/game';
 import { isUnderTruce } from '@seven-planets/game';
 
 const game = useGameStore();
@@ -27,12 +33,14 @@ const human = game.state.players[0];
 
 const breaksVow = computed(() => isPacifist(human));
 
-const siloPlanets = ownedPlanets(game.state, human).filter(
+const siloPlanets = getOwnedPlanets(game.state, human).filter(
   (planet) => planet.buildings.SILO && planet.troops >= 1,
 );
 const sourceId = ref(
   siloPlanets.reduce((strongest, planet) =>
-    strongest.troops >= planet.troops ? strongest : planet,
+    match(strongest.troops >= planet.troops)
+      .with(true, () => strongest)
+      .otherwise(() => planet),
   ).id,
 );
 const selectedId = ref(-1);
@@ -40,7 +48,7 @@ const troopCount = ref(1);
 
 const source = computed(() => game.state.planets[sourceId.value]);
 const sources = computed(() =>
-  ownedPlanets(game.state, human).filter((planet) => planet.buildings.SILO),
+  getOwnedPlanets(game.state, human).filter((planet) => planet.buildings.SILO),
 );
 const targets = computed(() =>
   game.state.planets.filter((planet: Planet) => planet.ownerId !== 0),
@@ -49,85 +57,133 @@ const openTargets = computed(() =>
   targets.value.filter((planet: Planet) => !isUnderTruce(planet)),
 );
 const capacity = computed(() =>
-  Math.min(rocketCap(source.value), source.value.troops),
+  Math.min(getRocketCapacity(source.value), source.value.troops),
 );
 
-// Keep the selected target valid and the troop count within capacity.
 watch(
   [openTargets, sourceId],
-  () => {
-    if (
-      !openTargets.value.some(
-        (planet: Planet) => planet.id === selectedId.value,
+  () =>
+    chain(openTargets.value)
+      .tap((open) =>
+        match(open.some((planet: Planet) => planet.id === selectedId.value))
+          .with(false, () =>
+            assign(selectedId, {
+              value: match(open.length)
+                .with(0, () => -1)
+                .otherwise(() => open[0].id),
+            }),
+          )
+          .otherwise(noop),
       )
-    )
-      selectedId.value = openTargets.value.length
-        ? openTargets.value[0].id
-        : -1;
-    troopCount.value = Math.max(1, Math.min(troopCount.value, capacity.value));
-  },
+      .tap(() =>
+        assign(troopCount, {
+          value: Math.max(1, Math.min(troopCount.value, capacity.value)),
+        }),
+      )
+      .thru(noop)
+      .value(),
   { immediate: true },
 );
 
 const target = computed(() =>
-  selectedId.value >= 0 ? game.state.planets[selectedId.value] : null,
+  match(selectedId.value >= 0)
+    .with(true, () => game.state.planets[selectedId.value])
+    .otherwise(() => null),
 );
 const canLaunch = computed(
   () => selectedId.value >= 0 && source.value.troops >= 1,
 );
 
-const preview = computed(() => {
-  if (!target.value) return null;
-  const attackPower = 2 * troopCount.value + siloBonus(source.value);
-  const defensePower =
-    2 * target.value.troops +
-    (target.value.buildings.SHIELD || 0) * SHIELD_DEFENSE +
-    pacifistDefBonus(game.state, target.value) +
-    singularityDefBonus(target.value) +
-    HOME_FIELD;
-  // exact P(win), same math the dice roll
-  const winProbability = battleWinProb(attackPower, defensePower);
-  const winPercent = Math.round(winProbability * 100);
-  const note =
-    winProbability >= 0.6
-      ? 'good'
-      : winProbability >= 0.35
-        ? 'close'
-        : 'suicide';
-  const sendingAll = troopCount.value >= source.value.troops;
-  return {
-    attackPower,
-    defensePower,
-    winProbability,
-    winPercent,
-    note,
-    sendingAll,
-  };
-});
+const preview = computed(() =>
+  match(target.value)
+    .with(nullish, () => null)
+    .otherwise((targetPlanet) =>
+      chain({
+        attackPower: 2 * troopCount.value + computeSiloBonus(source.value),
+        defensePower:
+          2 * targetPlanet.troops +
+          computeShieldDefense(targetPlanet) +
+          computePacifistDefenseBonus(game.state, targetPlanet) +
+          computeSingularityDefenseBonus(targetPlanet) +
+          HOME_FIELD,
+      })
+        .thru(({ attackPower, defensePower }) =>
+          chain(computeBattleWinProbability(attackPower, defensePower))
+            .thru((winProbability) => ({
+              attackPower,
+              defensePower,
+              winProbability,
+              winPercent: Math.round(winProbability * 100),
+              note: match(winProbability >= 0.6)
+                .with(true, () => 'good')
+                .otherwise(() =>
+                  match(winProbability >= 0.35)
+                    .with(true, () => 'close')
+                    .otherwise(() => 'suicide'),
+                ),
+              sendingAll: troopCount.value >= source.value.troops,
+            }))
+            .value(),
+        )
+        .value(),
+    ),
+);
 
-function capacityLabel(planet = source.value): string {
-  const cap = rocketCap(planet);
-  return cap === Infinity ? '∞ (all troops)' : String(cap);
-}
-function selectTarget(planet: { id: number; truce: boolean }): void {
-  if (!planet.truce) selectedId.value = planet.id;
-}
-function decrease(): void {
-  if (troopCount.value > 1) troopCount.value--;
-}
-function increase(): void {
-  if (troopCount.value < capacity.value) troopCount.value++;
-}
-function launch(): void {
-  if (!canLaunch.value) return;
-  ui.closeModal();
-  void attackPlanet({
-    playerId: 0,
-    sourceId: sourceId.value,
-    targetId: selectedId.value,
-    troops: troopCount.value,
-  });
-}
+const capacityLabel = (planet = source.value): string =>
+  match(getRocketCapacity(planet))
+    .with(Infinity, () => '∞ (all troops)')
+    .otherwise((cap) => String(cap));
+const toTruceTurnsSuffix = (planet: Planet): string =>
+  match(planet.protectedUntil - game.state.turn)
+    .with(0, () => '')
+    .otherwise(() => 's');
+const toNoteColor = (note: string): string =>
+  match(note)
+    .with('good', () => '#7dff8a')
+    .with('close', () => '#ffd23d')
+    .otherwise(() => '#ff6b6b');
+const selectTarget = (planet: { id: number; truce: boolean }): void =>
+  match(planet.truce)
+    .with(false, () =>
+      chain(assign(selectedId, { value: planet.id }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const decrease = (): void =>
+  match(troopCount.value > 1)
+    .with(true, () =>
+      chain(assign(troopCount, { value: troopCount.value - 1 }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const increase = (): void =>
+  match(troopCount.value < capacity.value)
+    .with(true, () =>
+      chain(assign(troopCount, { value: troopCount.value + 1 }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const launch = (): void =>
+  match(canLaunch.value)
+    .with(false, noop)
+    .otherwise(() =>
+      chain(ui.closeModal())
+        .thru(() =>
+          dispatch(
+            createAttackPlanetAction({
+              playerId: 0,
+              sourceId: sourceId.value,
+              targetId: selectedId.value,
+              troops: troopCount.value,
+            }),
+          ),
+        )
+        .thru(noop)
+        .value(),
+    );
 </script>
 
 <template>
@@ -169,18 +225,19 @@ function launch(): void {
         — {{ game.state.players[planet.ownerId].name }}
         <span v-if="isUnderTruce(planet)" class="dimtx">
           🕊️ truce ({{ planet.protectedUntil - game.state.turn + 1 }} turn{{
-            planet.protectedUntil - game.state.turn ? 's' : ''
+            toTruceTurnsSuffix(planet)
           }})
         </span>
       </div>
       <div>
-        🪖{{ planet.troops }} {{ '🛡️'.repeat(planet.buildings.SHIELD || 0) }}
+        🪖{{ planet.troops }}
+        {{ '🛡️'.repeat(getBuildingLevel(planet, 'SHIELD')) }}
         <span
           v-if="game.state.players[planet.ownerId].hasPacifistStatus"
-          title="Pacifist — +6 defense"
+          v-tooltip="`Pacifist — +${PACIFIST_DEF_BONUS} defense`"
           >☮️</span
         >
-        🃏{{ handSize(game.state.players[planet.ownerId]) }}
+        🃏{{ getHandSize(game.state.players[planet.ownerId]) }}
       </div>
     </div>
     <p style="margin-top: 12px">
@@ -203,15 +260,7 @@ function launch(): void {
         &nbsp;vs&nbsp; defense {{ preview.defensePower }} + 🎲0-{{
           COMBAT.defenseRoll
         }}<br />
-        <b
-          :style="{
-            color:
-              preview.note === 'good'
-                ? '#7dff8a'
-                : preview.note === 'close'
-                  ? '#ffd23d'
-                  : '#ff6b6b',
-          }"
+        <b :style="{ color: toNoteColor(preview.note) }"
           >Win chance: {{ preview.winPercent }}%</b
         >
         —

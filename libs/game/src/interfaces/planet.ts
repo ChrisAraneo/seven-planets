@@ -7,6 +7,7 @@ export interface Planet {
   buildings: BuildingLevels;
   troops: number;
   protectedUntil: number;
+  isShieldUnpowered: boolean;
   x: number;
   y: number;
   r: number;

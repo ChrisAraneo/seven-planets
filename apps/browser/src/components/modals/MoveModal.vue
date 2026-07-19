@@ -1,68 +1,113 @@
 <script setup lang="ts">
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { computed, ref, watch } from 'vue';
 import { moveTroops } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
+import { chain } from '@/utils/chain';
 import ModalShell from './ModalShell.vue';
-import { ownedPlanets } from '@seven-planets/game';
-import { rocketCap } from '@seven-planets/game';
+import { getOwnedPlanets } from '@seven-planets/game';
+import { getRocketCapacity } from '@seven-planets/game';
 
 const game = useGameStore();
 const ui = useUiStore();
 
 const human = game.state.players[0];
 
+const sources = computed(() =>
+  getOwnedPlanets(game.state, human).filter(
+    (planet) => planet.buildings.SPACEPORT,
+  ),
+);
+
 const fromId = ref(
-  ownedPlanets(game.state, human).reduce((strongest, planet) =>
-    strongest.troops >= planet.troops ? strongest : planet,
-  ).id,
+  match(sources.value.length)
+    .with(0, () => getOwnedPlanets(game.state, human))
+    .otherwise(() => sources.value)
+    .reduce((strongest, planet) =>
+      match(strongest.troops >= planet.troops)
+        .with(true, () => strongest)
+        .otherwise(() => planet),
+    ).id,
 );
 const toId = ref(-1);
 const troopCount = ref(1);
 
 const from = computed(() => game.state.planets[fromId.value]);
-const owned = computed(() => ownedPlanets(game.state, human));
+const owned = computed(() => getOwnedPlanets(game.state, human));
 const dests = computed(() =>
   owned.value.filter((planet) => planet.id !== fromId.value),
 );
 const capacity = computed(() =>
-  Math.min(rocketCap(from.value), from.value.troops),
+  Math.min(getRocketCapacity(from.value), from.value.troops),
 );
 
 watch(
   [dests, fromId],
-  () => {
-    if (!dests.value.some((planet) => planet.id === toId.value))
-      toId.value = dests.value.length ? dests.value[0].id : -1;
-    troopCount.value = Math.max(
-      1,
-      Math.min(troopCount.value, Math.max(1, capacity.value)),
-    );
-  },
+  () =>
+    chain(dests.value)
+      .tap((destinations) =>
+        match(destinations.some((planet) => planet.id === toId.value))
+          .with(false, () =>
+            assign(toId, {
+              value: match(destinations.length)
+                .with(0, () => -1)
+                .otherwise(() => destinations[0].id),
+            }),
+          )
+          .otherwise(noop),
+      )
+      .tap(() =>
+        assign(troopCount, {
+          value: Math.max(
+            1,
+            Math.min(troopCount.value, Math.max(1, capacity.value)),
+          ),
+        }),
+      )
+      .thru(noop)
+      .value(),
   { immediate: true },
 );
 
 const capacityLabel = computed(() =>
-  rocketCap(from.value) === Infinity
-    ? '∞ (all troops)'
-    : String(rocketCap(from.value)),
+  match(getRocketCapacity(from.value))
+    .with(Infinity, () => '∞ (all troops)')
+    .otherwise((cap) => String(cap)),
 );
 
-function decrease(): void {
-  if (troopCount.value > 1) troopCount.value--;
-}
-function increase(): void {
-  if (troopCount.value < capacity.value) troopCount.value++;
-}
-function doMove(): void {
-  if (capacity.value < 1 || toId.value < 0) return;
-  ui.closeModal();
-  void moveTroops({
-    playerId: 0,
-    fromId: fromId.value,
-    toId: toId.value,
-    troops: troopCount.value,
-  });
-}
+const decrease = (): void =>
+  match(troopCount.value > 1)
+    .with(true, () =>
+      chain(assign(troopCount, { value: troopCount.value - 1 }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const increase = (): void =>
+  match(troopCount.value < capacity.value)
+    .with(true, () =>
+      chain(assign(troopCount, { value: troopCount.value + 1 }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(noop);
+const doMove = (): void =>
+  match(capacity.value < 1 || toId.value < 0)
+    .with(true, noop)
+    .otherwise(() =>
+      chain(ui.closeModal())
+        .thru(() =>
+          moveTroops({
+            playerId: 0,
+            fromId: fromId.value,
+            toId: toId.value,
+            troops: troopCount.value,
+          }),
+        )
+        .thru(noop)
+        .value(),
+    );
 </script>
 
 <template>
@@ -74,9 +119,9 @@ function doMove(): void {
       {{ human.hand.MOVE }}).
     </p>
     <p>
-      From:
+      From (🛰️ Spaceport planets only):
       <button
-        v-for="planet in owned"
+        v-for="planet in sources"
         :key="planet.id"
         class="tab"
         :class="{ active: planet.id === fromId }"

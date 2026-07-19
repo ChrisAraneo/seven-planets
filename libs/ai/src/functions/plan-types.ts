@@ -1,7 +1,5 @@
-import type { BuildingType } from '@seven-planets/game';
-
-import type { BuildCandidate } from './build-candidates';
-import type { AttackPlan } from './evaluate-attacks';
+import type { AttackPlan } from './get-attack-plans';
+import type { BuildCandidate } from './get-build-candidates';
 
 export type StrategyKind =
   | 'DEVELOP'

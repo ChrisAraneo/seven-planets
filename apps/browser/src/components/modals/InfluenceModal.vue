@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { assign, noop } from 'lodash-es';
+import { match } from 'ts-pattern';
 import { computed, ref } from 'vue';
-import { useInfluence } from '@seven-planets/game';
+import { createUseInfluenceAction, dispatch } from '@seven-planets/game';
 import { useGameStore, useUiStore } from '@/stores';
+import { chain } from '@/utils/chain';
 import ModalShell from './ModalShell.vue';
 import {
   ACTION_TYPES,
@@ -13,12 +16,12 @@ import {
   INFLUENCE_TYPES,
 } from '@seven-planets/game';
 import { filterAlivePlayers } from '@seven-planets/game';
-import { coupTargets } from '@seven-planets/game';
-import { influenceTarget } from '@seven-planets/game';
+import { getCoupTargets } from '@seven-planets/game';
+import { getInfluenceTarget } from '@seven-planets/game';
 import { isPacifist } from '@seven-planets/game';
 import type {
   BuildingType,
-  InfluenceOpts,
+  InfluenceOptions,
   InfluenceType,
   Planet,
   Player,
@@ -29,10 +32,16 @@ const ui = useUiStore();
 
 const human = game.state.players[0];
 
-function playInfluence(type: InfluenceType, opts: InfluenceOpts = {}): void {
-  ui.closeModal();
-  void useInfluence({ playerId: 0, type, opts });
-}
+const playInfluence = (
+  type: InfluenceType,
+  options: InfluenceOptions = {},
+): void =>
+  chain(ui.closeModal())
+    .thru(() =>
+      dispatch(createUseInfluenceAction({ playerId: 0, type, options })),
+    )
+    .thru(noop)
+    .value();
 
 type View = 'main' | 'coup' | 'steal';
 const view = ref<View>('main');
@@ -42,56 +51,58 @@ const held = computed(() =>
     (influenceType) => (human.hand[influenceType] || 0) > 0,
   ),
 );
-const coupList = computed(() => coupTargets(game.state, human));
-// A Pacifist may coup a rival's last planet (their only path to a win); everyone
-// else is barred from eliminating a player by influence card.
+const coupList = computed(() => getCoupTargets(game.state, human));
 const canCoupLast = computed(() => isPacifist(human));
+const coupLastNote = computed(() =>
+  match(canCoupLast.value)
+    .with(true, () => '')
+    .otherwise(
+      () => ", and a rival's last planet can only be taken by a Pacifist",
+    ),
+);
 const rivals = computed(() =>
   filterAlivePlayers(game.state).filter((player) => !player.isHuman),
 );
 
-function skipTarget(influenceType: InfluenceType): Player | null {
-  return influenceType.startsWith('SKIP_')
-    ? influenceTarget(game.state, human, influenceType)
-    : null;
-}
+const skipTarget = (influenceType: InfluenceType): Player | null =>
+  match(influenceType.startsWith('SKIP_'))
+    .with(true, () => getInfluenceTarget(game.state, human, influenceType))
+    .otherwise(() => null);
 
-function chooseCard(influenceType: InfluenceType): void {
-  if (influenceType === 'STEAL_ACTION') {
-    view.value = 'steal';
-    return;
-  }
-  if (influenceType === 'COUP') {
-    view.value = 'coup';
-    return;
-  }
-  playInfluence(influenceType);
-}
+const chooseCard = (influenceType: InfluenceType): void =>
+  match(influenceType)
+    .with('STEAL_ACTION', () =>
+      chain(assign(view, { value: 'steal' }))
+        .thru(noop)
+        .value(),
+    )
+    .with('COUP', () =>
+      chain(assign(view, { value: 'coup' }))
+        .thru(noop)
+        .value(),
+    )
+    .otherwise(() => playInfluence(influenceType));
 
-function coupIcons(planet: Planet): string {
-  return BUILD_ORDER.filter((b) => planet.buildings[b])
+const coupIcons = (planet: Planet): string =>
+  BUILD_ORDER.filter((b) => planet.buildings[b])
     .map(
       (b: BuildingType) =>
         BUILDINGS[b].icon +
-        (planet.buildings[b] > 1 ? planet.buildings[b] : ''),
+        match(planet.buildings[b] > 1)
+          .with(true, () => String(planet.buildings[b]))
+          .otherwise(() => ''),
     )
     .join(' ');
-}
 
-function doCoup(planet: Planet): void {
-  playInfluence('COUP', { planet });
-}
-function doSteal(
+const doCoup = (planet: Planet): void => playInfluence('COUP', { planet });
+const doSteal = (
   target: Player,
   cardType: 'RECRUIT' | 'ATTACK' | 'MOVE' | 'TRADE',
-): void {
-  playInfluence('STEAL_ACTION', { target, cardType });
-}
+): void => playInfluence('STEAL_ACTION', { target, cardType });
 </script>
 
 <template>
   <ModalShell @close="ui.closeModal()">
-    <!-- main view -->
     <template v-if="view === 'main'">
       <h2>⭐ PLAY INFLUENCE CARD</h2>
       <p class="dimtx">
@@ -127,7 +138,6 @@ function doSteal(
       </div>
     </template>
 
-    <!-- coup view -->
     <template v-else-if="view === 'coup'">
       <h2>👑 COUP D'ÉTAT</h2>
       <p class="dimtx">
@@ -160,9 +170,7 @@ function doSteal(
       </template>
       <p v-else class="warn">
         No valid target — planets under truce cannot be couped{{
-          canCoupLast
-            ? ''
-            : ", and a rival's last planet can only be taken by a Pacifist"
+          coupLastNote
         }}.
       </p>
       <div class="mbtns">
@@ -171,7 +179,6 @@ function doSteal(
       </div>
     </template>
 
-    <!-- steal view -->
     <template v-else>
       <h2>🎭 EXTORTION</h2>
       <p class="dimtx">

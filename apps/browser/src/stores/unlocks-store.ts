@@ -1,80 +1,73 @@
+import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
+import { noop } from 'lodash-es';
 import { defineStore } from 'pinia';
+import { tryCatch } from 'ramda';
+import { match } from 'ts-pattern';
 import { ref } from 'vue';
 
-import { DIFFICULTIES, type Difficulty } from '@seven-planets/game';
-
-/* =====================================================================
-   SEVEN PLANETS — difficulty unlocks.
-
-   The three hardest levels are earned, not given: winning a game at one
-   difficulty unlocks the next rung up. Progress is persisted to
-   localStorage so it survives reloads (New Game reloads the page).
-
-   Casual / Easy / Normal are always available (they never appear as an
-   unlock TARGET below, so ALWAYS_UNLOCKED derives them automatically).
-   ===================================================================== */
+import { chain } from '@/utils/chain';
+import { nullish } from '@/utils/p';
 
 const STORAGE_KEY = 'seven-planets:unlocked-difficulties';
 
-/** Winning at the KEY difficulty unlocks the VALUE difficulty. */
 const UNLOCKED_BY_WIN: Partial<Record<Difficulty, Difficulty>> = {
   normal: 'hard',
   hard: 'impossible',
 };
 
-// Every level that is not the reward of some other win is free from the start.
-const rewarded = new Set<Difficulty>(Object.values(UNLOCKED_BY_WIN));
+const REWARDED = new Set<Difficulty>(Object.values(UNLOCKED_BY_WIN));
 const ALWAYS_UNLOCKED: Difficulty[] = DIFFICULTIES.map(
   (difficultyDef) => difficultyDef.id,
-).filter((id) => !rewarded.has(id));
+).filter((id) => !REWARDED.has(id));
 
-/** Read the unlocked set (always-unlocked ∪ persisted earned levels). Tolerant
-    of missing/corrupt storage and environments without localStorage. */
-function read(): Set<Difficulty> {
-  const unlocked = new Set<Difficulty>(ALWAYS_UNLOCKED);
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      for (const id of JSON.parse(raw) as Difficulty[]) {
-        unlocked.add(id);
-      }
-    }
-  } catch {
-    /* No storage, or corrupt JSON — fall back to the always-unlocked set */
-  }
-  return unlocked;
-}
+const parseStored = (): unknown =>
+  match(localStorage.getItem(STORAGE_KEY))
+    .with(nullish, (): unknown => [])
+    .otherwise((raw): unknown => JSON.parse(raw));
 
-/** Persist the earned levels (best-effort; private mode may reject writes). */
-function write(unlocked: Set<Difficulty>): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocked]));
-  } catch {
-    /* Storage unavailable — unlocks simply won't persist this session */
-  }
-}
+const read = (): Set<Difficulty> =>
+  tryCatch(
+    (): Set<Difficulty> =>
+      match(parseStored())
+        .when(
+          Array.isArray,
+          (parsed) =>
+            new Set<Difficulty>([
+              ...ALWAYS_UNLOCKED,
+              ...DIFFICULTIES.map((difficultyDef) => difficultyDef.id).filter(
+                (id) => parsed.includes(id),
+              ),
+            ]),
+        )
+        .otherwise(() => new Set<Difficulty>(ALWAYS_UNLOCKED)),
+    (): Set<Difficulty> => new Set<Difficulty>(ALWAYS_UNLOCKED),
+  )();
+
+const write = (unlocked: Set<Difficulty>): void =>
+  tryCatch(
+    (): void =>
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlocked])),
+    noop,
+  )();
 
 export const useUnlocksStore = defineStore('unlocks', () => {
   const unlocked = ref<Set<Difficulty>>(read());
 
-  function isUnlocked(id: Difficulty): boolean {
-    return unlocked.value.has(id);
-  }
+  const isUnlocked = (id: Difficulty): boolean => unlocked.value.has(id);
 
-  /** Record a human victory at `level`. If it unlocks a new difficulty,
-      persist it and return the newly unlocked id; otherwise return null. */
-  function recordWin(level: Difficulty): Difficulty | null {
-    const next = UNLOCKED_BY_WIN[level];
-    if (!next) {
-      return null;
-    }
-    if (unlocked.value.has(next)) {
-      return null; // Already earned in a previous game
-    }
-    unlocked.value.add(next);
-    write(unlocked.value);
-    return next;
-  }
+  const recordWin = (level: Difficulty): Difficulty | null =>
+    match(UNLOCKED_BY_WIN[level])
+      .with(nullish, () => null)
+      .when(
+        (next) => unlocked.value.has(next),
+        () => null,
+      )
+      .otherwise((next) =>
+        chain(unlocked.value.add(next))
+          .tap((set) => write(set))
+          .thru(() => next)
+          .value(),
+      );
 
   return { unlocked, isUnlocked, recordWin };
 });

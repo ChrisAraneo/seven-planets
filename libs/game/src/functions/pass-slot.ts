@@ -1,24 +1,22 @@
 import { assign, noop } from 'lodash-es';
-import { chain } from '../utils/chain';
 import { match } from 'ts-pattern';
 
 import type { GameState } from '../interfaces/game-state';
 import type { Planet } from '../interfaces/planet';
 import type { Player } from '../interfaces/player';
+import { chain } from '../utils/chain';
 import { log } from './log';
 import { setStatus } from './set-status';
 
-/* Nothing in the pool is pickable for this slot: log a pass (and tell the
-   human why) — the draft moves straight on without parking. */
-export function passSlot(
+export const passSlot = (
   state: GameState,
   player: Player,
   planet: Planet,
-  humanControlled: boolean,
-): void {
-  return chain(state)
-    .tap((state) =>
-      match(humanControlled)
+  isHumanControlled: boolean,
+): void =>
+  chain(state)
+    .tap(() =>
+      match(isHumanControlled)
         .with(
           true,
           () =>
@@ -29,16 +27,15 @@ export function passSlot(
         )
         .otherwise(noop),
     )
-    .tap((state) =>
+    .tap(() =>
       assign(
         state,
         log(
           state,
           `🃏 ${player.name} passes (nothing pickable for ${planet.name})`,
-          'draft',
+          'DRAFT',
         ),
       ),
     )
     .thru(noop)
     .value();
-}

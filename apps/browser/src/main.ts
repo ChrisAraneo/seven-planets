@@ -1,31 +1,27 @@
 import './assets/game.css';
 
-import { createApp } from 'vue';
-import { distinctUntilKeyChanged } from 'rxjs';
-
-import App from './App.vue';
 import { installEffects, playNewEffects } from '@seven-planets/effects';
 import { getGameState } from '@seven-planets/game';
-import { pinia, useEffectsStore } from './stores';
+import { distinctUntilKeyChanged } from 'rxjs';
+import { createApp } from 'vue';
 
-// Composition root: hook the graphical effects into the app, with the
-// effects store as the animation sink. Importing ./stores above already
-// seated the AI's subscriptions.
-const effectsStore = useEffectsStore();
+import App from './App.vue';
+import { V_TOOLTIP } from './directives/tooltip';
+import { PINIA, useEffectsStore } from './stores';
+
+const EFFECTS_STORE = useEffectsStore();
 installEffects({
-  enqueue: (anim) => effectsStore.anims.push(anim),
-  isFastMode: () => effectsStore.fastMode,
+  enqueue: (anim) => EFFECTS_STORE.anims.push(anim),
+  isFastMode: () => EFFECTS_STORE.isFastMode,
 });
 
-// Animations fire in RESPONSE to game-state emissions: the game core
-// appends effect events as it mutates state and publishes snapshots;
-// this subscription plays the new ones.
 getGameState()
   .pipe(distinctUntilKeyChanged('effectSeq'))
   .subscribe((snapshot) => playNewEffects(snapshot));
 
-const app = createApp(App);
+const APP = createApp(App);
 
-app.use(pinia);
+APP.use(PINIA);
+APP.directive('tooltip', V_TOOLTIP);
 
-app.mount('#app');
+APP.mount('#app');

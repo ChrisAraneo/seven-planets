@@ -1,14 +1,22 @@
-import { maxLevel } from '@seven-planets/game';
-import { isSingularityLabOk } from '@seven-planets/game';
 import type { Player } from '@seven-planets/game';
+import { getBuildingLevel } from '@seven-planets/game';
+import { getMaxLevel } from '@seven-planets/game';
+import { canBuildSingularity } from '@seven-planets/game';
 
-import { owned } from './owned';
-import { techLevel } from './tech-level';
+import { chain } from '../utils/chain';
+import { computeTechLevel } from './compute-tech-level';
+import { getOwnedPlanets } from './get-owned-planets';
 
-export function isSingularityReadyFor(player: Player): boolean {
-  const cap = Math.min(maxLevel('SINGULARITY'), techLevel(player));
-  return owned(player).some((planet) => {
-    const next = (planet.buildings.SINGULARITY || 0) + 1;
-    return next <= cap && isSingularityLabOk(planet, next);
-  });
-}
+export const isSingularityReadyFor = (player: Player): boolean =>
+  chain(Math.min(getMaxLevel('SINGULARITY'), computeTechLevel(player)))
+    .thru((cap) =>
+      getOwnedPlanets(player).some((planet) =>
+        chain(getBuildingLevel(planet, 'SINGULARITY') + 1)
+          .thru(
+            (nextLevel) =>
+              nextLevel <= cap && canBuildSingularity(planet, nextLevel),
+          )
+          .value(),
+      ),
+    )
+    .value();

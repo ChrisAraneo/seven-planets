@@ -2,7 +2,7 @@
   "name": "seven-planets",
   "author": "Krzysztof Pająk (Chris Araneo) <chris.araneo@gmail.com>",
   "license": "MIT",
-  "version": "0.4.1",
+  "version": "0.5.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,20 +20,23 @@
     "format": "prettier --write --experimental-cli apps/ libs/ scripts/"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
     "@vueuse/rxjs": "^14.3.0",
     "lodash-es": "^4.18.1",
     "pinia": "^3.0.4",
+    "ramda": "^0.32.0",
     "rxjs": "^7.8.2",
     "ts-pattern": "^5.9.0",
     "vue": "^3.5.38"
   },
   "devDependencies": {
-    "@chris.araneo/eslint-config": "0.0.138",
+    "@chris.araneo/eslint-config": "0.0.139",
     "@playwright/test": "^1.61.0",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.3",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.13.2",
+    "@types/ramda": "^0.32.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitejs/plugin-vue-jsx": "^5.1.5",
     "@vitest/eslint-plugin": "^1.6.20",
