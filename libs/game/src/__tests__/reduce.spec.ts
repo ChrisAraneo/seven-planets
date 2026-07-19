@@ -106,7 +106,7 @@ describe('reduce/advance invariants', () => {
           index: getFirstPickableIndex(crafted),
         }),
       }))
-      .tap(({ resumed }) => expect(resumed.cursor).toEqual({ phase: 'd1' }))
+      .tap(({ resumed }) => expect(resumed.cursor).toEqual({ phase: 'DONE' }))
       .tap(({ resumed }) => expect(resumed.isAwaitingPick).toBe(false))
       .tap(({ resumed }) => expect(resumed.activeId).toBe(-1))
       .tap(({ parked, resumed }) =>

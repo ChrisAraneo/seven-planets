@@ -32,7 +32,7 @@ export const simulateGame = (
     )
     .thru(() =>
       firstValueFrom(
-        getGameState().pipe(filter((state) => state.cursor.phase === 'd1')),
+        getGameState().pipe(filter((state) => state.cursor.phase === 'DONE')),
       ),
     )
     .tap(() => startGame())

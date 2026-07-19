@@ -197,7 +197,7 @@ export const BUILDINGS: Record<BuildingType, BuildingDefinition> = {
   },
 };
 
-export const MAX_TURNS = 400;
+export const MAX_TURNS = 250;
 
 export const SINGULARITY_RESOURCE_ODDS = 0.55;
 

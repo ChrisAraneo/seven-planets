@@ -13,4 +13,4 @@ export type EngineCursor =
       seatQueue: number[];
       seatIdx: number;
     }
-  | { phase: 'd1' };
+  | { phase: 'DONE' };

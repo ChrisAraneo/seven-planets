@@ -11,7 +11,7 @@ import '@/stores';
 import { chain } from '@/utils/chain';
 
 const SEATS = 7;
-const DEFAULT_GAMES = 240;
+const DEFAULT_GAMES = 100;
 const DEFAULT_PASSES = 2;
 
 interface ParamSpec {
@@ -23,16 +23,16 @@ interface ParamSpec {
 }
 
 const SPECS: ParamSpec[] = [
-  { key: 'planHorizon', step: 2, min: 5, max: 12, int: true },
+  { key: 'planHorizon', step: 1, min: 5, max: 12, int: true },
   { key: 'holdHorizon', step: 1, min: 5, max: 10, int: true },
-  { key: 'buildRoiHorizon', step: 3, min: 6, max: 30, int: true },
-  { key: 'minConquerProb', step: 0.08, min: 0.3, max: 0.9 },
-  { key: 'minHoldProb', step: 0.08, min: 0.1, max: 0.8 },
+  { key: 'buildRoiHorizon', step: 2, min: 6, max: 30, int: true },
+  { key: 'minConquerProb', step: 0.05, min: 0.3, max: 0.9 },
+  { key: 'minHoldProb', step: 0.05, min: 0.1, max: 0.8 },
   { key: 'reserveTroops', step: 1, min: 0, max: 5, int: true },
-  { key: 'denialWeight', step: 0.15, min: 0, max: 1.5 },
+  { key: 'denialWeight', step: 0.08, min: 0, max: 1.5 },
   { key: 'planStickiness', step: 0.1, min: 1, max: 1.6 },
   { key: 'aggressionRamp', step: 0.001, min: 0, max: 0.01 },
-  { key: 'troopValue', step: 0.25, min: 0.5, max: 3 },
+  { key: 'troopValue', step: 0.15, min: 0.5, max: 3 },
   { key: 'coupValueFloor', step: 2, min: 4, max: 24, int: true },
   { key: 'peaceThreatFloor', step: 0.08, min: 0.1, max: 0.8 },
   { key: 'tradeAcceptRatio', step: 0.1, min: 0.8, max: 1.8 },
